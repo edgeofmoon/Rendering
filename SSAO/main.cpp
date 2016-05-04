@@ -415,7 +415,7 @@ int main(int argc, char* argv[])
 	lightingPass.Build();
 
 	//track.Read("C:\\Users\\GuohaoZhang\\Desktop\\tmpdata\\ACR.trk");
-	track.Read("C:\\Users\\GuohaoZhang\\Dropbox\\data\\normal_s3.data");
+	track.Read("data\\normal_s3.data");
 	//track.Read("ACR.trk");
 	//track.SetShape(MyTracks::TRACK_SHAPE_LINE);
 	track.SetShape(MyTracks::TRACK_SHAPE_TUBE);
