@@ -22,6 +22,7 @@ public:
 
 	// rendering parameter
 	float mSampleRadius;
+	float mOcclusionPower;
 	void ResetRenderingParameters();
 
 protected:

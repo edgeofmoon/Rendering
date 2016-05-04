@@ -11,6 +11,7 @@ uniform sampler2D texNoise;
 uniform vec3 samples[kernelSize];
 uniform mat4 projection;
 uniform float radius;
+uniform float occlusionPower;
 
 out vec4 fragColour;
 
@@ -46,6 +47,6 @@ void main()
 		occlusion += (sampleDepth >= sample.z ? 1.0 : 0.0) * rangeCheck;   
 	} 
 	occlusion = 1.0 - (occlusion / kernelSize);
-	fragColour.xyz = vec3(occlusion);
+	fragColour.xyz = vec3(pow(occlusion,occlusionPower));
 	fragColour.a = 1;
 }

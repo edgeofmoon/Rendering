@@ -15,15 +15,14 @@ using namespace std;
 #include "MyBlurPass.h"
 #include "MyLightingPass.h"
 
-#define DSR_FACTOR_X 2
-#define DSR_FACTOR_Y 2
 int windowWidth = 1000;
 int windowHeight = 800;
+float dsr_factor;
 int gl_error;
 
 MyTracks track;
 MyTrackBall trackBall;
-MyFrameBuffer geomFb, ssaoFb, blurFb;
+MyFrameBuffer geomFb, ssaoFb, blurFb, lightingFb;
 MySsaoPass ssaoPass;
 MyBlurPass blurPass;
 MyLightingPass lightingPass;
@@ -99,8 +98,28 @@ int lightComponentRatioControl = 1;
 int trackShape = 0;
 int trackFaces = 6;
 GLUI_Panel* tubeParameterPanel;
+int dsrIndex = 2;
 
 void reRender(int mode){
+	glutPostRedisplay();
+}
+
+void changeDsr(int mode){
+	dsr_factor = dsrIndex / 2.f;
+
+	int tw = windowWidth * dsr_factor;
+	int th = windowHeight * dsr_factor;
+	geomFb.SetSize(tw, th);
+	geomFb.Build();
+
+	ssaoFb.SetSize(tw, th);
+	ssaoFb.Build();
+
+	blurFb.SetSize(tw, th);
+	blurFb.Build();
+
+	lightingFb.SetSize(tw, th);
+	lightingFb.Build();
 	glutPostRedisplay();
 }
 
@@ -239,7 +258,7 @@ void myGlutDisplay(){
 	// geometry pass
 	glBindFramebuffer(GL_FRAMEBUFFER, geomFb.GetFrameBuffer());
 	geomFb.Clear();
-	drawTracks(0, 0, windowWidth, windowHeight);
+	drawTracks(0, 0, windowWidth*dsr_factor, windowHeight*dsr_factor);
 	drawAxes();
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -253,6 +272,7 @@ void myGlutDisplay(){
 		// ssao pass
 		glBindFramebuffer(GL_FRAMEBUFFER, ssaoFb.GetFrameBuffer());
 		ssaoFb.Clear();
+		glViewport(0, 0, windowWidth*dsr_factor, windowHeight*dsr_factor);
 		ssaoPass.SetColorTexture(geomFb.GetColorTexture());
 		ssaoPass.SetPositionTexture(geomFb.GetExtraDrawTexture(0));
 		ssaoPass.SetNormalTexture(geomFb.GetExtraDrawTexture(1));
@@ -271,6 +291,7 @@ void myGlutDisplay(){
 		// blur pass
 		glBindFramebuffer(GL_FRAMEBUFFER, blurFb.GetFrameBuffer());
 		ssaoFb.Clear();
+		glViewport(0, 0, windowWidth*dsr_factor, windowHeight*dsr_factor);
 		blurPass.SetInputTexture(ssaoFb.GetColorTexture());
 		blurPass.Render();
 		drawAxes();
@@ -285,15 +306,23 @@ void myGlutDisplay(){
 
 	if (renderIdx >= 3){
 		// lighting pass
+		glBindFramebuffer(GL_FRAMEBUFFER, lightingFb.GetFrameBuffer());
+		lightingFb.Clear();
+		glViewport(0, 0, windowWidth*dsr_factor, windowHeight*dsr_factor);
 		lightingPass.SetColorTexture(geomFb.GetColorTexture());
 		lightingPass.SetPositionTexture(geomFb.GetExtraDrawTexture(0));
 		lightingPass.SetNormalTexture(geomFb.GetExtraDrawTexture(1));
 		lightingPass.SetSsaoTexture(blurFb.GetColorTexture());
 		lightingPass.Render();
 		drawAxes();
-		glutSwapBuffers();
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
 
+	if (renderIdx == 3){
+		RenderTexture(lightingFb.GetColorTexture(), 0, 0, windowWidth, windowHeight);
+		glutSwapBuffers();
+		return;
+	}
 }
 void myGlutKeyboard(unsigned char Key, int x, int y)
 {
@@ -373,14 +402,7 @@ void myGlutReshape(int x, int y)
 	MyGraphicsTool::LoadModelViewMatrix(&MyMatrixf::IdentityMatrix());
 	gluLookAt(0, 0, 150, 0, 0, 0, 0, 1, 0);
 
-	geomFb.SetSize(tw, th);
-	geomFb.Build();
-
-	ssaoFb.SetSize(tw, th);
-	ssaoFb.Build();
-
-	blurFb.SetSize(tw, th);
-	blurFb.Build();
+	changeDsr(-1);
 
 	glutPostRedisplay();
 }
@@ -457,6 +479,10 @@ int main(int argc, char* argv[])
 
 
 	panel[0] = new GLUI_Panel(glui, "Rendering Mode");
+	GLUI_Spinner* dsrSpinner = new GLUI_Spinner(
+		panel[0], "DSR Index", GLUI_SPINNER_INT,
+		&dsrIndex, -1, changeDsr);
+	dsrSpinner->set_int_limits(1, 4);
 	GLUI_RadioGroup* radioGroup = new GLUI_RadioGroup(panel[0],
 		&renderIdx, 0, switchRenderMode);
 	new GLUI_RadioButton(radioGroup, "Geometry Pass");
@@ -478,7 +504,8 @@ int main(int argc, char* argv[])
 		(tubeParameterPanel, "Tube Radius", GLUI_SCROLL_HORIZONTAL,
 		&(track.mTrackRadius), -1, reRender);
 	tubeRadiusSlider->set_float_limits(0, 1);
-	GLUI_Spinner* trackFaceSpinner = new GLUI_Spinner(tubeParameterPanel, "Number Faces",
+	GLUI_Spinner* trackFaceSpinner = new GLUI_Spinner(
+		tubeParameterPanel, "Number Faces", GLUI_SPINNER_INT,
 		&trackFaces, -1, changeTrackShape);
 	trackFaceSpinner->set_int_limits(2, 12);
 	trackFaceSpinner->set_int_val(track.GetNumberFaces());
@@ -491,6 +518,11 @@ int main(int argc, char* argv[])
 		(panel[2], "Sample Radius", GLUI_SCROLL_HORIZONTAL,
 		&(ssaoPass.mSampleRadius), -1, reRender);
 	sampleRadiusSlider->set_float_limits(0, 100);
+	new GLUI_StaticText(panel[2], "Occlusion Power");
+	GLUI_Scrollbar* occulusioPowerSlider = new GLUI_Scrollbar
+		(panel[2], "Occlusion Power", GLUI_SCROLL_HORIZONTAL,
+		&(ssaoPass.mOcclusionPower), -1, reRender);
+	occulusioPowerSlider->set_float_limits(0, 4);
 
 	// blur pass
 	panel[3] = new GLUI_Panel(glui, "Blur Pass");

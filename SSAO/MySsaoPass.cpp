@@ -30,6 +30,7 @@ void MySsaoPass::SetNormalTexture(unsigned int tex){
 }
 
 void MySsaoPass::ResetRenderingParameters(){
+	mOcclusionPower = 1.f;
 	mSampleRadius = 10.f;
 }
 
@@ -88,6 +89,9 @@ void MySsaoPass::Render(){
 
 	location = glGetUniformLocation(mShaderProgram, "radius");
 	glUniform1f(location, mSampleRadius);
+
+	location = glGetUniformLocation(mShaderProgram, "occlusionPower");
+	glUniform1f(location, mOcclusionPower);
 
 	mQuad.Render();
 
