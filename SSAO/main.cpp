@@ -174,9 +174,14 @@ void changeLightComponent(int component){
 		}
 		for (int i = 0; i < MAX_LIGHT_COMPONENTS; i++){
 			if (i != component){
-				float oldValue = lightComponentSlider[i]->get_float_val();
-				float newValue = oldValue / restReal*rest;
-				lightComponentSlider[i]->set_float_val(newValue);
+				if (rest <= 0 || restReal <= 0){
+					lightComponentSlider[i]->set_float_val(0);
+				}
+				else{
+					float oldValue = lightComponentSlider[i]->get_float_val();
+					float newValue = oldValue / restReal*rest;
+					lightComponentSlider[i]->set_float_val(newValue);
+				}
 			}
 		}
 	}
@@ -489,7 +494,7 @@ int main(int argc, char* argv[])
 	// lighting pass
 	panel[4] = new GLUI_Panel(glui, "Lighting Pass");
 	new GLUI_Button(panel[4], "Reset", 3, resetRenderingParameters);
-	new GLUI_Checkbox(panel[4], "Normalize Itensity",
+	new GLUI_Checkbox(panel[4], "Normalize Intensity",
 		&lightComponentRatioControl, -1, changeLightComponent);
 	new GLUI_Checkbox(panel[4], "Use SSAO",
 		&lightingPass.mUseSsao, -1, changeLightComponent);
@@ -502,17 +507,17 @@ int main(int argc, char* argv[])
 	lightComponentSlider[0] = new GLUI_Scrollbar
 		(panel[4], "Ambient", GLUI_SCROLL_HORIZONTAL,
 		&(lightingPass.mAmbient), 0, changeLightComponent);
-	lightComponentSlider[0]->set_float_limits(0, 1);
+	lightComponentSlider[0]->set_float_limits(0, 0.999);
 	new GLUI_StaticText(panel[4], "Diffuse");
 	lightComponentSlider[1] = new GLUI_Scrollbar
 		(panel[4], "Diffuse", GLUI_SCROLL_HORIZONTAL,
 		&(lightingPass.mDiffuse), 1, changeLightComponent);
-	lightComponentSlider[1]->set_float_limits(0, 1);
+	lightComponentSlider[1]->set_float_limits(0, 0.999);
 	new GLUI_StaticText(panel[4], "Specular");
 	lightComponentSlider[2] = new GLUI_Scrollbar
 		(panel[4], "Specular", GLUI_SCROLL_HORIZONTAL,
 		&(lightingPass.mSpecular), 2, changeLightComponent);
-	lightComponentSlider[2]->set_float_limits(0, 1);
+	lightComponentSlider[2]->set_float_limits(0, 0.999);
 	new GLUI_StaticText(panel[4], "Shininess");
 	GLUI_Scrollbar* shininessSlider = new GLUI_Scrollbar
 		(panel[4], "Shininess", GLUI_SCROLL_HORIZONTAL,
