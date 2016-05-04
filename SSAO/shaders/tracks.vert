@@ -3,6 +3,7 @@
 uniform mat4x4 mvMat;
 uniform mat4x4 projMat;
 uniform mat4x4 normalMat;
+uniform float radius;
 
 in vec3 position;
 in vec3 normal;
@@ -16,7 +17,7 @@ void main (void)
 {
 	fnormal = (normalMat*vec4(normal,0)).xyz;
 	fcolor = color;
-	vec4 ndcPosition = mvMat*vec4(position,1);
+	vec4 ndcPosition = mvMat*vec4(position+normal*radius,1);
 	fposition = ndcPosition.xyz/ndcPosition.w;
 	gl_Position = projMat*ndcPosition;
 }

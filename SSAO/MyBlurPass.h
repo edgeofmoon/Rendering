@@ -15,6 +15,10 @@ public:
 
 	void SetInputTexture(unsigned int tex);
 
+	// rendering parameter
+	int mBlurRadius;
+	void ResetRenderingParameters();
+
 protected:
 	unsigned int mInputTexture;
 

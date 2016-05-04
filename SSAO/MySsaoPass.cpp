@@ -11,6 +11,7 @@ using namespace std;
 #include "Shader.h"
 MySsaoPass::MySsaoPass()
 {
+	ResetRenderingParameters();
 }
 
 
@@ -26,6 +27,10 @@ void MySsaoPass::SetPositionTexture(unsigned int tex){
 }
 void MySsaoPass::SetNormalTexture(unsigned int tex){
 	mNormalTexture = tex;
+}
+
+void MySsaoPass::ResetRenderingParameters(){
+	mSampleRadius = 10.f;
 }
 
 void MySsaoPass::CompileShader(){
@@ -80,6 +85,9 @@ void MySsaoPass::Render(){
 	float projMat[16];
 	glGetFloatv(GL_PROJECTION_MATRIX, projMat);
 	glUniformMatrix4fv(location, 1, GL_FALSE, projMat);
+
+	location = glGetUniformLocation(mShaderProgram, "radius");
+	glUniform1f(location, mSampleRadius);
 
 	mQuad.Render();
 

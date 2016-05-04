@@ -2,17 +2,15 @@
 
 in vec2 TexCoords;
 
+const int kernelSize = 64;
+
 uniform sampler2D gColor;
 uniform sampler2D gPositionDepth;
 uniform sampler2D gNormal;
 uniform sampler2D texNoise;
-
-const int kernelSize = 64;
-const float radius = 15.0;
-
 uniform vec3 samples[kernelSize];
-
 uniform mat4 projection;
+uniform float radius;
 
 out vec4 fragColour;
 

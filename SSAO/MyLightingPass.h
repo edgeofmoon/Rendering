@@ -18,6 +18,12 @@ public:
 	void SetNormalTexture(unsigned int tex);
 	void SetSsaoTexture(unsigned int tex);
 
+	// rendering parameters
+	float mLightItensity;
+	float mAmbient, mDiffuse, mSpecular, mShininess;
+	int mUseSsao;
+	void ResetRenderingParameters();
+
 protected:
 	unsigned int mColorTexture;
 	unsigned int mPositionTexture;

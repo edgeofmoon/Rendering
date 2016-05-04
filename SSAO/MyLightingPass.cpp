@@ -9,6 +9,7 @@ using namespace std;
 
 MyLightingPass::MyLightingPass()
 {
+	ResetRenderingParameters();
 }
 
 
@@ -29,6 +30,14 @@ void MyLightingPass::SetSsaoTexture(unsigned int tex){
 	mSsaoTexture = tex;
 }
 
+void MyLightingPass::ResetRenderingParameters(){
+	mLightItensity = 1;
+	mAmbient = 0.2;
+	mDiffuse = 0.5;
+	mSpecular = 0.3;
+	mShininess = 16;
+	mUseSsao = 1;
+}
 
 void MyLightingPass::CompileShader(){
 
@@ -72,6 +81,21 @@ void MyLightingPass::Render(){
 	glUniform1i(location, 3);
 	glActiveTexture(GL_TEXTURE0 + 3);
 	glBindTexture(GL_TEXTURE_2D, mSsaoTexture);
+
+	location = glGetUniformLocation(mShaderProgram, "gAmbient");
+	glUniform1f(location, mAmbient*mLightItensity/(mAmbient+mDiffuse+mSpecular));
+
+	location = glGetUniformLocation(mShaderProgram, "gDiffuse");
+	glUniform1f(location, mDiffuse*mLightItensity / (mAmbient + mDiffuse + mSpecular));
+
+	location = glGetUniformLocation(mShaderProgram, "gSpecular");
+	glUniform1f(location, mSpecular*mLightItensity / (mAmbient + mDiffuse + mSpecular));
+
+	location = glGetUniformLocation(mShaderProgram, "gShininess");
+	glUniform1f(location, mShininess);
+
+	location = glGetUniformLocation(mShaderProgram, "gUseSsao");
+	glUniform1i(location, mUseSsao);
 
 	mQuad.Render();
 

@@ -49,6 +49,9 @@ public:
 #endif
 	MyVec3f GetCoord(int trackIdx, int pointIdx) const;
 
+	// rendering parameters
+	float mTrackRadius;
+	void ResetRenderingParameters();
 
 protected:
 	struct MyTrackHeader
@@ -121,11 +124,15 @@ protected:
 	void ComputeTubeGeometry();
 	void ComputeLineGeometry();
 public:
+	int GetNumberFaces() const { return mFaces; };
+	void SetNumberFaces(int f);
+	void ClearGeometry();
 	void ComputeGeometry();
 	void LoadGeometry();
 	void LoadShader();
 	void Show();
 	void SetShape(TrackShape shape){ mShape = shape; };
+	TrackShape GetShape() const { return mShape; };
 
 // for filtering
 protected:

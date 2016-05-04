@@ -1,10 +1,11 @@
 
 #include <iostream>
+#include <iomanip>
 using namespace std;
 
 #include <GL/glew.h>
 #include <GL/freeglut.h>
-//#include "GL/glui.h"
+#include "GL/glui.h"
 #include "MyTracks.h"
 #include "MyTrackBall.h"
 #include "MyFrameBuffer.h"
@@ -28,7 +29,10 @@ MyBlurPass blurPass;
 MyLightingPass lightingPass;
 
 #define MAX_RENDER_MODE 4
-int renderIdx = 0;
+int renderIdx = 3;
+
+// glui code
+GLUI_Panel* panel[MAX_RENDER_MODE + 1] = { 0 };
 
 void RenderTexture(int texture, int x, int y, int width, int height){
 	MyGraphicsTool::SetViewport(MyVec4i(x, y, width, height));
@@ -84,6 +88,133 @@ void drawAxes(){
 		glVertex3f(0, 0, 100);
 		glEnd();
 	}glPopMatrix();
+}
+
+/**************************************** GLUI Callback ********************/
+
+GLUI* glui;
+#define MAX_LIGHT_COMPONENTS 3
+GLUI_Scrollbar* lightComponentSlider[MAX_LIGHT_COMPONENTS] = { 0 };
+int lightComponentRatioControl = 1;
+int trackShape = 0;
+int trackFaces = 6;
+GLUI_Panel* tubeParameterPanel;
+
+void reRender(int mode){
+	glutPostRedisplay();
+}
+
+void switchRenderMode(int mode){
+	for (int i = 1; i <= MAX_RENDER_MODE; i++){
+		if (i - 1 <= renderIdx) panel[i]->enable();
+		else panel[i]->disable();
+	}
+	glutPostRedisplay();
+}
+
+void changeTrackShape(int id){
+	MyTracks::TrackShape oldShape = track.GetShape();
+	int oldNumFaces = track.GetNumberFaces();
+	switch (trackShape)
+	{
+	case 0:
+		track.SetShape(MyTracks::TrackShape::TRACK_SHAPE_TUBE);
+		tubeParameterPanel->enable();
+		break;
+	case 1:
+		track.SetShape(MyTracks::TrackShape::TRACK_SHAPE_LINE);
+		tubeParameterPanel->disable();
+		break;
+	default:
+		break;
+	}
+	track.SetNumberFaces(trackFaces);
+	if (oldShape != track.GetShape() || oldNumFaces != track.GetNumberFaces()){
+		track.ComputeGeometry();
+		track.LoadGeometry();
+	}
+	glutPostRedisplay();
+}
+
+void resetTrackShape(){
+	MyTracks::TrackShape oldShape = track.GetShape();
+	int oldNumFaces = track.GetNumberFaces();
+	track.ResetRenderingParameters();
+	if (oldShape != track.GetShape() || oldNumFaces != track.GetNumberFaces()){
+		track.ComputeGeometry();
+		track.LoadGeometry();
+	}
+	switch (track.GetShape())
+	{
+	case MyTracks::TrackShape::TRACK_SHAPE_TUBE:
+		tubeParameterPanel->enable();
+		trackShape = 0;
+		break;
+	case MyTracks::TrackShape::TRACK_SHAPE_LINE:
+		tubeParameterPanel->disable();
+		trackShape = 1;
+		break;
+	default:
+		break;
+	}
+	trackFaces = track.GetNumberFaces();
+}
+
+void changeLightComponent(int component){
+	if (lightComponentRatioControl){
+		float rest = 1.0;
+		if (component >= 0 && component < MAX_LIGHT_COMPONENTS){
+			rest = 1 - lightComponentSlider[component]->get_float_val();
+		}
+		float restReal = 0;
+		for (int i = 0; i < MAX_LIGHT_COMPONENTS; i++){
+			if (i != component){
+				restReal += lightComponentSlider[i]->get_float_val();
+			}
+		}
+		for (int i = 0; i < MAX_LIGHT_COMPONENTS; i++){
+			if (i != component){
+				float oldValue = lightComponentSlider[i]->get_float_val();
+				float newValue = oldValue / restReal*rest;
+				lightComponentSlider[i]->set_float_val(newValue);
+			}
+		}
+	}
+	cout << "lighting: " << setprecision(2)
+		<< lightingPass.mLightItensity << ", "
+		<< lightingPass.mAmbient << ", "
+		<< lightingPass.mDiffuse << ", "
+		<< lightingPass.mSpecular << ", "
+		<< lightingPass.mShininess << endl;
+	glutPostRedisplay();
+}
+
+void resetRenderingParameters(int mode){
+	switch (mode)
+	{
+	case 0:
+		resetTrackShape();
+		break;
+	case 1:
+		ssaoPass.ResetRenderingParameters();
+		break;
+	case 2:
+		blurPass.ResetRenderingParameters();
+		break;
+	case 3:
+		lightingPass.ResetRenderingParameters();
+		lightComponentRatioControl = 1;
+		break;
+	default:
+		resetTrackShape();
+		ssaoPass.ResetRenderingParameters();
+		blurPass.ResetRenderingParameters();
+		lightingPass.ResetRenderingParameters();
+		lightComponentRatioControl = 1;
+		break;
+	}
+	glui->sync_live();
+	glutPostRedisplay();
 }
 
 /**************************************** GLUT Callback ********************/
@@ -217,9 +348,7 @@ void myGlutPassiveMotion(int x, int y){
 void myGlutReshape(int x, int y)
 {
 	int tx, ty, tw, th;
-	//GLUI_Master.get_viewport_area(&tx, &ty, &tw, &th);
-	tx = ty = 0;
-	tw = x, th = y;
+	GLUI_Master.get_viewport_area(&tx, &ty, &tw, &th);
 	glViewport(tx, ty, tw, th);
 	windowWidth = tw;
 	windowHeight = th;
@@ -297,7 +426,6 @@ int main(int argc, char* argv[])
 	/****************************************/
 	/*         Here's the GLUI code         */
 	/****************************************/
-	/*
 	printf("GLUI version: %3.2f\n", GLUI_Master.get_version());
 
 	GLUI_Master.set_glutDisplayFunc(myGlutDisplay);
@@ -306,11 +434,94 @@ int main(int argc, char* argv[])
 	GLUI_Master.set_glutSpecialFunc(NULL);
 	GLUI_Master.set_glutMouseFunc(myGlutMouse);
 
-	GLUI* glui = GLUI_Master.create_glui_subwindow(main_window,
+	glui = GLUI_Master.create_glui_subwindow(main_window,
 		GLUI_SUBWINDOW_RIGHT);
 
 	glui->set_main_gfx_window(main_window);
-	*/
+
+	// add panels for parameter tunning
+
+
+	panel[0] = new GLUI_Panel(glui, "Rendering Mode");
+	GLUI_RadioGroup* radioGroup = new GLUI_RadioGroup(panel[0],
+		&renderIdx, 0, switchRenderMode);
+	new GLUI_RadioButton(radioGroup, "Geometry Pass");
+	new GLUI_RadioButton(radioGroup, "SSAO Pass");
+	new GLUI_RadioButton(radioGroup, "Blur Pass");
+	new GLUI_RadioButton(radioGroup, "Lighting Pass");
+	new GLUI_Button(panel[0], "Reset All", -1, resetRenderingParameters);
+
+	// geometry pass
+	panel[1] = new GLUI_Panel(glui, "Geometry Pass");
+	new GLUI_Button(panel[1], "Reset", 0, resetRenderingParameters);
+	GLUI_RadioGroup* shapeRadioGroup = new GLUI_RadioGroup(panel[1],
+		&trackShape, 0, changeTrackShape);
+	new GLUI_RadioButton(shapeRadioGroup, "Tube");
+	new GLUI_RadioButton(shapeRadioGroup, "Line");
+	tubeParameterPanel = new GLUI_Panel(panel[1], "Tube Parameters");
+	new GLUI_StaticText(tubeParameterPanel, "Tube Radius");
+	GLUI_Scrollbar* tubeRadiusSlider = new GLUI_Scrollbar
+		(tubeParameterPanel, "Tube Radius", GLUI_SCROLL_HORIZONTAL,
+		&(track.mTrackRadius), -1, reRender);
+	tubeRadiusSlider->set_float_limits(0, 1);
+	GLUI_Spinner* trackFaceSpinner = new GLUI_Spinner(tubeParameterPanel, "Number Faces",
+		&trackFaces, -1, changeTrackShape);
+	trackFaceSpinner->set_int_limits(2, 12);
+	trackFaceSpinner->set_int_val(track.GetNumberFaces());
+
+	// ssao pass
+	panel[2] = new GLUI_Panel(glui, "SSAO Pass");
+	new GLUI_Button(panel[2], "Reset", 1, resetRenderingParameters);
+	new GLUI_StaticText(panel[2], "Sample Radius");
+	GLUI_Scrollbar* sampleRadiusSlider = new GLUI_Scrollbar
+		(panel[2], "Sample Radius", GLUI_SCROLL_HORIZONTAL,
+		&(ssaoPass.mSampleRadius), -1, reRender);
+	sampleRadiusSlider->set_float_limits(0, 100);
+
+	// blur pass
+	panel[3] = new GLUI_Panel(glui, "Blur Pass");
+	new GLUI_Button(panel[3], "Reset", 2, resetRenderingParameters);
+	GLUI_Spinner* blurRadiusSpinner = new GLUI_Spinner
+		(panel[3], "Blur Radius (Pixel)", GLUI_SPINNER_INT,
+		&(blurPass.mBlurRadius), -1, reRender);
+	blurRadiusSpinner->set_int_limits(0, 20);
+
+	// lighting pass
+	panel[4] = new GLUI_Panel(glui, "Lighting Pass");
+	new GLUI_Button(panel[4], "Reset", 3, resetRenderingParameters);
+	new GLUI_Checkbox(panel[4], "Normalize Itensity",
+		&lightComponentRatioControl, -1, changeLightComponent);
+	new GLUI_Checkbox(panel[4], "Use SSAO",
+		&lightingPass.mUseSsao, -1, changeLightComponent);
+	new GLUI_StaticText(panel[4], "Light Intensity");
+	GLUI_Scrollbar* lightIntensitySlider = new GLUI_Scrollbar
+		(panel[4], "Light Intensity", GLUI_SCROLL_HORIZONTAL,
+		&(lightingPass.mLightItensity), -1, reRender);
+	lightIntensitySlider->set_float_limits(0, 10);
+	new GLUI_StaticText(panel[4], "Ambient");
+	lightComponentSlider[0] = new GLUI_Scrollbar
+		(panel[4], "Ambient", GLUI_SCROLL_HORIZONTAL,
+		&(lightingPass.mAmbient), 0, changeLightComponent);
+	lightComponentSlider[0]->set_float_limits(0, 1);
+	new GLUI_StaticText(panel[4], "Diffuse");
+	lightComponentSlider[1] = new GLUI_Scrollbar
+		(panel[4], "Diffuse", GLUI_SCROLL_HORIZONTAL,
+		&(lightingPass.mDiffuse), 1, changeLightComponent);
+	lightComponentSlider[1]->set_float_limits(0, 1);
+	new GLUI_StaticText(panel[4], "Specular");
+	lightComponentSlider[2] = new GLUI_Scrollbar
+		(panel[4], "Specular", GLUI_SCROLL_HORIZONTAL,
+		&(lightingPass.mSpecular), 2, changeLightComponent);
+	lightComponentSlider[2]->set_float_limits(0, 1);
+	new GLUI_StaticText(panel[4], "Shininess");
+	GLUI_Scrollbar* shininessSlider = new GLUI_Scrollbar
+		(panel[4], "Shininess", GLUI_SCROLL_HORIZONTAL,
+		&(lightingPass.mShininess), -1, changeLightComponent);
+	shininessSlider->set_float_limits(0, 128);
+
+
+	// set init state right
+	switchRenderMode(renderIdx);
 
 	glutMainLoop();
 

@@ -9,6 +9,7 @@ using namespace std;
 
 MyBlurPass::MyBlurPass()
 {
+	ResetRenderingParameters();
 }
 
 
@@ -38,16 +39,25 @@ void MyBlurPass::Build(){
 void MyBlurPass::Render(){
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
 	glUseProgram(mShaderProgram);
+
 	int location = glGetUniformLocation(mShaderProgram, "gColor");
 	glUniform1i(location, 0);
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, mInputTexture);
+
+	location = glGetUniformLocation(mShaderProgram, "blurRadius");
+	glUniform1i(location, mBlurRadius);
+
 	mQuad.Render();
 	glUseProgram(0);
 	glPopAttrib();
 }
 void MyBlurPass::Destory(){
 
+}
+
+void MyBlurPass::ResetRenderingParameters(){
+	mBlurRadius = 2;
 }
 
 void MyBlurPass::SetInputTexture(unsigned int tex){

@@ -3,13 +3,14 @@
 in vec2 TexCoords;
 
 uniform sampler2D gColor;
+uniform int blurRadius;
 
 out vec4 fragColour;
 
-const int blurX = 1;
-const int blurY = 1;
 
 void main() {
+	int blurX = blurRadius;
+	int blurY = blurRadius;
     vec2 texelSize = 1.0 / vec2(textureSize(gColor, 0));
     vec4 result = vec4(0.0);
     for (int x = -blurX; x <= blurX; ++x) 

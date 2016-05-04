@@ -28,14 +28,18 @@ using namespace std;
 #include <GL/freeglut.h>
 
 MyTracks::MyTracks(){
-	mFaces = 6;
-	mShape = TRACK_SHAPE_LINE;
+	ResetRenderingParameters();
 }
 
 MyTracks::MyTracks(const string& filename){
 	Read(filename);
+	ResetRenderingParameters();
+}
+
+void MyTracks::ResetRenderingParameters(){
+	mTrackRadius = 0.4;
 	mFaces = 6;
-	mShape = TRACK_SHAPE_LINE;
+	mShape = TRACK_SHAPE_TUBE;
 }
 
 int MyTracks::Read(const std::string& filename){
@@ -263,7 +267,7 @@ void MyTracks::ComputeTubeGeometry(){
 			for (int is = 0; is<mFaces; is++){
 				float angle = dangle*is;
 				MyVec3f pt = sin(angle)*perpend1 + cos(angle)*perpend2;
-				mVertices[currentIdx + i*(mFaces + 1) + is] = pt * 0.4 + p;
+				mVertices[currentIdx + i*(mFaces + 1) + is] = pt * 0.0 + p;
 				mNormals[currentIdx + i*(mFaces + 1) + is] = pt;
 				//mTexCoords[currentIdx + i*(mFaces + 1) + is] = MyVec2f(i, is / (float)mFaces);
 				//mRadius[currentIdx + i*(mFaces + 1) + is] = size;
@@ -333,8 +337,8 @@ void MyTracks::ComputeLineGeometry(){
 	mNormals.clear();
 	mVertices.reserve(totalPoints);
 	mNormals.reserve(totalPoints);
-	//mVertices.resize(totalPoints);
-	//mNormals.resize(totalPoints);
+	mColors.reserve(totalPoints);
+
 
 	mIdxOffset.clear();
 	mIdxOffset.reserve(mTracks.size());
@@ -391,6 +395,15 @@ void MyTracks::ComputeLineGeometry(){
 			//mNormals[currentIdx + i] = perpend1;
 			mVertices.push_back(p);
 			mNormals.push_back(perpend1);
+			if (mHeader.n_scalars == 3){
+				 MyColor4f color (
+					mTracks[it].mPointScalars[i][0], mTracks[it].mPointScalars[i][1],
+					mTracks[it].mPointScalars[i][2], 1);
+				 mColors.push_back(color);
+			}
+			else {
+				mColors.push_back(MyColor4f(1, 1, 1, 1));
+			}
 		}
 
 		mIdxOffset << currentIdx;
@@ -409,8 +422,23 @@ void MyTracks::ComputeLineGeometry(){
 	cout << "Computing completed.\n";
 }
 
-void MyTracks::ComputeGeometry(){
+void MyTracks::SetNumberFaces(int f){
+	mFaces = f;
 
+}
+
+void MyTracks::ClearGeometry(){
+	mVertices.clear();
+	mNormals.clear();
+	//mTexCoords.clear();
+	//mRadius.clear();
+	mColors.clear();
+	mIndices.clear();
+	mLineIndices.clear();
+}
+
+void MyTracks::ComputeGeometry(){
+	ClearGeometry();
 	if (mShape == TRACK_SHAPE_TUBE){
 		this->ComputeTubeGeometry();
 	}
@@ -497,15 +525,9 @@ void MyTracks::LoadGeometry(){
 	glBindVertexArray(0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-	return;
+
 	// now free everything
-	mVertices.clear();
-	mNormals.clear();
-	//mTexCoords.clear();
-	//mRadius.clear();
-	mColors.clear();
-	mIndices.clear();
-	mLineIndices.clear();
+	ClearGeometry();
 }
 
 void MyTracks::LoadShader(){
@@ -561,6 +583,14 @@ void MyTracks::Show(){
 
 		int colorLocation = glGetUniformLocation(mShaderProgram, "color");
 		glUniform3f(colorLocation, 1, 1, 1);
+
+		int radiusLocation = glGetUniformLocation(mShaderProgram, "radius");
+		if (mShape == TRACK_SHAPE_LINE){
+			glUniform1f(radiusLocation, 0);
+		}
+		else{
+			glUniform1f(radiusLocation, mTrackRadius);
+		}
 
 #ifdef RIC
 		glEnable(GL_TEXTURE_3D);

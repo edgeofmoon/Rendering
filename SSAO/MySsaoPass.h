@@ -20,6 +20,10 @@ public:
 	void Render();
 	void Destory();
 
+	// rendering parameter
+	float mSampleRadius;
+	void ResetRenderingParameters();
+
 protected:
 	unsigned int mColorTexture;
 	unsigned int mPositionTexture;
