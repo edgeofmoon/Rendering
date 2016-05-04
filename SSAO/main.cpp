@@ -450,7 +450,6 @@ int main(int argc, char* argv[])
 	blurPass.Build();
 	lightingPass.Build();
 
-	//track.Read("C:\\Users\\GuohaoZhang\\Desktop\\tmpdata\\ACR.trk");
 	track.Read("data\\normal_s3.data");
 	//track.Read("ACR.trk");
 	//track.SetShape(MyTracks::TRACK_SHAPE_LINE);
