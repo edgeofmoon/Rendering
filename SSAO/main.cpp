@@ -166,6 +166,9 @@ void changeLightComponent(int component){
 		if (component >= 0 && component < MAX_LIGHT_COMPONENTS){
 			rest = 1 - lightComponentSlider[component]->get_float_val();
 		}
+		// must have this since the rest sum could
+		// be larger than 1 when normailzation is
+		// disabled.
 		float restReal = 0;
 		for (int i = 0; i < MAX_LIGHT_COMPONENTS; i++){
 			if (i != component){
@@ -174,23 +177,29 @@ void changeLightComponent(int component){
 		}
 		for (int i = 0; i < MAX_LIGHT_COMPONENTS; i++){
 			if (i != component){
-				if (rest <= 0 || restReal <= 0){
-					lightComponentSlider[i]->set_float_val(0);
+				float oldValue = lightComponentSlider[i]->get_float_val();
+				float newValue;
+				if (rest <= 0){
+					if (restReal <= 0){
+						newValue = 1.f / MAX_LIGHT_COMPONENTS;
+					}
+					else{
+						newValue = 0;
+					}
+				}
+				else if (restReal <= 0){
+					if (component >= 0 && component < MAX_LIGHT_COMPONENTS){
+						newValue = rest / (MAX_LIGHT_COMPONENTS - 1);
+					}
+					else newValue = rest / MAX_LIGHT_COMPONENTS;
 				}
 				else{
-					float oldValue = lightComponentSlider[i]->get_float_val();
-					float newValue = oldValue / restReal*rest;
-					lightComponentSlider[i]->set_float_val(newValue);
+					newValue = oldValue / restReal*rest;
 				}
+				lightComponentSlider[i]->set_float_val(newValue);
 			}
 		}
 	}
-	cout << "lighting: " << setprecision(2)
-		<< lightingPass.mLightItensity << ", "
-		<< lightingPass.mAmbient << ", "
-		<< lightingPass.mDiffuse << ", "
-		<< lightingPass.mSpecular << ", "
-		<< lightingPass.mShininess << endl;
 	glutPostRedisplay();
 }
 
@@ -507,17 +516,17 @@ int main(int argc, char* argv[])
 	lightComponentSlider[0] = new GLUI_Scrollbar
 		(panel[4], "Ambient", GLUI_SCROLL_HORIZONTAL,
 		&(lightingPass.mAmbient), 0, changeLightComponent);
-	lightComponentSlider[0]->set_float_limits(0, 0.999);
+	lightComponentSlider[0]->set_float_limits(0, 1);
 	new GLUI_StaticText(panel[4], "Diffuse");
 	lightComponentSlider[1] = new GLUI_Scrollbar
 		(panel[4], "Diffuse", GLUI_SCROLL_HORIZONTAL,
 		&(lightingPass.mDiffuse), 1, changeLightComponent);
-	lightComponentSlider[1]->set_float_limits(0, 0.999);
+	lightComponentSlider[1]->set_float_limits(0, 1);
 	new GLUI_StaticText(panel[4], "Specular");
 	lightComponentSlider[2] = new GLUI_Scrollbar
 		(panel[4], "Specular", GLUI_SCROLL_HORIZONTAL,
 		&(lightingPass.mSpecular), 2, changeLightComponent);
-	lightComponentSlider[2]->set_float_limits(0, 0.999);
+	lightComponentSlider[2]->set_float_limits(0, 1);
 	new GLUI_StaticText(panel[4], "Shininess");
 	GLUI_Scrollbar* shininessSlider = new GLUI_Scrollbar
 		(panel[4], "Shininess", GLUI_SCROLL_HORIZONTAL,

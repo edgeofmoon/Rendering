@@ -29,11 +29,13 @@ void main() {
 	vec3 lightDir = vec3(0,0,1);
 	float ambient = gAmbient;
 	float diffusion = gDiffuse*clamp(dot(normal,lightDir),0,1);
-	//float diffusion = 0.6*abs(dot(normal,lightDir));
+	diffusion = clamp(diffusion, 0.0, 1.0);     
 	vec3 eyeDir = normalize(-position);
-	vec3 hv = normalize(eyeDir+lightDir);
-	//float specular = gSpecular*pow(clamp(dot(hv,normal),0,1),gShininess);
-	float specular = gSpecular*pow(abs(dot(hv,normal)),gShininess);
+	vec3 hv = normalize(-reflect(lightDir,normal));
+	float specular = gSpecular*pow(max(dot(hv,eyeDir),0.0),gShininess);
+	//vec3 hv = normalize(eyeDir+lightDir);
+	//float specular = gSpecular*pow(max(dot(hv,normal),0.0),gShininess);
+	specular = clamp(specular, 0.0, 1.0);     
 	fragColour.xyz = color*(ambient+diffusion);
 	fragColour.xyz += vec3(specular);
 	fragColour.a = 1;
