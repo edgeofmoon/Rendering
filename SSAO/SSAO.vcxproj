@@ -152,6 +152,7 @@
     <ClInclude Include="MyLine.h" />
     <ClInclude Include="MyMathHelper.h" />
     <ClInclude Include="MyMatrix.h" />
+    <ClInclude Include="MyMesh.h" />
     <ClInclude Include="MyPolyLine.h" />
     <ClInclude Include="MyPrimitiveDrawer.h" />
     <ClInclude Include="MyQuadGeometry.h" />
@@ -172,6 +173,7 @@
     <ClCompile Include="MyGraphicsTool.cpp" />
     <ClCompile Include="MyLightingPass.cpp" />
     <ClCompile Include="MyMathHelper.cpp" />
+    <ClCompile Include="MyMesh.cpp" />
     <ClCompile Include="MyPrimitiveDrawer.cpp" />
     <ClCompile Include="MyQuadGeometry.cpp" />
     <ClCompile Include="MyQuarternion.cpp" />
@@ -183,14 +185,19 @@
     <ClCompile Include="svd.c" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="data\normal_s3.data" />
     <None Include="shaders\blur.frag" />
     <None Include="shaders\blur.vert" />
     <None Include="shaders\lighting.frag" />
     <None Include="shaders\lighting.vert" />
     <None Include="shaders\ssao.frag" />
     <None Include="shaders\ssao.vert" />
-    <None Include="Shaders\tracks.frag" />
-    <None Include="Shaders\tracks.vert" />
+    <None Include="Shaders\geom.frag" />
+    <None Include="Shaders\geom.vert" />
+  </ItemGroup>
+  <ItemGroup>
+    <Object Include="data\lh.pial.obj" />
+    <Object Include="data\rh.pial.obj" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

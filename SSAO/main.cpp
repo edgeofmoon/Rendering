@@ -1,4 +1,7 @@
 
+
+#define MESH
+
 #include <iostream>
 #include <iomanip>
 using namespace std;
@@ -6,7 +9,15 @@ using namespace std;
 #include <GL/glew.h>
 #include <GL/freeglut.h>
 #include "GL/glui.h"
+
+#ifdef TRACK
 #include "MyTracks.h"
+#endif
+
+#ifdef MESH
+#include "MyMesh.h"
+#endif
+
 #include "MyTrackBall.h"
 #include "MyFrameBuffer.h"
 #include "MyGraphicsTool.h"
@@ -20,7 +31,15 @@ int windowHeight = 800;
 float dsr_factor;
 int gl_error;
 
+
+#ifdef TRACK
 MyTracks track;
+#endif
+
+#ifdef MESH
+MyMesh mesh;
+#endif
+
 MyTrackBall trackBall;
 MyFrameBuffer geomFb, ssaoFb, blurFb, lightingFb;
 MySsaoPass ssaoPass;
@@ -61,6 +80,7 @@ void RenderTexture(int texture, int x, int y, int width, int height){
 	MyGraphicsTool::PopProjectionMatrix();
 }
 
+#ifdef TRACK
 void drawTracks(int x, int y, int width, int height){
 	MyGraphicsTool::SetViewport(MyVec4i(x, y, width, height));
 	glPushMatrix(); {
@@ -71,7 +91,19 @@ void drawTracks(int x, int y, int width, int height){
 		track.Show();
 	}glPopMatrix();
 }
-
+#endif
+#ifdef MESH
+void drawMesh(int x, int y, int width, int height){
+	MyGraphicsTool::SetViewport(MyVec4i(x, y, width, height));
+	glPushMatrix(); {
+		MyGraphicsTool::LoadTrackBall(&trackBall);
+		MyGraphicsTool::Rotate(180, MyVec3f(0, 1, 0));
+		MyBoundingBox box = mesh.GetBoundingBox();
+		MyGraphicsTool::Translate(-box.GetCenter());
+		mesh.Render();
+	}glPopMatrix();
+}
+#endif
 void drawAxes(){
 	glPushMatrix(); {
 		MyGraphicsTool::LoadTrackBall(&trackBall);
@@ -95,9 +127,6 @@ GLUI* glui;
 #define MAX_LIGHT_COMPONENTS 3
 GLUI_Scrollbar* lightComponentSlider[MAX_LIGHT_COMPONENTS] = { 0 };
 int lightComponentRatioControl = 1;
-int trackShape = 0;
-int trackFaces = 6;
-GLUI_Panel* tubeParameterPanel;
 int dsrIndex = 2;
 
 void reRender(int mode){
@@ -131,6 +160,10 @@ void switchRenderMode(int mode){
 	glutPostRedisplay();
 }
 
+#ifdef TRACK
+int trackShape = 0;
+int trackFaces = 6;
+GLUI_Panel* tubeParameterPanel;
 void changeTrackShape(int id){
 	MyTracks::TrackShape oldShape = track.GetShape();
 	int oldNumFaces = track.GetNumberFaces();
@@ -178,6 +211,7 @@ void resetTrackShape(){
 	}
 	trackFaces = track.GetNumberFaces();
 }
+#endif
 
 void changeLightComponent(int component){
 	if (lightComponentRatioControl){
@@ -226,7 +260,9 @@ void resetRenderingParameters(int mode){
 	switch (mode)
 	{
 	case 0:
+#ifdef TRACK
 		resetTrackShape();
+#endif
 		break;
 	case 1:
 		ssaoPass.ResetRenderingParameters();
@@ -239,7 +275,9 @@ void resetRenderingParameters(int mode){
 		lightComponentRatioControl = 1;
 		break;
 	default:
+#ifdef TRACK
 		resetTrackShape();
+#endif
 		ssaoPass.ResetRenderingParameters();
 		blurPass.ResetRenderingParameters();
 		lightingPass.ResetRenderingParameters();
@@ -258,7 +296,12 @@ void myGlutDisplay(){
 	// geometry pass
 	glBindFramebuffer(GL_FRAMEBUFFER, geomFb.GetFrameBuffer());
 	geomFb.Clear();
+#ifdef TRACK
 	drawTracks(0, 0, windowWidth*dsr_factor, windowHeight*dsr_factor);
+#endif
+#ifdef MESH
+	drawMesh(0, 0, windowWidth*dsr_factor, windowHeight*dsr_factor);
+#endif
 	drawAxes();
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -334,7 +377,9 @@ void myGlutKeyboard(unsigned char Key, int x, int y)
 		break;
 	case 'r':
 	case 'R':
+#ifdef TRACK
 		track.LoadShader();
+#endif
 		ssaoPass.CompileShader();
 		blurPass.CompileShader();
 		lightingPass.CompileShader();
@@ -450,6 +495,7 @@ int main(int argc, char* argv[])
 	blurPass.Build();
 	lightingPass.Build();
 
+#ifdef TRACK
 	track.Read("data\\normal_s3.data");
 	//track.Read("ACR.trk");
 	//track.SetShape(MyTracks::TRACK_SHAPE_LINE);
@@ -457,7 +503,17 @@ int main(int argc, char* argv[])
 	track.ComputeGeometry();
 	track.LoadShader();
 	track.LoadGeometry();
+#endif
 
+#ifdef MESH
+	mesh.Read("data\\lh.pial.obj");
+	MyMesh mesh2;
+	mesh2.Read("data\\rh.pial.obj");
+	mesh.Merge(mesh2);
+	mesh.GenPerVertexNormal();
+	mesh.CompileShader();
+	mesh.Build();
+#endif
 	/****************************************/
 	/*         Here's the GLUI code         */
 	/****************************************/
@@ -493,6 +549,8 @@ int main(int argc, char* argv[])
 	// geometry pass
 	panel[1] = new GLUI_Panel(glui, "Geometry Pass");
 	new GLUI_Button(panel[1], "Reset", 0, resetRenderingParameters);
+
+#ifdef TRACK
 	GLUI_RadioGroup* shapeRadioGroup = new GLUI_RadioGroup(panel[1],
 		&trackShape, 0, changeTrackShape);
 	new GLUI_RadioButton(shapeRadioGroup, "Tube");
@@ -508,6 +566,7 @@ int main(int argc, char* argv[])
 		&trackFaces, -1, changeTrackShape);
 	trackFaceSpinner->set_int_limits(2, 12);
 	trackFaceSpinner->set_int_val(track.GetNumberFaces());
+#endif
 
 	// ssao pass
 	panel[2] = new GLUI_Panel(glui, "SSAO Pass");

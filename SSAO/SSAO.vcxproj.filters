@@ -16,6 +16,9 @@
     <Filter Include="Shaders">
       <UniqueIdentifier>{23108efc-9dbc-49ec-8c80-4e6a21e5cf05}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Data">
+      <UniqueIdentifier>{841e7858-28de-4b81-b5d1-ee3e73c70594}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="MyFrameBuffer.h">
@@ -84,6 +87,9 @@
     <ClInclude Include="MyLightingPass.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="MyMesh.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -134,14 +140,11 @@
     <ClCompile Include="MyLightingPass.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="MyMesh.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Shaders\tracks.vert">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="Shaders\tracks.frag">
-      <Filter>Shaders</Filter>
-    </None>
     <None Include="shaders\ssao.frag">
       <Filter>Shaders</Filter>
     </None>
@@ -160,5 +163,22 @@
     <None Include="shaders\lighting.vert">
       <Filter>Shaders</Filter>
     </None>
+    <None Include="Shaders\geom.vert">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\geom.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="data\normal_s3.data">
+      <Filter>Data</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Object Include="data\lh.pial.obj">
+      <Filter>Data</Filter>
+    </Object>
+    <Object Include="data\rh.pial.obj">
+      <Filter>Data</Filter>
+    </Object>
   </ItemGroup>
 </Project>

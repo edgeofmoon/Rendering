@@ -108,8 +108,8 @@ protected:
 	unsigned int mVertexArray;
 	unsigned int mVertexBuffer;
 	unsigned int mNormalBuffer;
-	unsigned int mTexCoordBuffer;
-	unsigned int mRadiusBuffer;
+	//unsigned int mTexCoordBuffer;
+	//unsigned int mRadiusBuffer;
 	unsigned int mColorBuffer;
 	unsigned int mIndexBuffer;
 	bool mbScreenSpace;

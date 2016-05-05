@@ -536,7 +536,7 @@ void MyTracks::LoadShader(){
 	}
 
 	glDeleteProgram(mShaderProgram);
-	mShaderProgram = InitShader("Shaders\\tracks.vert", "Shaders\\tracks.frag", "fragColour", "position");
+	mShaderProgram = InitShader("Shaders\\geom.vert", "Shaders\\geom.frag", "fragColour", "position");
 	//mShaderProgram = InitShader("Shaders\\tracks.vert", "Shaders\\tracks.frag", "fragColour");
 
 	mNormalAttribute = glGetAttribLocation(mShaderProgram, "normal");

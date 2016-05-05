@@ -1,8 +1,16 @@
 #include "MyMesh.h"
+#include "Shader.h"
+#include "MyMathHelper.h"
+
 #include <fstream>
 #include <map>
 #include <iostream>
+#include <cassert>
 using namespace std;
+
+
+#include "GL\glew.h"
+#include <GL/freeglut.h>
 
 MyMesh::MyMesh()
 {
@@ -51,6 +59,125 @@ int MyMesh::Read(const MyString& fileName){
 		}
 	}
 	return 1;
+}
+
+
+void MyMesh::CompileShader(){
+	if (glIsShader(mShaderProgram)){
+		glDeleteProgram(mShaderProgram);
+	}
+
+	// check if there is color
+	if (mColors.size() < mVertices.size()){
+		mColors.resize(mVertices.size(), MyColor4f(1, 1, 1, 1));
+	}
+	mShaderProgram = InitShader("Shaders\\geom.vert", "Shaders\\geom.frag", "fragColour", "position");
+	//mShaderProgram = InitShader("Shaders\\tracks.vert", "Shaders\\tracks.frag", "fragColour");
+
+	mNormalAttribute = glGetAttribLocation(mShaderProgram, "normal");
+	if (mNormalAttribute < 0) {
+		cerr << "Shader did not contain the 'normal' attribute." << endl;
+	}
+	mPositionAttribute = glGetAttribLocation(mShaderProgram, "position");
+	if (mPositionAttribute < 0) {
+		cerr << "Shader did not contain the 'position' attribute." << endl;
+	}
+	mColorAttribute = glGetAttribLocation(mShaderProgram, "color");
+	if (mColorAttribute < 0) {
+		cerr << "Shader did not contain the 'color' attribute." << endl;
+	}
+}
+
+void MyMesh::Build(){
+	if (!glIsShader(mShaderProgram)){
+		CompileShader();
+	}
+
+	if (glIsVertexArray(mVertexArray)){
+		glDeleteVertexArrays(1, &mVertexArray);
+	}
+	glGenVertexArrays(1, &mVertexArray);
+	glBindVertexArray(mVertexArray);
+	// vertex
+	if (glIsBuffer(mVertexBuffer)){
+		glDeleteBuffers(1, &mVertexBuffer);
+	}
+	glGenBuffers(1, &mVertexBuffer);
+	glBindBuffer(GL_ARRAY_BUFFER, mVertexBuffer);
+	glBufferData(GL_ARRAY_BUFFER, mVertices.size() * sizeof(MyVec3f), &mVertices[0][0], GL_STATIC_DRAW);
+	glEnableVertexAttribArray(mPositionAttribute);
+	glVertexAttribPointer(mPositionAttribute, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	// normal
+	if (glIsBuffer(mNormalBuffer)){
+		glDeleteBuffers(1, &mNormalBuffer);
+	}
+	glGenBuffers(1, &mNormalBuffer);
+	glBindBuffer(GL_ARRAY_BUFFER, mNormalBuffer);
+	glBufferData(GL_ARRAY_BUFFER, mNormals.size() * sizeof(MyVec3f), &mNormals[0][0], GL_STATIC_DRAW);
+	glEnableVertexAttribArray(mNormalAttribute);
+	glVertexAttribPointer(mNormalAttribute, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	// color
+	if (glIsBuffer(mColorBuffer)){
+		glDeleteBuffers(1, &mColorBuffer);
+	}
+	glGenBuffers(1, &mColorBuffer);
+	glBindBuffer(GL_ARRAY_BUFFER, mColorBuffer);
+	glBufferData(GL_ARRAY_BUFFER, mColors.size() * sizeof(MyColor4f), &mColors[0].r, GL_STATIC_DRAW);
+	glEnableVertexAttribArray(mColorAttribute);
+	glVertexAttribPointer(mColorAttribute, 4, GL_FLOAT, GL_FALSE, 0, 0);
+	if (glIsBuffer(mIndexBuffer)){
+		glDeleteBuffers(1, &mIndexBuffer);
+	}
+	glGenBuffers(1, &mIndexBuffer);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mIndexBuffer);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, mTriangles.size() * sizeof(MyVec3i), &mTriangles[0][0], GL_STATIC_DRAW);
+
+	// unbind
+	glBindVertexArray(0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
+}
+void MyMesh::Render(){
+	glPushAttrib(GL_ALL_ATTRIB_BITS);
+	glEnable(GL_DEPTH_TEST);
+	//glEnable(GL_CULL_FACE);
+	//glCullFace(GL_BACK);
+	//glEnable(GL_BLEND);
+	//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glBindVertexArray(mVertexArray);
+	glUseProgram(mShaderProgram);
+
+	int mvmatLocation = glGetUniformLocation(mShaderProgram, "mvMat");
+	float modelViewMat[16];
+	glGetFloatv(GL_MODELVIEW_MATRIX, modelViewMat);
+	glUniformMatrix4fv(mvmatLocation, 1, GL_FALSE, modelViewMat);
+
+	int normatLocation = glGetUniformLocation(mShaderProgram, "normalMat");
+	float normalMat[16];
+	bool bInv = MyMathHelper::InvertMatrix4x4ColMaj(modelViewMat, normalMat);
+	assert(bInv);
+	MyMathHelper::TransposeMatrix4x4ColMaj(normalMat, normalMat);
+	glUniformMatrix4fv(normatLocation, 1, GL_FALSE, normalMat);
+
+	int projmatLocation = glGetUniformLocation(mShaderProgram, "projMat");
+	float projMat[16];
+	glGetFloatv(GL_PROJECTION_MATRIX, projMat);
+	glUniformMatrix4fv(projmatLocation, 1, GL_FALSE, projMat);
+
+	int colorLocation = glGetUniformLocation(mShaderProgram, "color");
+	glUniform3f(colorLocation, 1, 1, 1);
+
+	int radiusLocation = glGetUniformLocation(mShaderProgram, "radius");
+	glUniform1f(radiusLocation, 0);
+
+	glDrawElements(GL_TRIANGLES, mTriangles.size()*3, GL_UNSIGNED_INT, 0);
+
+	glUseProgram(0);
+	glBindVertexArray(0);
+	glPopAttrib();
+}
+void MyMesh::Destory(){
 }
 
 int MyMesh::GenPerVertexNormal(){
