@@ -696,11 +696,11 @@ int main(int argc, char* argv[])
 #ifdef TRACK
 	trackBall.SetRotationMatrix(MyMatrixf::RotateMatrix(90, 1, 0, 0));
 	trackBall.ScaleMultiply(1.3);
-	track.Read("data\\normal_s3.data");
+	//track.Read("data\\normal_s3.data");
 	//track.Read("data\\normal_s5.tensorinfo");
 	//track.Read("data\\cFile.tensorinfo");
 	//track.Read("C:\\Users\\GuohaoZhang\\Desktop\\tmpdata\\dti.trk");
-	//track.Read("C:\\Users\\GuohaoZhang\\Desktop\\tmpdata\\ACR.trk");
+	track.Read("C:\\Users\\GuohaoZhang\\Desktop\\tmpdata\\ACR.trk");
 	//track.Read("dti_20_0995.data");
 	track.SetShape(MyTracks::TRACK_SHAPE_LINE);
 	//track.SetShape(MyTracks::TRACK_SHAPE_TUBE);
@@ -802,6 +802,7 @@ int main(int argc, char* argv[])
 		&(track.mDepthCueing), -1, reRender);
 	tmpUIptr->set_float_limits(0, 1);
 
+	/*
 	// geometry pass
 	panel[1] = new GLUI_Panel(glui, "Geometry Pass");
 	new GLUI_Button(panel[1], "Reset", 0, resetRenderingParameters);
@@ -905,7 +906,7 @@ int main(int argc, char* argv[])
 
 	// set init state right
 	switchRenderMode(renderIdx);
-
+	*/
 	glutMainLoop();
 
 	return EXIT_SUCCESS;
