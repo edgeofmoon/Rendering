@@ -36,23 +36,33 @@ public:
 	int Read(const std::string& filename);
 	
 	int Save(const std::string& filename) const;
+	int SavePartial(const std::string& filename, const std::vector<int>& saveTrackIdx) const;
 
 	MyTracks Subset(const std::vector<int>& trackIndices) const;
 	void AddTracks(const MyTracks& tracks);
 
+	void CopyTracksFrom(const MyTracks& track);
+
 	int GetNumTracks() const;
 	int GetNumVertex(int trackIdx) const;
 	MyBoundingBox GetBoundingBox() const { return mBoundingBox; };
+	void GetSampleValueInfo(MyBoundingBox& box, int& nSample, float& valueSum) const;
+
+	void FilterByTrackLength(const std::vector<int>& inset, float threshold[2], std::vector<int>& outset) const;
+	void FilterByIndexSkip(const std::vector<int>& inset, float skipRatio, std::vector<int>& outset) const;
 
 #ifdef RIC
 	Point GetPoint(int trackIdx, int pointIdx) const;
 #endif
 	MyVec3f GetCoord(int trackIdx, int pointIdx) const;
+	float GetValue(int trackIdx, int pointIdx) const;
+	float ComputeTrackLength(int trackIdx) const;
 
 	// rendering parameters
 	float mTrackRadius;
 	void ResetRenderingParameters();
 
+	MyVec3f mBoxOffset0, mBoxOffset1;
 protected:
 	struct MyTrackHeader
 	{
@@ -122,15 +132,17 @@ protected:
 	int mColorAttribute;
 
 	void ComputeTubeGeometry();
-	void ComputeLineGeometry();
+	virtual void ComputeLineGeometry();
+
 public:
 	int GetNumberFaces() const { return mFaces; };
 	void SetNumberFaces(int f);
 	void ClearGeometry();
-	void ComputeGeometry();
-	void LoadGeometry();
-	void LoadShader();
-	void Show();
+	virtual void ComputeGeometry();
+	virtual void LoadGeometry();
+	virtual void LoadShader();
+	virtual void Show();
+	void ShowCapsOnly();
 	void SetShape(TrackShape shape){ mShape = shape; };
 	TrackShape GetShape() const { return mShape; };
 

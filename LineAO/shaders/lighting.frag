@@ -21,10 +21,10 @@ void main() {
 	if(dcolor.a == 0){
 		discard;
 	}
+	vec3 color = dcolor.rgb;
 	vec3 position = texture(gPositionDepth, TexCoords).xyz;
 	vec3 normal = texture(gNormal, TexCoords).xyz;
 	float ssao = texture(gSsao, TexCoords).r;
-	vec3 color = dcolor.rgb;
 
 	vec3 lightDir = vec3(0,0,1);
 	float ambient = gAmbient;

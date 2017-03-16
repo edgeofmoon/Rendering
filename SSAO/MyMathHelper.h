@@ -23,6 +23,10 @@ public:
 
 	static void TransposeMatrix4x4ColMaj(const float m[16], float transOut[16]);
 
+	static MyVec3f MatMulVec(const MyMatrixf& mat, const MyVec3f& vec);
+
+	static MyMatrixf InverseMatrix4x4ColMaj(const MyMatrixf& mat);
+
 protected:
 	static MyArrayi Factorials;
 };

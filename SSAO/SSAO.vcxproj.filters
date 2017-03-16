@@ -16,9 +16,6 @@
     <Filter Include="Shaders">
       <UniqueIdentifier>{23108efc-9dbc-49ec-8c80-4e6a21e5cf05}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Data">
-      <UniqueIdentifier>{841e7858-28de-4b81-b5d1-ee3e73c70594}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="MyFrameBuffer.h">
@@ -90,6 +87,24 @@
     <ClInclude Include="MyMesh.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="OSCB.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MyTrackRings.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MyBlackBodyColor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MyBitmap.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MyImage.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MyUtility.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -143,6 +158,30 @@
     <ClCompile Include="MyMesh.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="meshTransform.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="OSCB.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="MyTrackRings.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="MyBlackBodyColor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="MyBitmap.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="MyImage.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="converter.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="triangleMatch.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\ssao.frag">
@@ -169,16 +208,11 @@
     <None Include="Shaders\geom.frag">
       <Filter>Shaders</Filter>
     </None>
-    <None Include="data\normal_s3.data">
-      <Filter>Data</Filter>
+    <None Include="Shaders\ring.vert">
+      <Filter>Shaders</Filter>
     </None>
-  </ItemGroup>
-  <ItemGroup>
-    <Object Include="data\lh.pial.obj">
-      <Filter>Data</Filter>
-    </Object>
-    <Object Include="data\rh.pial.obj">
-      <Filter>Data</Filter>
-    </Object>
+    <None Include="Shaders\ring.frag">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>

@@ -47,7 +47,8 @@ bool MyBoundingBox::RayHit(const MyVec3f& source, const MyVec3f& dir) const{
 	return true;
 }
 void MyBoundingBox::Reset(){
-	mLowPos = mHighPos = MyVec3f(0.f,0.f,0.f);
+	mLowPos = MyVec3f(FLT_MAX, FLT_MAX, FLT_MAX);
+	mHighPos = MyVec3f(-FLT_MAX, -FLT_MAX, -FLT_MAX);
 }
 
 void MyBoundingBox::Show(){

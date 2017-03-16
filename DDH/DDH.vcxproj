@@ -19,9 +19,9 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{7D6234B1-5DC6-4DD3-82D1-8C217D9BDB1B}</ProjectGuid>
+    <ProjectGuid>{7D1452BA-6B45-4F4B-BDA5-F946E3A9469E}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>SSAO</RootNamespace>
+    <RootNamespace>DDH</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -68,15 +68,28 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
+    <IncludePath>C:\Users\GuohaoZhang\Dropbox\Programs\Rendering\SSAO;$(IncludePath)</IncludePath>
+    <LibraryPath>$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);C:\Users\GuohaoZhang\Dropbox\Programs\Rendering\SSAO</LibraryPath>
+    <SourcePath>C:\Users\GuohaoZhang\Dropbox\Programs\Rendering\SSAO;$(SourcePath)</SourcePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
+    <IncludePath>C:\Users\GuohaoZhang\Dropbox\Programs\Rendering\SSAO;$(IncludePath)</IncludePath>
+    <LibraryPath>$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);C:\Users\GuohaoZhang\Dropbox\Programs\Rendering\SSAO</LibraryPath>
+    <SourcePath>C:\Users\GuohaoZhang\Dropbox\Programs\Rendering\SSAO;$(SourcePath)</SourcePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
+    <IncludePath>C:\Users\GuohaoZhang\Dropbox\Programs\Rendering\SSAO;$(IncludePath)</IncludePath>
+    <LibraryPath>$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);C:\Users\GuohaoZhang\Dropbox\Programs\Rendering\SSAO</LibraryPath>
+    <SourcePath>C:\Users\GuohaoZhang\Dropbox\Programs\Rendering\SSAO;$(SourcePath)</SourcePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
+    <IncludePath>..\SSAO;$(IncludePath)</IncludePath>
+    <LibraryPath>..\SSAO;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
+    <SourcePath>..\SSAO;$(SourcePath)</SourcePath>
+    <ReferencePath>..\SSAO;$(ReferencePath)</ReferencePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -141,94 +154,75 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="MyArray.h" />
-    <ClInclude Include="MyBitmap.h" />
-    <ClInclude Include="MyBlackBodyColor.h" />
-    <ClInclude Include="MyBlurPass.h" />
-    <ClInclude Include="MyBoundingBox.h" />
-    <ClInclude Include="MyBox.h" />
-    <ClInclude Include="MyColor4.h" />
-    <ClInclude Include="MyFrameBuffer.h" />
-    <ClInclude Include="MyGraphicsTool.h" />
-    <ClInclude Include="MyImage.h" />
-    <ClInclude Include="MyLightingPass.h" />
-    <ClInclude Include="MyLine.h" />
-    <ClInclude Include="MyMathHelper.h" />
-    <ClInclude Include="MyMatrix.h" />
-    <ClInclude Include="MyMesh.h" />
-    <ClInclude Include="MyPolyLine.h" />
-    <ClInclude Include="MyPrimitiveDrawer.h" />
-    <ClInclude Include="MyQuadGeometry.h" />
-    <ClInclude Include="MyQuarternion.h" />
-    <ClInclude Include="MySsaoPass.h" />
-    <ClInclude Include="MyString.h" />
-    <ClInclude Include="MyTrackBall.h" />
-    <ClInclude Include="MyTrackRings.h" />
-    <ClInclude Include="MyTracks.h" />
-    <ClInclude Include="MyUtility.h" />
-    <ClInclude Include="MyVec.h" />
-    <ClInclude Include="OSCB.h" />
-    <ClInclude Include="Shader.h" />
-    <ClInclude Include="svd.h" />
+    <ClCompile Include="..\SSAO\MyBitmap.cpp" />
+    <ClCompile Include="..\SSAO\MyBlackBodyColor.cpp" />
+    <ClCompile Include="..\SSAO\MyBlurPass.cpp" />
+    <ClCompile Include="..\SSAO\MyBoundingBox.cpp" />
+    <ClCompile Include="..\SSAO\MyFrameBuffer.cpp" />
+    <ClCompile Include="..\SSAO\MyGraphicsTool.cpp" />
+    <ClCompile Include="..\SSAO\MyImage.cpp" />
+    <ClCompile Include="..\SSAO\MyLightingPass.cpp" />
+    <ClCompile Include="..\SSAO\MyMathHelper.cpp" />
+    <ClCompile Include="..\SSAO\MyMesh.cpp" />
+    <ClCompile Include="..\SSAO\MyPrimitiveDrawer.cpp" />
+    <ClCompile Include="..\SSAO\MyQuadGeometry.cpp" />
+    <ClCompile Include="..\SSAO\MyQuarternion.cpp" />
+    <ClCompile Include="..\SSAO\MySsaoPass.cpp" />
+    <ClCompile Include="..\SSAO\MyString.cpp" />
+    <ClCompile Include="..\SSAO\MyTrackBall.cpp" />
+    <ClCompile Include="..\SSAO\MyTrackRings.cpp" />
+    <ClCompile Include="..\SSAO\MyTracks.cpp" />
+    <ClCompile Include="..\SSAO\OSCB.cpp" />
+    <ClCompile Include="..\SSAO\Shader.cpp" />
+    <ClCompile Include="..\SSAO\svd.c" />
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="MyTrackDDH.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="converter.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
-    </ClCompile>
-    <ClCompile Include="main.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </ClCompile>
-    <ClCompile Include="meshTransform.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</ExcludedFromBuild>
-    </ClCompile>
-    <ClCompile Include="MyBitmap.cpp" />
-    <ClCompile Include="MyBlackBodyColor.cpp" />
-    <ClCompile Include="MyBlurPass.cpp" />
-    <ClCompile Include="MyBoundingBox.cpp" />
-    <ClCompile Include="MyFrameBuffer.cpp" />
-    <ClCompile Include="MyGraphicsTool.cpp" />
-    <ClCompile Include="MyImage.cpp" />
-    <ClCompile Include="MyLightingPass.cpp" />
-    <ClCompile Include="MyMathHelper.cpp" />
-    <ClCompile Include="MyMesh.cpp" />
-    <ClCompile Include="MyPrimitiveDrawer.cpp" />
-    <ClCompile Include="MyQuadGeometry.cpp" />
-    <ClCompile Include="MyQuarternion.cpp" />
-    <ClCompile Include="MySsaoPass.cpp" />
-    <ClCompile Include="MyString.cpp" />
-    <ClCompile Include="MyTrackBall.cpp" />
-    <ClCompile Include="MyTrackRings.cpp" />
-    <ClCompile Include="MyTracks.cpp" />
-    <ClCompile Include="OSCB.cpp" />
-    <ClCompile Include="Shader.cpp" />
-    <ClCompile Include="svd.c" />
-    <ClCompile Include="triangleMatch.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </ClCompile>
+    <ClInclude Include="..\SSAO\MyArray.h" />
+    <ClInclude Include="..\SSAO\MyBitmap.h" />
+    <ClInclude Include="..\SSAO\MyBlackBodyColor.h" />
+    <ClInclude Include="..\SSAO\MyBlurPass.h" />
+    <ClInclude Include="..\SSAO\MyBoundingBox.h" />
+    <ClInclude Include="..\SSAO\MyBox.h" />
+    <ClInclude Include="..\SSAO\MyColor4.h" />
+    <ClInclude Include="..\SSAO\MyFrameBuffer.h" />
+    <ClInclude Include="..\SSAO\MyGraphicsTool.h" />
+    <ClInclude Include="..\SSAO\MyImage.h" />
+    <ClInclude Include="..\SSAO\MyLightingPass.h" />
+    <ClInclude Include="..\SSAO\MyLine.h" />
+    <ClInclude Include="..\SSAO\MyMathHelper.h" />
+    <ClInclude Include="..\SSAO\MyMatrix.h" />
+    <ClInclude Include="..\SSAO\MyMesh.h" />
+    <ClInclude Include="..\SSAO\MyPolyLine.h" />
+    <ClInclude Include="..\SSAO\MyPrimitiveDrawer.h" />
+    <ClInclude Include="..\SSAO\MyQuadGeometry.h" />
+    <ClInclude Include="..\SSAO\MyQuarternion.h" />
+    <ClInclude Include="..\SSAO\MySsaoPass.h" />
+    <ClInclude Include="..\SSAO\MyString.h" />
+    <ClInclude Include="..\SSAO\MyTrackBall.h" />
+    <ClInclude Include="..\SSAO\MyTrackRings.h" />
+    <ClInclude Include="..\SSAO\MyTracks.h" />
+    <ClInclude Include="..\SSAO\MyUtility.h" />
+    <ClInclude Include="..\SSAO\MyVec.h" />
+    <ClInclude Include="..\SSAO\OSCB.h" />
+    <ClInclude Include="..\SSAO\Shader.h" />
+    <ClInclude Include="..\SSAO\svd.h" />
+    <ClInclude Include="MyTrackDDH.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\blur.frag" />
     <None Include="shaders\blur.vert" />
+    <None Include="shaders\ddh.frag" />
+    <None Include="shaders\ddh.vert" />
+    <None Include="shaders\geom.frag" />
+    <None Include="shaders\geom.vert" />
     <None Include="shaders\lighting.frag" />
     <None Include="shaders\lighting.vert" />
-    <None Include="Shaders\ring.frag" />
-    <None Include="Shaders\ring.vert" />
+    <None Include="shaders\ring.frag" />
+    <None Include="shaders\ring.vert" />
     <None Include="shaders\ssao.frag" />
     <None Include="shaders\ssao.vert" />
-    <None Include="Shaders\geom.frag" />
-    <None Include="Shaders\geom.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

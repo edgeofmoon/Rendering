@@ -30,6 +30,7 @@ public:
 	bool EraseAt(int index);
 	void EraseOne(const MyArray<T>* arr);
 	void EraseAll(const MyArray<T>* arr);
+	void EraseBySortedIndices(const vector<int>* indices);
 
 	bool HasOne(const T& ele)const;
 
@@ -200,6 +201,25 @@ void MyArray<T>::EraseAll(const MyArray<T>* arr){
 }
 
 template <typename T>
+void MyArray<T>::EraseBySortedIndices(const vector<int>* indices){
+	if (indices->empty()) return;
+	int last = 0;
+	MyArray<int>::const_iterator itr = indices->begin();
+	for (int i = 0; i<size(); ++i, ++last){
+		while (itr != indices->end() && *itr == i){
+			++i;
+			++itr;
+			if (itr == indices->end()) break;
+		}
+		if (i >= size()) break;
+		if (last != i){
+			this->operator[](last) = at(i);
+		}
+	}
+	resize(last);
+}
+
+template <typename T>
 void MyArray<T>::Copy(const MyArray<T>* arr){
 	*(this) = *arr;
 }
@@ -315,7 +335,7 @@ MyArray<T> MyArray<T>::GetSequence(const T& start, const T& end, const T& inc = 
 	do{
 		rst << value;
 		value += inc;
-	}while((value-start)*(value-end)<=0);
+	} while ((value - start >= 0)!=(value - end >= 0));
 	return rst;
 }
 

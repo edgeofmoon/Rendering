@@ -233,3 +233,23 @@ void MyMathHelper::TransposeMatrix4x4ColMaj(const float m[16], float transOut[16
 	transOut[14] = tmp[11];
 	transOut[15] = tmp[15];
 }
+
+MyVec3f MyMathHelper::MatMulVec(const MyMatrixf& mat, const MyVec3f& vec){
+	float d[16];
+	memcpy(d, mat.GetData(), 16 * sizeof(float));
+	MyVec4f rst(0,0,0,0);
+	MyVec4f _vec4(vec[0], vec[1], vec[2], 1);
+	for (int i = 0; i < 4; i++){
+		for (int j = 0; j < 4; j++){
+			rst[i] += mat.At(i, j)*_vec4[j];
+		}
+	}
+	return MyVec3f(rst[0] / rst[3], rst[1] / rst[3], rst[2] / rst[3]);
+}
+
+MyMatrixf MyMathHelper::InverseMatrix4x4ColMaj(const MyMatrixf& mat){
+	float inverse[16];
+	MyMatrixf rmjMat = mat.Transpose();
+	InvertMatrix4x4ColMaj(rmjMat.GetData(), inverse);
+	return MyMatrixf(inverse, 4, 4).Transpose();
+}

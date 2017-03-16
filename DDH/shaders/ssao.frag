@@ -49,6 +49,7 @@ void main()
 	occlusion = 1.0 - (occlusion / kernelSize);
 	fragColour.xyz = vec3(pow(occlusion,occlusionPower));
 	fragColour.a = 1;
+
 	/*
 	// halo code
 	const int numNeighbors = 8;
