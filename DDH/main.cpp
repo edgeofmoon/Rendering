@@ -15,6 +15,7 @@ using namespace std;
 #include "MyTracks.h"
 #include "MyTrackRings.h"
 #include "MyTrackDDH.h"
+#include "MyTubeDDH.h"
 #endif
 
 #ifdef MESH
@@ -39,7 +40,8 @@ int gl_error;
 
 
 #ifdef TRACK
-MyTrackDDH track;
+MyTrackDDH halo;
+MyTubeDDH track;
 #endif
 
 #ifdef MESH
@@ -59,6 +61,7 @@ int bdrawTracks = 1;
 int bdrawAxes = 0;
 MyVec3f boxOffset[2];
 int bdrawBoxes = 0;
+int bdrawHalo = 1;
 int activeBox = 0;
 int boxOpacityIndex = 0;
 // glui code
@@ -188,12 +191,22 @@ void drawTracks(int x, int y, int width, int height){
 		MyBoundingBox box = track.GetBoundingBox();
 		MyGraphicsTool::Translate(-box.GetCenter());
 		if (bdrawTracks){
+			track.mDepthCueing = halo.mDepthCueing;
+			track.mTrackRadius = halo.mStrokeWidth / 2;
 			track.Show();
 		}
-		else{
-			//track.ShowCapsOnly();
+	}glPopMatrix();
+
+	glPushMatrix(); {
+		MyGraphicsTool::LoadTrackBall(&trackBall);
+		MyGraphicsTool::Rotate(180, MyVec3f(0, 1, 0));
+		MyBoundingBox box = halo.GetBoundingBox();
+		MyGraphicsTool::Translate(-box.GetCenter());
+		if (bdrawHalo){
+			halo.Show();
 		}
 	}glPopMatrix();
+
 }
 
 #endif
@@ -278,7 +291,7 @@ GLUI* glui;
 float meshPrecision = 0.01;
 GLUI_Scrollbar* lightComponentSlider[MAX_LIGHT_COMPONENTS] = { 0 };
 int lightComponentRatioControl = 1;
-int dsrIndex = 4;
+int dsrIndex = 2;
 int cullface = 0;
 
 void reRender(int mode){
@@ -478,12 +491,14 @@ void myGlutDisplay(){
 	geomFb.Clear();
 #ifdef TRACK
 
+	/*
 	// code for pixel halo
 	glLineWidth(1 * (dsrIndex / 2));
 	track.mTrackRadius = 1;
 	drawTracks(0, 0, windowWidth*dsr_factor, windowHeight*dsr_factor);
 	glLineWidth(3 * (dsrIndex / 2));
 	track.mTrackRadius = 0;
+	*/
 	drawTracks(0, 0, windowWidth*dsr_factor, windowHeight*dsr_factor);
 	glLineWidth(1);
 
@@ -577,6 +592,7 @@ void myGlutKeyboard(unsigned char Key, int x, int y)
 	case 'R':
 #ifdef TRACK
 		track.LoadShader();
+		halo.LoadShader();
 #endif
 		ssaoPass.CompileShader();
 		blurPass.CompileShader();
@@ -696,32 +712,23 @@ int main(int argc, char* argv[])
 #ifdef TRACK
 	trackBall.SetRotationMatrix(MyMatrixf::RotateMatrix(90, 1, 0, 0));
 	trackBall.ScaleMultiply(1.3);
-	//track.Read("data\\normal_s3.data");
+	track.Read("data\\normal_s3.data");
 	//track.Read("data\\normal_s5.tensorinfo");
 	//track.Read("data\\cFile.tensorinfo");
 	//track.Read("C:\\Users\\GuohaoZhang\\Desktop\\tmpdata\\dti.trk");
-	track.Read("C:\\Users\\GuohaoZhang\\Desktop\\tmpdata\\ACR.trk");
+	//track.Read("C:\\Users\\GuohaoZhang\\Desktop\\tmpdata\\ACR.trk");
 	//track.Read("dti_20_0995.data");
-	track.SetShape(MyTracks::TRACK_SHAPE_LINE);
-	//track.SetShape(MyTracks::TRACK_SHAPE_TUBE);
+	//track.SetShape(MyTracks::TRACK_SHAPE_LINE);
+	track.SetShape(MyTracks::TRACK_SHAPE_TUBE);
 	track.ComputeGeometry();
 	track.LoadShader();
 	track.LoadGeometry();
 
-	/*
-	ring.CopyTracksFrom(track);
-	ring.SetShape(MyTracks::TRACK_SHAPE_TUBE);
-	ring.ComputeGeometry();
-	ring.LoadShader();
-	ring.LoadGeometry();
-
-
-	trackLine.CopyTracksFrom(track);
-	trackLine.SetShape(MyTracks::TRACK_SHAPE_LINE);
-	trackLine.ComputeGeometry();
-	trackLine.LoadShader();
-	trackLine.LoadGeometry();
-	*/
+	//halo.Read("data\\normal_s3.data");
+	halo.AddTracks(track);
+	halo.ComputeGeometry();
+	halo.LoadShader();
+	halo.LoadGeometry();
 
 	MyVec3f center = track.GetBoundingBox().GetCenter();
 	cout << "Center: " << center[0] << ", " << center[1] << ", " << center[2] << endl;
@@ -783,26 +790,25 @@ int main(int argc, char* argv[])
 
 	new GLUI_StaticText(panel[0], "Stripe Width");
 	auto tmpUIptr = new GLUI_Scrollbar(panel[0], "Stripe Width", GLUI_SCROLL_HORIZONTAL,
-		&(track.mStripWidth), -1, reRender);
+		&(halo.mStripWidth), -1, reRender);
 	tmpUIptr->set_float_limits(0, 8);
 	new GLUI_StaticText(panel[0], "Stripe Depth");
 	tmpUIptr = new GLUI_Scrollbar(panel[0], "Stripe Depth", GLUI_SCROLL_HORIZONTAL,
-		&(track.mStripDepth), -1, reRender);
+		&(halo.mStripDepth), -1, reRender);
 	tmpUIptr->set_float_limits(0, 0.04);
 	new GLUI_StaticText(panel[0], "Stroke Width");
 	tmpUIptr = new GLUI_Scrollbar(panel[0], "Stroke Width", GLUI_SCROLL_HORIZONTAL,
-		&(track.mStrokeWidth), -1, reRender);
+		&(halo.mStrokeWidth), -1, reRender);
 	tmpUIptr->set_float_limits(0, 1);
 	new GLUI_StaticText(panel[0], "Taper Length");
 	tmpUIptr = new GLUI_Scrollbar(panel[0], "Taper Length", GLUI_SCROLL_HORIZONTAL,
-		&(track.mTaperLength), -1, reRender);
+		&(halo.mTaperLength), -1, reRender);
 	tmpUIptr->set_float_limits(0, 4);
 	new GLUI_StaticText(panel[0], "Depth Cueing");
 	tmpUIptr = new GLUI_Scrollbar(panel[0], "Depth Cueing", GLUI_SCROLL_HORIZONTAL,
-		&(track.mDepthCueing), -1, reRender);
+		&(halo.mDepthCueing), -1, reRender);
 	tmpUIptr->set_float_limits(0, 1);
 
-	/*
 	// geometry pass
 	panel[1] = new GLUI_Panel(glui, "Geometry Pass");
 	new GLUI_Button(panel[1], "Reset", 0, resetRenderingParameters);
@@ -814,6 +820,8 @@ int main(int argc, char* argv[])
 		&bdrawAxes, -1, reRender);
 	new GLUI_Checkbox(panel[1], "Draw Boxes",
 		&bdrawBoxes, -1, reRender);
+	new GLUI_Checkbox(panel[1], "Draw Halos",
+		&bdrawHalo, -1, reRender);
 
 #ifdef MESH
 	GLUI_Spinner* meshPrecisionSpinner = new GLUI_Spinner
@@ -825,9 +833,10 @@ int main(int argc, char* argv[])
 #ifdef TRACK
 	GLUI_RadioGroup* shapeRadioGroup = new GLUI_RadioGroup(panel[1],
 		&trackShape, 0, changeTrackShape);
-	new GLUI_RadioButton(shapeRadioGroup, "Tube");
-	new GLUI_RadioButton(shapeRadioGroup, "Line");
+	//new GLUI_RadioButton(shapeRadioGroup, "Tube");
+	//new GLUI_RadioButton(shapeRadioGroup, "Line");
 	tubeParameterPanel = new GLUI_Panel(panel[1], "Tube Parameters");
+	/*
 	new GLUI_StaticText(tubeParameterPanel, "Tube Radius");
 	GLUI_Scrollbar* tubeRadiusSlider = new GLUI_Scrollbar
 		(tubeParameterPanel, "Tube Radius", GLUI_SCROLL_HORIZONTAL,
@@ -837,6 +846,7 @@ int main(int argc, char* argv[])
 		tubeParameterPanel, "Opacity Index", GLUI_SPINNER_INT,
 		&boxOpacityIndex, -1, reRender);
 	boxOpacitySpinner->set_int_limits(0, 2);
+	*/
 	GLUI_Spinner* trackFaceSpinner = new GLUI_Spinner(
 		tubeParameterPanel, "Number Faces", GLUI_SPINNER_INT,
 		&trackFaces, -1, changeTrackShape);
@@ -844,6 +854,7 @@ int main(int argc, char* argv[])
 	trackFaceSpinner->set_int_val(track.GetNumberFaces());
 #endif
 
+	/*
 	// ssao pass
 	panel[2] = new GLUI_Panel(glui, "SSAO Pass");
 	new GLUI_Button(panel[2], "Reset", 1, resetRenderingParameters);

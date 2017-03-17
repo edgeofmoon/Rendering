@@ -53,7 +53,7 @@ float linearizeDepth(float d){
 void main (void)
 {
 	if(isTapered()) discard;
-	float side = 2*abs(ftexcoord.y-0.5);
+	float side = abs(ftexcoord.y-0.5);
 	float depthOffset = 0;
 	float dz = linearizeDepth(gl_FragCoord.z);
 	//float thres = strokeWidth*0.5* ((1.0-depthCueing) + depthCueing*(1.0-(dz-0.48)/0.24));

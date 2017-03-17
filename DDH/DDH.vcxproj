@@ -177,6 +177,7 @@
     <ClCompile Include="..\SSAO\svd.c" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MyTrackDDH.cpp" />
+    <ClCompile Include="MyTubeDDH.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\SSAO\MyArray.h" />
@@ -209,6 +210,7 @@
     <ClInclude Include="..\SSAO\Shader.h" />
     <ClInclude Include="..\SSAO\svd.h" />
     <ClInclude Include="MyTrackDDH.h" />
+    <ClInclude Include="MyTubeDDH.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\blur.frag" />

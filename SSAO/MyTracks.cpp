@@ -30,6 +30,7 @@ using namespace std;
 
 MyTracks::MyTracks(){
 	ResetRenderingParameters();
+	mBoundingBox = MyBoundingBox(MyVec3f(INT_MAX, INT_MAX, INT_MAX), MyVec3f(-INT_MAX, -INT_MAX, -INT_MAX));
 }
 
 MyTracks::MyTracks(const string& filename){
@@ -333,9 +334,13 @@ MyTracks MyTracks::Subset(const std::vector<int>& trackIndices) const{
 
 void MyTracks::AddTracks(const MyTracks& tracks){
 	mHeader.n_count += tracks.mHeader.n_count;
+	
+	int n = mFiberToDraw.size();
 	for(unsigned int i = 0;i<tracks.mTracks.size(); i++){
 		mTracks.push_back(tracks.mTracks[i]);
+		mFiberToDraw.push_back(n + i);
 	}
+	mBoundingBox.Engulf(tracks.GetBoundingBox());
 }
 
 void MyTracks::CopyTracksFrom(const MyTracks& track){
@@ -446,6 +451,8 @@ void MyTracks::ComputeTubeGeometry(){
 	//mRadius.resize(totalPoints);
 	mColors.resize(totalPoints);
 
+	float R = 0;
+
 	for (int it = 0; it < mTracks.size(); it++){
 		if ((int)((it + 1) * 100 / (float)mTracks.size())
 			- (int)(it * 100 / (float)mTracks.size()) >= 1){
@@ -498,7 +505,7 @@ void MyTracks::ComputeTubeGeometry(){
 			for (int is = 0; is<mFaces; is++){
 				float angle = dangle*is;
 				MyVec3f pt = sin(angle)*perpend1 + cos(angle)*perpend2;
-				mVertices[currentIdx + i*(mFaces + 1) + is] = pt * mTrackRadius + p;
+				mVertices[currentIdx + i*(mFaces + 1) + is] = pt * R + p;
 				mNormals[currentIdx + i*(mFaces + 1) + is] = pt;
 				//mTexCoords[currentIdx + i*(mFaces + 1) + is] = MyVec2f(i, is / (float)mFaces);
 				//mRadius[currentIdx + i*(mFaces + 1) + is] = size;
@@ -536,10 +543,10 @@ void MyTracks::ComputeTubeGeometry(){
 			for (int is = 0; is < mFaces; is++){
 				float angle = dangle*is;
 				MyVec3f pt = sin(angle)*perpend1 + cos(angle)*perpend2;
-				MyVec3f pe = pt*mTrackRadius + p;
+				MyVec3f pe = pt*R + p;
 				mVertices[currentIdx + is + 1] = pe;
 				mNormals[currentIdx + is + 1] = pt;
-				mNormals[currentIdx + is + 1] = -d;
+				//mNormals[currentIdx + is + 1] = -d;
 				mColors[currentIdx + is + 1] = mColors[currentIdx - npoints*(mFaces + 1)];
 			}
 		}
@@ -558,10 +565,10 @@ void MyTracks::ComputeTubeGeometry(){
 			for (int is = 0; is < mFaces; is++){
 				float angle = dangle*is;
 				MyVec3f pt = sin(angle)*perpend1 + cos(angle)*perpend2;
-				MyVec3f pe = pt*mTrackRadius + p;
+				MyVec3f pe = pt*R + p;
 				mVertices[currentIdx + is + 1] = pe;
 				mNormals[currentIdx + is + 1] = pt;
-				mNormals[currentIdx + is + 1] = -d;
+				//mNormals[currentIdx + is + 1] = -d;
 				mColors[currentIdx + is + 1] = mColors[currentIdx - (mFaces + 2)];
 			}
 		}

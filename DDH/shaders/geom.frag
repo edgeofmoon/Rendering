@@ -18,7 +18,7 @@ layout (location = 1) out vec4 gPositionDepth;
 layout (location = 2) out vec4 gNormal;
 
 const float NEAR = 1;
-const float FAR = 200;
+const float FAR = 300;
 
 float LinearizeDepth(float depth)
 {
@@ -27,14 +27,46 @@ float LinearizeDepth(float depth)
     //return NEAR + depth * (FAR - NEAR);	
 }
 
+float linearizeDepth2(float d){
+	float f = 300;
+	float n = 1;
+	float z = (2 * n) / (f + n - d * (f - n));
+	return z;
+}
+
+vec3 GetLightedColor(vec3 color){
+	vec3 lightColor = vec3( 1.0f, 1.0f, 1.0f );
+	vec3 lightDir = vec3(0, 0, 1);
+	// illumination
+	vec3 viewDir = -normalize(fposition);
+	vec3 H = normalize( lightDir + viewDir );
+	// ambient
+	float ambientStrength = 0.1f;
+	vec3 ambient = lightColor * ambientStrength;
+	// diffuse
+	float diffuseStrength = max( dot( lightDir, fnormal ), 0.0f );
+	vec3 diffuse = lightColor * diffuseStrength;
+	// specular
+	float specularStrength = pow( max( dot( H, fnormal ), 0.0f ), 64.0f );
+	if( diffuseStrength <= 0.0f ) specularStrength = 0.0f;
+	vec3 specular = lightColor * specularStrength;
+
+	vec3 result = ( ambient + diffuse + specular ) * color;
+
+	return result;
+}
+
 void main(void)
 {
 
 	gPositionDepth.xyz = fposition;
 	gPositionDepth.w = LinearizeDepth(gl_FragCoord.z);
 	gNormal = vec4(normalize(fnormal),1);
-	fragColour = vec4(1,1,1,1);
-	
+	fragColour = vec4(1,0,1,1);
+	fragColour.xyz = GetLightedColor(vec3(1,1,1));
+
+	gl_FragDepth = linearizeDepth2(gl_FragCoord.z);
+
 	return;
 	// halo code
 	float cosTheta = dot(normalize(fnormal), normalize(fposition));

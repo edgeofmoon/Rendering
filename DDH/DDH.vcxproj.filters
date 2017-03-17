@@ -87,6 +87,9 @@
     <ClCompile Include="MyTrackDDH.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="MyTubeDDH.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\SSAO\MyArray.h">
@@ -177,6 +180,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="MyTrackDDH.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MyTubeDDH.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
