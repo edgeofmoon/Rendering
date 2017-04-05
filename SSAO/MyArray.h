@@ -13,6 +13,7 @@ public:
 	MyArray(void);
 	MyArray(int n);
 	MyArray(int n, const T& defaultValue);
+	MyArray(std::initializer_list<T> s);
 
 	~MyArray(void);
 	
@@ -77,6 +78,11 @@ MyArray<T>::MyArray(int n)
 template <typename T>
 MyArray<T>::MyArray(int n, const T& defaultValue)
 	:std::vector<T>(n, defaultValue){
+}
+
+template <typename T>
+MyArray<T>::MyArray(std::initializer_list<T> s)
+	: std::vector<T>(s){
 }
 
 template <typename T>
@@ -286,15 +292,7 @@ int MyArray<T>::GetMaximumIndex() const{
 
 template <typename T>
 void MyArray<T>::Permute(unsigned int seed){
-	if(this->size()<=1) return;
-	srand(seed);
-	for(int i = 0;i<size()-1;i++){
-		int range = size()-i;
-		int toSwapIdx = rand()%range+i;
-		if(i != toSwapIdx){
-			this->Swap(i, toSwapIdx);
-		}
-	}
+	Permute(seed, 0, size()-1);
 }
 
 template <typename T>
@@ -302,8 +300,8 @@ void MyArray<T>::Permute(unsigned int seed, int start, int end){
 	if(end<start) return;
 	srand(seed);
 	int _end = end;
-	if(_end>size()) _end = size();
-	for(int i = start;i<_end-1;i++){
+	if(_end>=size()) _end = size()-1;
+	for(int i = start;i<_end;i++){
 		int range = _end-i+1;
 		int toSwapIdx = rand()%range+i;
 		if(i != toSwapIdx){

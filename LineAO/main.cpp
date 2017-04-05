@@ -14,7 +14,7 @@ using namespace std;
 #ifdef TRACK
 #include "MyTracks.h"
 #include "MyTrackRings.h"
-#include "GL_LineAO.h"
+#include "MyLineAO.h"
 #endif
 
 #ifdef MESH
@@ -39,11 +39,7 @@ int gl_error;
 
 
 #ifdef TRACK
-GL_LineAO track;
-MyTracks trackLine;
-MyTrackRings ring;
-MyBoundingBox box0(MyVec3f(-19.5985, -54.2138, -17.6974), MyVec3f(-12.3999, -43.2969, -8.65376));
-MyBoundingBox box1(MyVec3f(14.9959, -46.6653, -19.6276), MyVec3f(22.1945, -35.7483, -10.584));
+MyLineAO track;
 #endif
 
 #ifdef MESH
@@ -184,36 +180,13 @@ void drawBox(MyVec3f low, MyVec3f high, int id = 0){
 	glPopAttrib();
 }
 
-void drawBoxes(int x, int y, int width, int height){
-	MyBoundingBox tmpBox0 = box0;
-	MyBoundingBox tmpBox1 = box1;
-	tmpBox0.Translate(boxOffset[0]);
-	tmpBox1.Translate(boxOffset[1]);
-	MyGraphicsTool::SetViewport(MyVec4i(x, y, width, height));
-	glPushMatrix(); {
-		MyGraphicsTool::LoadTrackBall(&trackBall);
-		MyGraphicsTool::Rotate(180, MyVec3f(0, 1, 0));
-		MyBoundingBox box = track.GetBoundingBox();
-		MyGraphicsTool::Translate(-box.GetCenter());
-		glPushAttrib(GL_ALL_ATTRIB_BITS);
-		glEnable(GL_BLEND);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-		drawBox(tmpBox0.GetLowPos(), tmpBox0.GetHighPos(), 0);
-		drawBox(tmpBox1.GetLowPos(), tmpBox1.GetHighPos(), 1);
-		glPopAttrib();
-	}glPopMatrix();
-}
 
 void drawTracks(int x, int y, int width, int height){
-	track.mBoxOffset0 = boxOffset[0];
-	track.mBoxOffset1 = boxOffset[1];
-	ring.mBoxOffset0 = boxOffset[0];
-	ring.mBoxOffset1 = boxOffset[1];
 	MyGraphicsTool::SetViewport(MyVec4i(x, y, width, height));
 	glPushMatrix(); {
 		MyGraphicsTool::LoadTrackBall(&trackBall);
 		MyGraphicsTool::Rotate(180, MyVec3f(0, 1, 0));
-		MyBoundingBox box = track.GetBoundingBox();
+		MyBoundingBox box = track.GetTracts()->GetBoundingBox();
 		MyGraphicsTool::Translate(-box.GetCenter());
 		if (bdrawTracks){
 			track.Show();
@@ -221,26 +194,6 @@ void drawTracks(int x, int y, int width, int height){
 		else{
 			//track.ShowCapsOnly();
 		}
-		ring.Show();
-	}glPopMatrix();
-}
-
-void drawTrackLines(int x, int y, int width, int height){
-	trackLine.mBoxOffset0 = boxOffset[0];
-	trackLine.mBoxOffset1 = boxOffset[1];
-	MyGraphicsTool::SetViewport(MyVec4i(x, y, width, height));
-	glPushMatrix(); {
-		MyGraphicsTool::LoadTrackBall(&trackBall);
-		MyGraphicsTool::Rotate(180, MyVec3f(0, 1, 0));
-		MyBoundingBox box = track.GetBoundingBox();
-		MyGraphicsTool::Translate(-box.GetCenter());
-		if (bdrawTracks){
-			trackLine.Show();
-		}
-		else{
-			//track.ShowCapsOnly();
-		}
-		ring.Show();
 	}glPopMatrix();
 }
 
@@ -366,17 +319,17 @@ int trackFaces = 20;
 GLUI_Panel* tubeParameterPanel;
 GLUI_Panel* lineParameterPanel;
 void changeTrackShape(int id){
-	MyTracks::TrackShape oldShape = track.GetShape();
+	MyTractVisBase::TrackShape oldShape = track.GetShape();
 	int oldNumFaces = track.GetNumberFaces();
 	switch (trackShape)
 	{
 	case 0:
-		track.SetShape(MyTracks::TrackShape::TRACK_SHAPE_TUBE);
+		track.SetShape(MyTractVisBase::TrackShape::TRACK_SHAPE_TUBE);
 		tubeParameterPanel->enable();
 		lineParameterPanel->disable();
 		break;
 	case 1:
-		track.SetShape(MyTracks::TrackShape::TRACK_SHAPE_LINE);
+		track.SetShape(MyTractVisBase::TrackShape::TRACK_SHAPE_LINE);
 		tubeParameterPanel->disable();
 		lineParameterPanel->enable();
 		break;
@@ -392,7 +345,7 @@ void changeTrackShape(int id){
 }
 
 void resetTrackShape(){
-	MyTracks::TrackShape oldShape = track.GetShape();
+	MyTractVisBase::TrackShape oldShape = track.GetShape();
 	int oldNumFaces = track.GetNumberFaces();
 	track.ResetRenderingParameters();
 	if (oldShape != track.GetShape() || oldNumFaces != track.GetNumberFaces()){
@@ -401,11 +354,11 @@ void resetTrackShape(){
 	}
 	switch (track.GetShape())
 	{
-	case MyTracks::TrackShape::TRACK_SHAPE_TUBE:
+	case MyTractVisBase::TRACK_SHAPE_TUBE:
 		tubeParameterPanel->enable();
 		trackShape = 0;
 		break;
-	case MyTracks::TrackShape::TRACK_SHAPE_LINE:
+	case MyTractVisBase::TRACK_SHAPE_LINE:
 		tubeParameterPanel->disable();
 		trackShape = 1;
 		break;
@@ -472,7 +425,6 @@ void changeMeshPrecision(int mode){
 void resetShaders(int mode){
 #ifdef TRACK
 	track.LoadShader();
-	ring.LoadShader();
 	glutPostRedisplay();
 #endif
 #ifdef MESH
@@ -520,29 +472,6 @@ void resetRenderingParameters(int mode){
 	glutPostRedisplay();
 }
 
-void printBoxInfo(){
-#ifdef TRACK
-	std::cout << setprecision(2) << fixed;
-	cout << "B0: " << boxOffset[0][0] << ", "
-		<< boxOffset[0][1] << ", "
-		<< boxOffset[0][2] << " | ";
-	cout << "B1: " << boxOffset[1][0] << ", "
-		<< boxOffset[1][1] << ", "
-		<< boxOffset[1][2] << " | ";
-	float value0, value1;
-	int n0, n1;
-	MyBoundingBox tmpBox0 = box0;
-	MyBoundingBox tmpBox1 = box1;
-	tmpBox0.Translate(boxOffset[0]);
-	tmpBox1.Translate(boxOffset[1]);
-	track.GetSampleValueInfo(tmpBox0, n0, value0);
-	track.GetSampleValueInfo(tmpBox1, n1, value1);
-	float v0 = (n0 == 0 ? 0 : value0 / n0);
-	float v1 = (n1 == 0 ? 0 : value1 / n1);
-	cout << v0 - v1 << ": " << v0 << ", " << v1 << endl;
-#endif
-}
-
 /**************************************** GLUT Callback ********************/
 void myGlutDisplay(){
 	glClearColor(1, 1, 1, 0);
@@ -551,7 +480,7 @@ void myGlutDisplay(){
 	glPushMatrix(); {
 		MyGraphicsTool::LoadTrackBall(&trackBall);
 		MyGraphicsTool::Rotate(180, MyVec3f(0, 1, 0));
-		MyBoundingBox box = track.GetBoundingBox();
+		MyBoundingBox box = track.GetTracts()->GetBoundingBox();
 		MyGraphicsTool::Translate(-box.GetCenter());
 		if (bdrawTracks){
 			track.Show();
@@ -570,7 +499,6 @@ void myGlutKeyboard(unsigned char Key, int x, int y)
 	case 'R':
 #ifdef TRACK
 		track.LoadShader();
-		ring.LoadShader();
 #endif
 		ssaoPass.CompileShader();
 		blurPass.CompileShader();
@@ -691,14 +619,16 @@ int main(int argc, char* argv[])
 #ifdef TRACK
 	trackBall.SetRotationMatrix(MyMatrixf::RotateMatrix(90, 1, 0, 0));
 	trackBall.ScaleMultiply(1.3);
-	track.Read("..\\SSAO\\data\\normal_s3.data");
-	//track.Read("data\\normal_s5.tensorinfo");
-	//track.Read("data\\cFile.tensorinfo");
-	//track.Read("C:\\Users\\GuohaoZhang\\Desktop\\tmpdata\\dti.trk");
-	//track.Read("C:\\Users\\GuohaoZhang\\Desktop\\tmpdata\\ACR.trk");
-	//track.Read("dti_20_0995.data");
-	//track.SetShape(MyTracks::TRACK_SHAPE_LINE);
-	track.SetShape(MyTracks::TRACK_SHAPE_TUBE);
+	MyTracks tractData;
+	tractData.Read("..\\SSAO\\data\\normal_s3.data");
+	//tractData.Read("data\\normal_s5.tensorinfo");
+	//tractData.Read("data\\cFile.tensorinfo");
+	//tractData.Read("C:\\Users\\GuohaoZhang\\Desktop\\tmpdata\\dti.trk");
+	//tractData.Read("C:\\Users\\GuohaoZhang\\Desktop\\tmpdata\\ACR.trk");
+	//tractData.Read("dti_20_0995.data");
+	track.SetTracts(&tractData);
+	track.SetShape(MyTractVisBase::TRACK_SHAPE_LINE);
+	//track.SetShape(MyTractVisBase::TRACK_SHAPE_TUBE);
 	track.ComputeGeometry();
 	track.LoadShader();
 	track.LoadGeometry();

@@ -36,18 +36,18 @@ void MyTrackRings::ComputeTubeGeometry(){
 	for (int it = 0; it < mTracks.size(); it++){
 		int npoints = mTracks[it].mSize;
 		for (int i = 0; i<npoints; i++){
-			MyVec3f p = this->GetCoord(it, i);
+			MyVec3f p = mTracts->GetCoord(it, i);
 			float size = 0.4;
 			//float size = 0;
 			MyVec3f d;
 			if (i == npoints - 1){
-				d = p - this->GetCoord(it, i - 1);
+				d = p - mTracts->GetCoord(it, i - 1);
 			}
 			else if (i == 0){
-				d = this->GetCoord(it, i + 1) - p;
+				d = mTracts->GetCoord(it, i + 1) - p;
 			}
 			else{
-				d = this->GetCoord(it, i + 1) - this->GetCoord(it, i - 1);
+				d = mTracts->GetCoord(it, i + 1) - mTracts->GetCoord(it, i - 1);
 			}
 			for (int is = 0; is<mFaces; is++){
 				MyColor4f& color = mColors[currentIdx + i*(mFaces + 1) + is];
@@ -89,8 +89,8 @@ void MyTrackRings::ComputeTubeGeometry(){
 	int currentIdx = 0;
 	mIdxOffset.clear();
 	int totalPoints = 0;
-	for (int it = 0; it < mTracks.size(); it++){
-		totalPoints += mTracks[it].mSize;
+	for (int it = 0; it < mTracts->GetNumTracks(); it++){
+		totalPoints += mTracts->At(it).Size();
 	}
 	totalPoints *= mFaces * mRingFaces;
 
@@ -103,12 +103,12 @@ void MyTrackRings::ComputeTubeGeometry(){
 	mColors.resize(totalPoints);
 	mOrbits.resize(totalPoints);
 
-	for (int it = 0; it < mTracks.size(); it++){
-		if ((int)((it + 1) * 100 / (float)mTracks.size())
-			- (int)(it * 100 / (float)mTracks.size()) >= 1){
-			cout << "Computing: " << it*100.f / mTracks.size() << "%.          \r";
+	for (int it = 0; it < mTracts->GetNumTracks(); it++){
+		if ((int)((it + 1) * 100 / (float)mTracts->GetNumTracks())
+			- (int)(it * 100 / (float)mTracts->GetNumTracks()) >= 1){
+			cout << "Computing: " << it*100.f / mTracts->GetNumTracks() << "%.          \r";
 		}
-		int npoints = mTracks[it].mSize;
+		int npoints = mTracts->At(it).Size();
 
 		const float myPI = 3.1415926f;
 		float dangle = 2 * myPI / mFaces;
@@ -123,7 +123,7 @@ void MyTrackRings::ComputeTubeGeometry(){
 			<< MyVec3f(1, 0, 1);
 		float max = -1;
 		int maxIdx;
-		MyVec3f genDir = this->GetCoord(it, 0) - this->GetCoord(it, npoints - 1);
+		MyVec3f genDir = mTracts->GetCoord(it, 0) - mTracts->GetCoord(it, npoints - 1);
 		genDir.normalize();
 		for (int i = 0; i<candicates.size(); i++){
 			float cp = (candicates[i].normalized() ^ genDir).norm();
@@ -135,18 +135,18 @@ void MyTrackRings::ComputeTubeGeometry(){
 		pole = candicates[maxIdx].normalized();
 
 		for (int i = 0; i<npoints; i++){
-			MyVec3f p = this->GetCoord(it, i);
+			MyVec3f p = mTracts->GetCoord(it, i);
 			float size = 0.4;
 			//float size = 0;
 			MyVec3f d;
 			if (i == npoints - 1){
-				d = p - this->GetCoord(it, i - 1);
+				d = p - mTracts->GetCoord(it, i - 1);
 			}
 			else if (i == 0){
-				d = this->GetCoord(it, i + 1) - p;
+				d = mTracts->GetCoord(it, i + 1) - p;
 			}
 			else{
-				d = this->GetCoord(it, i + 1) - this->GetCoord(it, i - 1);
+				d = mTracts->GetCoord(it, i + 1) - mTracts->GetCoord(it, i - 1);
 			}
 
 			MyVec3f perpend1 = (pole^d).normalized();
@@ -165,14 +165,14 @@ void MyTrackRings::ComputeTubeGeometry(){
 					int vertexIdx = currentIdx + i*mFaces*mRingFaces + is*mRingFaces + ir;
 					mVertices[vertexIdx] = ringVertex;
 					mNormals[vertexIdx] = ptr;
-					if (mHeader.n_scalars == 3){
+					if (mTracts->GetHeader().n_scalars == 3){
 						mColors[vertexIdx] = MyColor4f(
-							mTracks[it].mPointScalars[i][0], mTracks[it].mPointScalars[i][1],
-							mTracks[it].mPointScalars[i][2], 1);
+							mTracts->At(it).mPointScalars[i][0], mTracts->At(it).mPointScalars[i][1],
+							mTracts->At(it).mPointScalars[i][2], 1);
 					}
-					else if (mHeader.n_scalars == 13){
+					else if (mTracts->GetHeader().n_scalars == 13){
 						mColors[vertexIdx] = MyColor4f(
-							1, 1, 1-mTracks[it].mPointScalars[i][0], 1);
+							1, 1, 1 - mTracts->At(it).mPointScalars[i][0], 1);
 					}
 					else mColors[vertexIdx] = MyColor4f(1, 1, 1, 1);
 					mNormals[vertexIdx] = ptr;
@@ -194,9 +194,9 @@ void MyTrackRings::ComputeTubeGeometry(){
 	}
 	// index
 	mIndices.clear();
-	for (int it = 0; it<this->GetNumTracks(); it++){
+	for (int it = 0; it<mTracts->GetNumTracks(); it++){
 		int offset = mIdxOffset[it];
-		for (int i = 0; i<this->GetNumVertex(it); i++){
+		for (int i = 0; i<mTracts->GetNumVertex(it); i++){
 			int segStrIdx = offset + i*mFaces*mRingFaces;
 			for (int j = 0; j < mFaces; j++){
 				for (int k = 0; k < mRingFaces; k++){
@@ -382,12 +382,6 @@ void MyTrackRings::Show(){
 		glUniform1f(radiusLocation, mTrackRadius);
 	}
 
-	int offset0Location = glGetUniformLocation(mShaderProgram, "offset0");
-	glUniform3fv(offset0Location, 1, &mBoxOffset0[0]);
-
-	int offset1Location = glGetUniformLocation(mShaderProgram, "offset1");
-	glUniform3fv(offset1Location, 1, &mBoxOffset1[0]);
-
 	int textureLocation = glGetUniformLocation(mShaderProgram, "colorTex");
 	glUniform1i(textureLocation, 0);
 	glActiveTexture(GL_TEXTURE0 + 0);
@@ -406,7 +400,7 @@ void MyTrackRings::Show(){
 		for (int i = 0; i < mFiberToDraw.size(); i++){
 			int fiberIdx = mFiberToDraw[i];
 			int offset = mIdxOffset[fiberIdx] * 6;
-			int numVertex = this->GetNumVertex(fiberIdx) * mFaces * mRingFaces * 6;
+			int numVertex = mTracts->GetNumVertex(fiberIdx) * mFaces * mRingFaces * 6;
 			glDrawElements(GL_TRIANGLES, numVertex, GL_UNSIGNED_INT, (const void *)(offset*sizeof(int)));
 		}
 	}

@@ -35,5 +35,6 @@ void main() {
 	Zoom = length( ( mvMat * normalize( vec4( 1.0f, 1.0f, 1.0f, 0.0f ) ) ).xyz );
 	FragPos = ( mvMat * vec4( pos, 1.0f ) ).xyz;;
 	Color = normalize( abs( tangent ) );
+	//Color = vec3(0.3);
 	gl_Position = projMat * vec4(FragPos, 1);
 }

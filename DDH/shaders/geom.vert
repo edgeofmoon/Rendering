@@ -22,7 +22,7 @@ void main (void)
 	rawPos = position;
 	fcolor = color;
 	vec4 p = mvMat*vec4(position,1);
-	float depth = -p.z / 300;
+	float depth = (-p.z-1) / 300;
 	float r = (1.0-depthCueing) + depthCueing*(1.0-(depth-0.48)/0.24);
 	vec4 ndcPosition = mvMat*vec4(position+normal*r*radius,1);
 	fposition = ndcPosition.xyz/ndcPosition.w;

@@ -19,7 +19,7 @@ using namespace std;
 #include <GL/freeglut.h>
 
 MyTubeDDH::MyTubeDDH()
-	:MyTracks()
+	:MyTractVisBase()
 {
 	mDepthCueing = 1;
 }
@@ -78,7 +78,7 @@ void MyTubeDDH::Show(){
 			//int numVertex = (this->GetNumVertex(fiberIdx) - 1)*(mFaces + 0) * 6;
 			// add cap offset
 			int offset = (mIdxOffset[fiberIdx] / (mFaces + 1) - fiberIdx * 2)*mFaces * 6;
-			int numVertex = (this->GetNumVertex(fiberIdx) - 1)*(mFaces + 0) * 6 + mFaces * 6;
+			int numVertex = (mTracts->GetNumVertex(fiberIdx) - 1)*(mFaces + 0) * 6 + mFaces * 6;
 			glDrawElements(GL_TRIANGLES, numVertex, GL_UNSIGNED_INT, (const void *)(offset*sizeof(int)));
 		}
 	}
@@ -86,7 +86,7 @@ void MyTubeDDH::Show(){
 		for (int i = 0; i < mFiberToDraw.size(); i++){
 			int fiberIdx = mFiberToDraw[i];
 			int offset = mIdxOffset[fiberIdx];
-			int numVertex = this->GetNumVertex(fiberIdx);
+			int numVertex = mTracts->GetNumVertex(fiberIdx);
 			glDrawElements(GL_LINE_STRIP, numVertex, GL_UNSIGNED_INT, (const void *)(offset*sizeof(int)));
 		}
 	}

@@ -1,7 +1,7 @@
 #pragma once
-#include "MyTracks.h"
+#include "MyTractVisBase.h"
 class MyTubeDDH :
-	public MyTracks
+	public MyTractVisBase
 {
 public:
 	MyTubeDDH();

@@ -1,4 +1,4 @@
-#include "GL_LineAO.h"
+#include "MyLineAO.h"
 #include "MyVec.h"
 #include "Shader.h"
 #include "MyGraphicsTool.h"
@@ -15,15 +15,15 @@
 #include <cassert>
 using namespace std;
 
-GL_LineAO::GL_LineAO()
-	:MyTracks()
+MyLineAO::MyLineAO()
+	:MyTractVisBase()
 {
 	mLineAOTotalStrength = 1.0f;
 	mBlurRadius = 0;
 	mLineWidth = 1;
 }
 
-GL_LineAO::~GL_LineAO() {
+MyLineAO::~MyLineAO() {
 	glDeleteVertexArrays( 1, &mVertexArray );
 	glDeleteBuffers( 1, &mVertexBuffer );
 	glDeleteBuffers( 1, &mTangentBuffer );
@@ -44,7 +44,7 @@ GL_LineAO::~GL_LineAO() {
 	glDeleteTextures( 1, &noise );
 }
 
-void GL_LineAO::Resize(int w, int h){
+void MyLineAO::Resize(int w, int h){
 	m_width = w;
 	m_height = h;
 	initGBuffer();
@@ -52,7 +52,7 @@ void GL_LineAO::Resize(int w, int h){
 	genNoiseTexture();
 }
 
-void GL_LineAO::LoadShader(){
+void MyLineAO::LoadShader(){
 
 	glDeleteProgram(mLineShader);
 	mLineShader = InitShader("shaders\\Line.vert", "shaders\\Line.frag", "fragColour");
@@ -77,7 +77,7 @@ void GL_LineAO::LoadShader(){
 }
 
 
-void GL_LineAO::ComputeGeometry(){
+void MyLineAO::ComputeGeometry(){
 	ClearGeometry();
 	if (mShape == TRACK_SHAPE_TUBE){
 		this->ComputeTubeGeometry();
@@ -88,17 +88,17 @@ void GL_LineAO::ComputeGeometry(){
 }
 
 
-void GL_LineAO::ComputeTubeGeometry(){
+void MyLineAO::ComputeTubeGeometry(){
 	int currentIdx = 0;
 	mIdxOffset.clear();
 	int totalPoints = 0;
-	for (int it = 0; it < mTracks.size(); it++){
-		totalPoints += mTracks[it].mSize;
+	for (int it = 0; it < mTracts->GetNumTracks(); it++){
+		totalPoints += mTracts->At(it).Size();
 	}
 	totalPoints *= (mFaces + 1);
 
 	// for caps
-	totalPoints += mTracks.size()*(1 + mFaces) * 2;
+	totalPoints += mTracts->GetNumTracks()*(1 + mFaces) * 2;
 
 	cout << "Allocating Storage for Geometry...\r";
 
@@ -106,12 +106,12 @@ void GL_LineAO::ComputeTubeGeometry(){
 	mNormals.resize(totalPoints);
 	mTangents.resize(totalPoints);
 
-	for (int it = 0; it < mTracks.size(); it++){
-		if ((int)((it + 1) * 100 / (float)mTracks.size())
-			- (int)(it * 100 / (float)mTracks.size()) >= 1){
-			cout << "Computing: " << it*100.f / mTracks.size() << "%.          \r";
+	for (int it = 0; it < mTracts->GetNumTracks(); it++){
+		if ((int)((it + 1) * 100 / (float)mTracts->GetNumTracks())
+			- (int)(it * 100 / (float)mTracts->GetNumTracks()) >= 1){
+			cout << "Computing: " << it*100.f / mTracts->GetNumTracks() << "%.          \r";
 		}
-		int npoints = mTracks[it].mSize;
+		int npoints = mTracts->At(it).Size();
 
 		const float myPI = 3.1415926f;
 		float dangle = 2 * myPI / mFaces;
@@ -126,7 +126,7 @@ void GL_LineAO::ComputeTubeGeometry(){
 			<< MyVec3f(1, 0, 1);
 		float max = -1;
 		int maxIdx;
-		MyVec3f genDir = this->GetCoord(it, 0) - this->GetCoord(it, npoints - 1);
+		MyVec3f genDir = mTracts->GetCoord(it, 0) - mTracts->GetCoord(it, npoints - 1);
 		genDir.normalize();
 		for (int i = 0; i<candicates.size(); i++){
 			float cp = (candicates[i].normalized() ^ genDir).norm();
@@ -138,11 +138,11 @@ void GL_LineAO::ComputeTubeGeometry(){
 		pole = candicates[maxIdx].normalized();
 
 		for (int i = 0; i<npoints; i++){
-			MyVec3f p = this->GetCoord(it, i);
+			MyVec3f p = mTracts->GetCoord(it, i);
 			MyVec3f d;
-			if (i == npoints - 1) d = p - this->GetCoord(it, i - 1);
-			else if (i == 0) d = this->GetCoord(it, i + 1) - p;
-			else d = this->GetCoord(it, i + 1) - this->GetCoord(it, i - 1);
+			if (i == npoints - 1) d = p - mTracts->GetCoord(it, i - 1);
+			else if (i == 0) d = mTracts->GetCoord(it, i + 1) - p;
+			else d = mTracts->GetCoord(it, i + 1) - mTracts->GetCoord(it, i - 1);
 
 			MyVec3f perpend1 = (pole^d).normalized();
 			MyVec3f perpend2 = (perpend1^d).normalized();
@@ -164,8 +164,8 @@ void GL_LineAO::ComputeTubeGeometry(){
 
 		// add front cap
 		{
-			MyVec3f p = this->GetCoord(it, 0);
-			MyVec3f d = this->GetCoord(it, 1) - p;
+			MyVec3f p = mTracts->GetCoord(it, 0);
+			MyVec3f d = mTracts->GetCoord(it, 1) - p;
 			d.normalize();
 			MyVec3f perpend1 = (pole^d).normalized();
 			MyVec3f perpend2 = (perpend1^d).normalized();
@@ -185,8 +185,8 @@ void GL_LineAO::ComputeTubeGeometry(){
 		// add back cap
 		currentIdx += mFaces + 1;
 		{
-			MyVec3f p = this->GetCoord(it, npoints - 1);
-			MyVec3f d = this->GetCoord(it, npoints - 2) - p;
+			MyVec3f p = mTracts->GetCoord(it, npoints - 1);
+			MyVec3f d = mTracts->GetCoord(it, npoints - 2) - p;
 			d.normalize();
 			MyVec3f perpend1 = (pole^d).normalized();
 			MyVec3f perpend2 = (perpend1^d).normalized();
@@ -206,9 +206,9 @@ void GL_LineAO::ComputeTubeGeometry(){
 	}
 	// index
 	mIndices.clear();
-	for (int it = 0; it<this->GetNumTracks(); it++){
+	for (int it = 0; it<mTracts->GetNumTracks(); it++){
 		int offset = mIdxOffset[it];
-		for (int i = 1; i<this->GetNumVertex(it); i++){
+		for (int i = 1; i<mTracts->GetNumVertex(it); i++){
 			for (int j = 0; j < mFaces; j++){
 				/*
 				// wrong direction!
@@ -229,7 +229,7 @@ void GL_LineAO::ComputeTubeGeometry(){
 			}
 		}
 		// add caps
-		offset += this->GetNumVertex(it)*(mFaces + 1);
+		offset += mTracts->GetNumVertex(it)*(mFaces + 1);
 		for (int j = 0; j < mFaces; j++){
 			mIndices << MyVec3i(offset, offset + (j + 1) % (mFaces)+1, offset + j + 1);
 		}
@@ -241,12 +241,12 @@ void GL_LineAO::ComputeTubeGeometry(){
 	cout << "Computing completed.\n";
 }
 
-void GL_LineAO::ComputeLineGeometry(){
+void MyLineAO::ComputeLineGeometry(){
 	int currentIdx = 0;
 	mIdxOffset.clear();
 	int totalPoints = 0;
-	for (int it = 0; it < mTracks.size(); it++){
-		totalPoints += mTracks[it].mSize;
+	for (int it = 0; it < mTracts->GetNumTracks(); it++){
+		totalPoints += mTracts->At(it).Size();
 	}
 
 	cout << "Allocating Storage for Geometry...\r";
@@ -258,24 +258,24 @@ void GL_LineAO::ComputeLineGeometry(){
 
 
 	mIdxOffset.clear();
-	mIdxOffset.reserve(mTracks.size());
-	for (int it = 0; it < mTracks.size(); it++){
-		int npoints = mTracks[it].mSize;
+	mIdxOffset.reserve(mTracts->GetNumTracks());
+	for (int it = 0; it < mTracts->GetNumTracks(); it++){
+		int npoints = mTracts->At(it).Size();
 		for (int i = 0; i<npoints; i++){
-			MyVec3f p = this->GetCoord(it, i);
+			MyVec3f p = mTracts->GetCoord(it, i);
 			MyVec3f tangent;
 
 			if (i == 0) {
-				MyVec3f pointNext = GetCoord(it, i + 1);
+				MyVec3f pointNext = mTracts->GetCoord(it, i + 1);
 				tangent = p - pointNext;
 			}
 			else if (i == npoints - 1) {
-				MyVec3f pointBefore = GetCoord(it, i - 1);
+				MyVec3f pointBefore = mTracts->GetCoord(it, i - 1);
 				tangent = pointBefore - p;
 			}
 			else {
-				MyVec3f pointNext = GetCoord(it, i + 1);
-				MyVec3f pointBefore = GetCoord(it, i - 1);
+				MyVec3f pointNext = mTracts->GetCoord(it, i + 1);
+				MyVec3f pointBefore = mTracts->GetCoord(it, i - 1);
 				tangent = pointBefore - pointNext;
 			}
 
@@ -297,12 +297,12 @@ void GL_LineAO::ComputeLineGeometry(){
 	cout << "Computing completed.\n";
 }
 
-void GL_LineAO::ClearGeometry(){
-	MyTracks::ClearGeometry();
+void MyLineAO::ClearGeometry(){
+	MyTractVisBase::ClearGeometry();
 	mTangents.clear();
 }
 
-void GL_LineAO::LoadGeometry(){
+void MyLineAO::LoadGeometry(){
 
 	initQuad();
 	if (glIsVertexArray(mVertexArray)){
@@ -364,7 +364,7 @@ void GL_LineAO::LoadGeometry(){
 	ClearGeometry();
 }
 
-void GL_LineAO::initQuad() {
+void MyLineAO::initQuad() {
 	// create quad
 	if (glIsVertexArray(quadVAO)) glDeleteVertexArrays(1, &quadVAO);
 	glGenVertexArrays( 1, &quadVAO );
@@ -416,7 +416,7 @@ void GL_LineAO::initQuad() {
 	glBindVertexArray( 0 );
 }
 
-void GL_LineAO::initGBuffer() {
+void MyLineAO::initGBuffer() {
 	if (glIsFramebuffer(gBuffer)) glDeleteFramebuffers(1, &gBuffer);
 	glGenFramebuffers( 1, &gBuffer );
 	glBindFramebuffer( GL_FRAMEBUFFER, gBuffer );
@@ -462,7 +462,7 @@ void GL_LineAO::initGBuffer() {
 	glBindFramebuffer( GL_FRAMEBUFFER, 0 );
 }
 
-void GL_LineAO::initAOBuffer() {
+void MyLineAO::initAOBuffer() {
 	if (glIsFramebuffer(aoBuffer)) glDeleteFramebuffers(1, &aoBuffer);
 	glGenFramebuffers(1, &aoBuffer);
 	glBindFramebuffer(GL_FRAMEBUFFER, aoBuffer);
@@ -484,7 +484,7 @@ void GL_LineAO::initAOBuffer() {
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void GL_LineAO::genNoiseTexture() {
+void MyLineAO::genNoiseTexture() {
 	// TODO: change to texture repeating by modifying texture coordinates
 
 	int width = m_width;
@@ -514,7 +514,7 @@ void GL_LineAO::genNoiseTexture() {
 
 // ---------------------     rendering passes     -------------------------
 
-void GL_LineAO::lineShadingPass() const {
+void MyLineAO::lineShadingPass() const {
 	glEnable( GL_DEPTH_TEST );
 
 	// select framebuffer as render target
@@ -553,10 +553,10 @@ void GL_LineAO::lineShadingPass() const {
 		for (int i = 0; i < mFiberToDraw.size(); i++){
 			int fiberIdx = mFiberToDraw[i];
 			//int offset = (mIdxOffset[fiberIdx] / (mFaces + 1) - fiberIdx)*mFaces * 6;
-			//int numVertex = (this->GetNumVertex(fiberIdx) - 1)*(mFaces + 0) * 6;
+			//int numVertex = (mTracts->GetNumVertex(fiberIdx) - 1)*(mFaces + 0) * 6;
 			// add cap offset
 			int offset = (mIdxOffset[fiberIdx] / (mFaces + 1) - fiberIdx * 2)*mFaces * 6;
-			int numVertex = (this->GetNumVertex(fiberIdx) - 1)*(mFaces + 0) * 6 + mFaces * 6;
+			int numVertex = (mTracts->GetNumVertex(fiberIdx) - 1)*(mFaces + 0) * 6 + mFaces * 6;
 			glDrawElements(GL_TRIANGLES, numVertex, GL_UNSIGNED_INT, (const void *)(offset*sizeof(int)));
 		}
 	}
@@ -566,7 +566,7 @@ void GL_LineAO::lineShadingPass() const {
 		for (int i = 0; i < mFiberToDraw.size(); i++){
 			int fiberIdx = mFiberToDraw[i];
 			int offset = mIdxOffset[fiberIdx];
-			int numVertex = this->GetNumVertex(fiberIdx);
+			int numVertex = mTracts->GetNumVertex(fiberIdx);
 			glDrawElements(GL_LINE_STRIP, numVertex, GL_UNSIGNED_INT, (const void *)(offset*sizeof(int)));
 		}
 		glLineWidth(1);
@@ -578,7 +578,7 @@ void GL_LineAO::lineShadingPass() const {
 	glUseProgram(0);
 }
 
-void GL_LineAO::lineAOPass() const {
+void MyLineAO::lineAOPass() const {
 	glDisable(GL_DEPTH_TEST);
 
 	// select framebuffer as render target
@@ -619,7 +619,7 @@ void GL_LineAO::lineAOPass() const {
 	glUseProgram(0);
 }
 
-void GL_LineAO::lightningPass() const {
+void MyLineAO::lightningPass() const {
 	//glDisable( GL_DEPTH_TEST );
 	//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glUseProgram(mTextureShader);
@@ -651,7 +651,7 @@ void GL_LineAO::lightningPass() const {
 	glUseProgram(0);
 }
 
-void GL_LineAO::Show() {
+void MyLineAO::Show() {
 
 	lineShadingPass();
 	lineAOPass();
@@ -661,6 +661,6 @@ void GL_LineAO::Show() {
 	/*GLint value[4];
 	glGetIntegerv( GL_VIEWPORT, value );
 
-	if( value[2] != m_width || value[3] != m_height ) const_cast< GL_LineAO* >(this)->initGBuffer();*/
+	if( value[2] != m_width || value[3] != m_height ) const_cast< MyLineAO* >(this)->initGBuffer();*/
 
 }

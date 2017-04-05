@@ -106,33 +106,33 @@ void MyTrackDDH::ComputeGeometry(){
 	ClearGeometry();
 
 	int totalPoints = 0;
-	for (int it = 0; it < mTracks.size(); it++){
-		totalPoints += mTracks[it].mSize;
+	for (int it = 0; it < mTracts->GetNumTracks(); it++){
+		totalPoints += mTracts->At(it).Size();
 	}
 	int currentVertexIdx = 0;
 	int currentIndexIdx = 0;
 	mVertices.reserve(totalPoints * 2);
 	mTextureCoords.reserve(totalPoints * 2);
-	for (int i = 0; i < mTracks.size(); i++){
+	for (int i = 0; i < mTracts->GetNumTracks(); i++){
 		float u = 0;
-		float len = ComputeTrackLength(i);
-		for (int j = 0; j < mTracks[i].mSize; j++){
+		float len = mTracts->ComputeTrackLength(i);
+		for (int j = 0; j < mTracts->At(i).Size(); j++){
 			// push twice to make a pair
-			mVertices << GetCoord(i, j) << GetCoord(i, j);
+			mVertices << mTracts->GetCoord(i, j) << mTracts->GetCoord(i, j);
 
-			u += (GetCoord(i, j) - GetCoord(i, j>0?j-1:0)).norm();
+			u += (mTracts->GetCoord(i, j) - mTracts->GetCoord(i, j>0 ? j - 1 : 0)).norm();
 			mTextureCoords << MyVec3f(u, 0, len) << MyVec3f(u, 1, len);
 
 			MyVec3f tangent;
 
-			if (j == mTracks[i].mSize - 1)
-				tangent = GetCoord(i, j) - GetCoord(i, j-1);
+			if (j == mTracts->At(i).Size() - 1)
+				tangent = mTracts->GetCoord(i, j) - mTracts->GetCoord(i, j - 1);
 			else 
-				tangent = GetCoord(i, j+1) - GetCoord(i, j);
+				tangent = mTracts->GetCoord(i, j + 1) - mTracts->GetCoord(i, j);
 			tangent.normalize();
 			mTangents << tangent << tangent;
 
-			if (j < mTracks[i].mSize - 1){
+			if (j < mTracts->At(i).Size() - 1){
 				mIndices << MyVec3i(currentVertexIdx + j * 2 + 0,
 					currentVertexIdx + j * 2 + 2, currentVertexIdx + j * 2 + 3);
 				mIndices << MyVec3i(currentVertexIdx + j * 2 + 0,
@@ -140,7 +140,7 @@ void MyTrackDDH::ComputeGeometry(){
 			}
 		}
 
-		currentVertexIdx += mTracks[i].mSize * 2;
+		currentVertexIdx += mTracts->At(i).Size() * 2;
 
 		mIdxOffset << currentIndexIdx;
 		currentIndexIdx = mIndices.size()*3;
@@ -191,7 +191,7 @@ void MyTrackDDH::Show(){
 	for (int i = 0; i < mFiberToDraw.size(); i++){
 		int fiberIdx = mFiberToDraw[i];
 		int offset = mIdxOffset[fiberIdx];
-		int numVertex = (this->GetNumVertex(fiberIdx)-1)*6;
+		int numVertex = (mTracts->GetNumVertex(fiberIdx)-1)*6;
 		glDrawElements(GL_TRIANGLES, numVertex, GL_UNSIGNED_INT, (const void *)(offset*sizeof(int)));
 	}
 

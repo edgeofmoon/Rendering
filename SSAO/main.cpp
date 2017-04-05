@@ -1,7 +1,7 @@
 
 
-#define MESH
-//#define TRACK
+//#define MESH
+#define TRACK
 
 #include <iostream>
 #include <iomanip>
@@ -13,7 +13,7 @@ using namespace std;
 
 #ifdef TRACK
 #include "MyTracks.h"
-#include "MyTrackRings.h"
+#include "MyTractVisBase.h"
 #endif
 
 #ifdef MESH
@@ -38,11 +38,7 @@ int gl_error;
 
 
 #ifdef TRACK
-MyTracks track;
-MyTracks trackLine;
-MyTrackRings ring;
-MyBoundingBox box0(MyVec3f(-19.5985, -54.2138, -17.6974), MyVec3f(-12.3999, -43.2969, -8.65376));
-MyBoundingBox box1(MyVec3f(14.9959, -46.6653, -19.6276), MyVec3f(22.1945, -35.7483, -10.584));
+MyTractVisBase track;
 #endif
 
 #ifdef MESH
@@ -183,63 +179,21 @@ void drawBox(MyVec3f low, MyVec3f high, int id = 0){
 	glPopAttrib();
 }
 
-void drawBoxes(int x, int y, int width, int height){
-	MyBoundingBox tmpBox0 = box0;
-	MyBoundingBox tmpBox1 = box1;
-	tmpBox0.Translate(boxOffset[0]);
-	tmpBox1.Translate(boxOffset[1]);
-	MyGraphicsTool::SetViewport(MyVec4i(x, y, width, height));
-	glPushMatrix(); {
-		MyGraphicsTool::LoadTrackBall(&trackBall);
-		MyGraphicsTool::Rotate(180, MyVec3f(0, 1, 0));
-		MyBoundingBox box = track.GetBoundingBox();
-		MyGraphicsTool::Translate(-box.GetCenter());
-		glPushAttrib(GL_ALL_ATTRIB_BITS);
-		glEnable(GL_BLEND);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-		drawBox(tmpBox0.GetLowPos(), tmpBox0.GetHighPos(), 0);
-		drawBox(tmpBox1.GetLowPos(), tmpBox1.GetHighPos(), 1);
-		glPopAttrib();
-	}glPopMatrix();
-}
-
 void drawTracks(int x, int y, int width, int height){
-	track.mBoxOffset0 = boxOffset[0];
-	track.mBoxOffset1 = boxOffset[1];
-	ring.mBoxOffset0 = boxOffset[0];
-	ring.mBoxOffset1 = boxOffset[1];
 	MyGraphicsTool::SetViewport(MyVec4i(x, y, width, height));
 	glPushMatrix(); {
 		MyGraphicsTool::LoadTrackBall(&trackBall);
 		MyGraphicsTool::Rotate(180, MyVec3f(0, 1, 0));
-		MyBoundingBox box = track.GetBoundingBox();
+		MyBoundingBox box = track.GetTracts()->GetBoundingBox();
 		MyGraphicsTool::Translate(-box.GetCenter());
 		if (bdrawTracks){
 			track.Show();
+			glColor3f(0, 0, 0);
+			glutSolidSphere(10, 10, 10);
 		}
 		else{
 			//track.ShowCapsOnly();
 		}
-		ring.Show();
-	}glPopMatrix();
-}
-
-void drawTrackLines(int x, int y, int width, int height){
-	trackLine.mBoxOffset0 = boxOffset[0];
-	trackLine.mBoxOffset1 = boxOffset[1];
-	MyGraphicsTool::SetViewport(MyVec4i(x, y, width, height));
-	glPushMatrix(); {
-		MyGraphicsTool::LoadTrackBall(&trackBall);
-		MyGraphicsTool::Rotate(180, MyVec3f(0, 1, 0));
-		MyBoundingBox box = track.GetBoundingBox();
-		MyGraphicsTool::Translate(-box.GetCenter());
-		if (bdrawTracks){
-			trackLine.Show();
-		}
-		else{
-			//track.ShowCapsOnly();
-		}
-		ring.Show();
 	}glPopMatrix();
 }
 
@@ -364,36 +318,31 @@ int trackShape = 0;
 int trackFaces = 20;
 GLUI_Panel* tubeParameterPanel;
 void changeTrackShape(int id){
-	MyTracks::TrackShape oldShape = track.GetShape();
+	MyTractVisBase::TrackShape oldShape = track.GetShape();
 	int oldNumFaces = track.GetNumberFaces();
 	switch (trackShape)
 	{
 	case 0:
-		track.SetShape(MyTracks::TrackShape::TRACK_SHAPE_TUBE);
+		track.SetShape(MyTractVisBase::TrackShape::TRACK_SHAPE_TUBE);
 		tubeParameterPanel->enable();
 		break;
 	case 1:
-		track.SetShape(MyTracks::TrackShape::TRACK_SHAPE_LINE);
+		track.SetShape(MyTractVisBase::TrackShape::TRACK_SHAPE_LINE);
 		tubeParameterPanel->disable();
 		break;
 	default:
 		break;
 	}
 	track.SetNumberFaces(trackFaces);
-	ring.SetNumberFaces(trackFaces);
 	if (oldShape != track.GetShape() || oldNumFaces != track.GetNumberFaces()){
 		track.ComputeGeometry();
 		track.LoadGeometry();
-	}
-	if (oldNumFaces != ring.GetNumberFaces()){
-		ring.ComputeGeometry();
-		ring.LoadGeometry();
 	}
 	glutPostRedisplay();
 }
 
 void resetTrackShape(){
-	MyTracks::TrackShape oldShape = track.GetShape();
+	MyTractVisBase::TrackShape oldShape = track.GetShape();
 	int oldNumFaces = track.GetNumberFaces();
 	track.ResetRenderingParameters();
 	if (oldShape != track.GetShape() || oldNumFaces != track.GetNumberFaces()){
@@ -402,11 +351,11 @@ void resetTrackShape(){
 	}
 	switch (track.GetShape())
 	{
-	case MyTracks::TrackShape::TRACK_SHAPE_TUBE:
+	case MyTractVisBase::TrackShape::TRACK_SHAPE_TUBE:
 		tubeParameterPanel->enable();
 		trackShape = 0;
 		break;
-	case MyTracks::TrackShape::TRACK_SHAPE_LINE:
+	case MyTractVisBase::TrackShape::TRACK_SHAPE_LINE:
 		tubeParameterPanel->disable();
 		trackShape = 1;
 		break;
@@ -473,7 +422,6 @@ void changeMeshPrecision(int mode){
 void resetShaders(int mode){
 #ifdef TRACK
 	track.LoadShader();
-	ring.LoadShader();
 	glutPostRedisplay();
 #endif
 #ifdef MESH
@@ -521,28 +469,6 @@ void resetRenderingParameters(int mode){
 	glutPostRedisplay();
 }
 
-void printBoxInfo(){
-#ifdef TRACK
-	std::cout << setprecision(2) << fixed;
-	cout << "B0: " << boxOffset[0][0] << ", "
-		<< boxOffset[0][1] << ", "
-		<< boxOffset[0][2] << " | ";
-	cout << "B1: " << boxOffset[1][0] << ", "
-		<< boxOffset[1][1] << ", "
-		<< boxOffset[1][2] << " | ";
-	float value0, value1;
-	int n0, n1;
-	MyBoundingBox tmpBox0 = box0;
-	MyBoundingBox tmpBox1 = box1;
-	tmpBox0.Translate(boxOffset[0]);
-	tmpBox1.Translate(boxOffset[1]);
-	track.GetSampleValueInfo(tmpBox0, n0, value0);
-	track.GetSampleValueInfo(tmpBox1, n1, value1);
-	float v0 = (n0 == 0 ? 0 : value0 / n0);
-	float v1 = (n1 == 0 ? 0 : value1 / n1);
-	cout << v0 - v1 << ": " << v0 << ", " << v1 << endl;
-#endif
-}
 
 /**************************************** GLUT Callback ********************/
 void myGlutDisplay(){
@@ -556,24 +482,10 @@ void myGlutDisplay(){
 
 	// code for pixel halo
 	glLineWidth(1 * (dsrIndex / 2));
-	track.mTrackRadius = 1;
-	drawTracks(0, 0, windowWidth*dsr_factor, windowHeight*dsr_factor);
-	glLineWidth(3 * (dsrIndex / 2));
-	track.mTrackRadius = 0;
 	drawTracks(0, 0, windowWidth*dsr_factor, windowHeight*dsr_factor);
 	glLineWidth(1);
 
-	/*
-	// code for line-tube in box.
-	track.mTrackRadius = 0;
-	drawTracks(0, 0, windowWidth*dsr_factor, windowHeight*dsr_factor);
-	trackLine.mTrackRadius = 1;
-	drawTrackLines(0, 0, windowWidth*dsr_factor, windowHeight*dsr_factor);
-	*/
 
-	if (bdrawBoxes){
-		drawBoxes(0, 0, windowWidth*dsr_factor, windowHeight*dsr_factor);
-	}
 #endif
 #ifdef MESH
 	drawMesh(0, 0, windowWidth*dsr_factor, windowHeight*dsr_factor);
@@ -656,7 +568,6 @@ void myGlutKeyboard(unsigned char Key, int x, int y)
 	case 'R':
 #ifdef TRACK
 		track.LoadShader();
-		ring.LoadShader();
 #endif
 		ssaoPass.CompileShader();
 		blurPass.CompileShader();
@@ -669,59 +580,6 @@ void myGlutKeyboard(unsigned char Key, int x, int y)
 	case 'I':
 		renderIdx = (renderIdx + MAX_RENDER_MODE - 1) % MAX_RENDER_MODE;
 		cout << renderIdx << endl;
-		break;
-	case 'a':
-		boxOffset[activeBox][0] -= 0.1;
-		printBoxInfo();
-		break;
-	case 'A':
-		boxOffset[activeBox][0] -= 1;
-		printBoxInfo();
-		break;
-	case 'd':
-		boxOffset[activeBox][0] += 0.1;
-		printBoxInfo();
-		break;
-	case 'D':
-		boxOffset[activeBox][0] += 1;
-		printBoxInfo();
-		break;
-	case 'w':
-		boxOffset[activeBox][1] += 0.1;
-		printBoxInfo();
-		break;
-	case 'W':
-		boxOffset[activeBox][1] += 1;
-		printBoxInfo();
-		break;
-	case 's':
-		boxOffset[activeBox][1] -= 0.1;
-		printBoxInfo();
-		break;
-	case 'S':
-		boxOffset[activeBox][1] -= 1;
-		printBoxInfo();
-		break;
-	case 'q':
-		boxOffset[activeBox][2] += 0.1;
-		printBoxInfo();
-		break;
-	case 'Q':
-		boxOffset[activeBox][2] += 1;
-		printBoxInfo();
-		break;
-	case 'e':
-		boxOffset[activeBox][2] -= 0.1;
-		printBoxInfo();
-		break;
-	case 'E':
-		boxOffset[activeBox][2] -= 1;
-		printBoxInfo();
-		break;
-	case '1':
-	case '2':
-	case '3':
-		activeBox = Key - '1';
 		break;
 	};
 
@@ -829,14 +687,16 @@ int main(int argc, char* argv[])
 #ifdef TRACK
 	trackBall.SetRotationMatrix(MyMatrixf::RotateMatrix(90, 1, 0, 0));
 	trackBall.ScaleMultiply(1.3);
-	//track.Read("data\\normal_s3.data");
-	//track.Read("data\\normal_s5.tensorinfo");
-	//track.Read("data\\cFile.tensorinfo");
-	//track.Read("C:\\Users\\GuohaoZhang\\Desktop\\tmpdata\\dti.trk");
-	track.Read("C:\\Users\\GuohaoZhang\\Desktop\\tmpdata\\ACR.trk");
-	//track.Read("dti_20_0995.data");
-	//track.SetShape(MyTracks::TRACK_SHAPE_LINE);
-	track.SetShape(MyTracks::TRACK_SHAPE_TUBE);
+	MyTracks tractData;
+	tractData.Read("data\\normal_s3.data");
+	//tractData.Read("data\\normal_s5.tensorinfo");
+	//tractData.Read("data\\cFile.tensorinfo");
+	//tractData.Read("C:\\Users\\GuohaoZhang\\Desktop\\tmpdata\\dti.trk");
+	//tractData.Read("C:\\Users\\GuohaoZhang\\Desktop\\tmpdata\\ACR.trk");
+	//tractData.Read("dti_20_0995.data");
+	track.SetTracts(&tractData);
+	//track.SetShape(MyTractVisBase::TRACK_SHAPE_LINE);
+	track.SetShape(MyTractVisBase::TRACK_SHAPE_TUBE);
 	track.ComputeGeometry();
 	track.LoadShader();
 	track.LoadGeometry();
@@ -856,11 +716,8 @@ int main(int argc, char* argv[])
 	trackLine.LoadGeometry();
 	*/
 
-	MyVec3f center = track.GetBoundingBox().GetCenter();
+	MyVec3f center = track.GetTracts()->GetBoundingBox().GetCenter();
 	cout << "Center: " << center[0] << ", " << center[1] << ", " << center[2] << endl;
-	boxOffset[0] = MyVec3f(5, 0, 4);
-	boxOffset[0] += center;
-	boxOffset[1] = boxOffset[0];
 #endif
 
 #ifdef MESH
@@ -927,8 +784,6 @@ int main(int argc, char* argv[])
 		&bdrawTracks, -1, reRender);
 	new GLUI_Checkbox(panel[1], "Draw Axes",
 		&bdrawAxes, -1, reRender);
-	new GLUI_Checkbox(panel[1], "Draw Boxes",
-		&bdrawBoxes, -1, reRender);
 
 #ifdef MESH
 	GLUI_Spinner* meshPrecisionSpinner = new GLUI_Spinner
@@ -947,10 +802,6 @@ int main(int argc, char* argv[])
 	GLUI_Scrollbar* tubeRadiusSlider = new GLUI_Scrollbar
 		(tubeParameterPanel, "Tube Radius", GLUI_SCROLL_HORIZONTAL,
 		&(track.mTrackRadius), -1, reRender);
-	new GLUI_StaticText(tubeParameterPanel, "Ring Radius");
-	GLUI_Scrollbar* ringRadiusSlider = new GLUI_Scrollbar
-		(tubeParameterPanel, "Ring Radius", GLUI_SCROLL_HORIZONTAL,
-		&(ring.mTrackRadius), -1, reRender);
 	tubeRadiusSlider->set_float_limits(0, 1);
 	GLUI_Spinner* boxOpacitySpinner = new GLUI_Spinner(
 		tubeParameterPanel, "Opacity Index", GLUI_SPINNER_INT,
@@ -989,7 +840,7 @@ int main(int argc, char* argv[])
 	lightingPass.mAmbient = 0.4;
 	lightingPass.mDiffuse = 0.6;
 	lightingPass.mSpecular = 0;
-	lightingPass.mUseSsao = 0;
+	lightingPass.mUseSsao = 1;
 	panel[4] = new GLUI_Panel(glui, "Lighting Pass");
 	new GLUI_Button(panel[4], "Reset", 3, resetRenderingParameters);
 	new GLUI_Checkbox(panel[4], "Normalize Intensity",

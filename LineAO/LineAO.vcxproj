@@ -165,10 +165,11 @@
     <ClCompile Include="..\SSAO\MyTrackBall.cpp" />
     <ClCompile Include="..\SSAO\MyTrackRings.cpp" />
     <ClCompile Include="..\SSAO\MyTracks.cpp" />
+    <ClCompile Include="..\SSAO\MyTractVisBase.cpp" />
     <ClCompile Include="..\SSAO\OSCB.cpp" />
     <ClCompile Include="..\SSAO\Shader.cpp" />
     <ClCompile Include="..\SSAO\svd.c" />
-    <ClCompile Include="GL_LineAO.cpp" />
+    <ClCompile Include="MyLineAO.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -196,12 +197,13 @@
     <ClInclude Include="..\SSAO\MyTrackBall.h" />
     <ClInclude Include="..\SSAO\MyTrackRings.h" />
     <ClInclude Include="..\SSAO\MyTracks.h" />
+    <ClInclude Include="..\SSAO\MyTractVisBase.h" />
     <ClInclude Include="..\SSAO\MyUtility.h" />
     <ClInclude Include="..\SSAO\MyVec.h" />
     <ClInclude Include="..\SSAO\OSCB.h" />
     <ClInclude Include="..\SSAO\Shader.h" />
     <ClInclude Include="..\SSAO\svd.h" />
-    <ClInclude Include="GL_LineAO.h" />
+    <ClInclude Include="MyLineAO.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\blur.frag" />

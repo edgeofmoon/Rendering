@@ -10,7 +10,7 @@ uniform sampler2D colorTex;
 in vec3 fposition;
 in vec3 fnormal;
 in vec4 fcolor;
-in float finBox;
+//in float finBox;
 in vec3 rawPos;
 
 layout (location = 0) out vec4 fragColour;
@@ -34,12 +34,9 @@ void main(void)
 	gPositionDepth.w = LinearizeDepth(gl_FragCoord.z);
 	gNormal = vec4(normalize(fnormal),1);
 	fragColour = vec4(1,1,1,1);
+	//fragColour = vec4(0,0,1,1);
 	
 	return;
-	// halo code
-	float cosTheta = dot(normalize(fnormal), normalize(fposition));
-	float intn = pow(2, -8*cosTheta*cosTheta);
-	fragColour.rgb *= 1-intn;
 
 	//fragColour = vec4(texture(colorTex, (fposition.xy)/6).rgb, 0.5);
 

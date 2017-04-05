@@ -6,14 +6,14 @@
 #include <GL/glew.h>
 
 #include "Shader.h"
-#include "MyTracks.h"
+#include "MyTractVisBase.h"
 
-class GL_LineAO :
-	public MyTracks{
+class MyLineAO :
+	public MyTractVisBase{
 
 public:
-	GL_LineAO();
-	~GL_LineAO();
+	MyLineAO();
+	~MyLineAO();
 
 	virtual void Resize(int w, int h);
 	virtual void LoadShader();

@@ -1,9 +1,9 @@
 #pragma once
 
-#include "MyTracks.h"
+#include "MyTractVisBase.h"
 
 class MyTrackDDH :
-	public MyTracks
+	public MyTractVisBase
 {
 public:
 	MyTrackDDH();

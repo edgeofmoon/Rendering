@@ -9,10 +9,6 @@
       <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
       <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
     </Filter>
-    <Filter Include="Resource Files">
-      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
-      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
-    </Filter>
     <Filter Include="shaders">
       <UniqueIdentifier>{13e10be2-892d-4a5c-8adb-b9043f262817}</UniqueIdentifier>
     </Filter>
@@ -84,7 +80,10 @@
     <ClCompile Include="..\SSAO\Shader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="GL_LineAO.cpp">
+    <ClCompile Include="..\SSAO\MyTractVisBase.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="MyLineAO.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -176,7 +175,10 @@
     <ClInclude Include="..\SSAO\svd.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GL_LineAO.h">
+    <ClInclude Include="..\SSAO\MyTractVisBase.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MyLineAO.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

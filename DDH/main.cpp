@@ -12,7 +12,7 @@ using namespace std;
 #include "GL/glui.h"
 
 #ifdef TRACK
-#include "MyTracks.h"
+#include "MyTractVisBase.h"
 #include "MyTrackRings.h"
 #include "MyTrackDDH.h"
 #include "MyTubeDDH.h"
@@ -188,7 +188,7 @@ void drawTracks(int x, int y, int width, int height){
 	glPushMatrix(); {
 		MyGraphicsTool::LoadTrackBall(&trackBall);
 		MyGraphicsTool::Rotate(180, MyVec3f(0, 1, 0));
-		MyBoundingBox box = track.GetBoundingBox();
+		MyBoundingBox box = track.GetTracts()->GetBoundingBox();
 		MyGraphicsTool::Translate(-box.GetCenter());
 		if (bdrawTracks){
 			track.mDepthCueing = halo.mDepthCueing;
@@ -200,7 +200,7 @@ void drawTracks(int x, int y, int width, int height){
 	glPushMatrix(); {
 		MyGraphicsTool::LoadTrackBall(&trackBall);
 		MyGraphicsTool::Rotate(180, MyVec3f(0, 1, 0));
-		MyBoundingBox box = halo.GetBoundingBox();
+		MyBoundingBox box = halo.GetTracts()->GetBoundingBox();
 		MyGraphicsTool::Translate(-box.GetCenter());
 		if (bdrawHalo){
 			halo.Show();
@@ -330,16 +330,16 @@ int trackShape = 0;
 int trackFaces = 20;
 GLUI_Panel* tubeParameterPanel;
 void changeTrackShape(int id){
-	MyTracks::TrackShape oldShape = track.GetShape();
+	MyTractVisBase::TrackShape oldShape = track.GetShape();
 	int oldNumFaces = track.GetNumberFaces();
 	switch (trackShape)
 	{
 	case 0:
-		track.SetShape(MyTracks::TrackShape::TRACK_SHAPE_TUBE);
+		track.SetShape(MyTractVisBase::TrackShape::TRACK_SHAPE_TUBE);
 		tubeParameterPanel->enable();
 		break;
 	case 1:
-		track.SetShape(MyTracks::TrackShape::TRACK_SHAPE_LINE);
+		track.SetShape(MyTractVisBase::TrackShape::TRACK_SHAPE_LINE);
 		tubeParameterPanel->disable();
 		break;
 	default:
@@ -354,7 +354,7 @@ void changeTrackShape(int id){
 }
 
 void resetTrackShape(){
-	MyTracks::TrackShape oldShape = track.GetShape();
+	MyTractVisBase::TrackShape oldShape = track.GetShape();
 	int oldNumFaces = track.GetNumberFaces();
 	track.ResetRenderingParameters();
 	if (oldShape != track.GetShape() || oldNumFaces != track.GetNumberFaces()){
@@ -363,11 +363,11 @@ void resetTrackShape(){
 	}
 	switch (track.GetShape())
 	{
-	case MyTracks::TrackShape::TRACK_SHAPE_TUBE:
+	case MyTractVisBase::TrackShape::TRACK_SHAPE_TUBE:
 		tubeParameterPanel->enable();
 		trackShape = 0;
 		break;
-	case MyTracks::TrackShape::TRACK_SHAPE_LINE:
+	case MyTractVisBase::TrackShape::TRACK_SHAPE_LINE:
 		tubeParameterPanel->disable();
 		trackShape = 1;
 		break;
@@ -712,25 +712,27 @@ int main(int argc, char* argv[])
 #ifdef TRACK
 	trackBall.SetRotationMatrix(MyMatrixf::RotateMatrix(90, 1, 0, 0));
 	trackBall.ScaleMultiply(1.3);
-	track.Read("data\\normal_s3.data");
-	//track.Read("data\\normal_s5.tensorinfo");
-	//track.Read("data\\cFile.tensorinfo");
-	//track.Read("C:\\Users\\GuohaoZhang\\Desktop\\tmpdata\\dti.trk");
-	//track.Read("C:\\Users\\GuohaoZhang\\Desktop\\tmpdata\\ACR.trk");
-	//track.Read("dti_20_0995.data");
-	//track.SetShape(MyTracks::TRACK_SHAPE_LINE);
-	track.SetShape(MyTracks::TRACK_SHAPE_TUBE);
+	MyTracks tractData;
+	//tractData.Read("data\\normal_s3.data");
+	//tractData.Read("data\\normal_s5.tensorinfo");
+	//tractData.Read("data\\cFile.tensorinfo");
+	//tractData.Read("C:\\Users\\GuohaoZhang\\Desktop\\tmpdata\\dti.trk");
+	tractData.Read("C:\\Users\\GuohaoZhang\\Desktop\\tmpdata\\ACR.trk");
+	//tractData.Read("dti_20_0995.data");
+	track.SetTracts(&tractData);
+	//track.SetShape(MyTractVisBase::TRACK_SHAPE_LINE);
+	track.SetShape(MyTractVisBase::TRACK_SHAPE_TUBE);
 	track.ComputeGeometry();
 	track.LoadShader();
 	track.LoadGeometry();
 
 	//halo.Read("data\\normal_s3.data");
-	halo.AddTracks(track);
+	halo.SetTracts(&tractData);
 	halo.ComputeGeometry();
 	halo.LoadShader();
 	halo.LoadGeometry();
 
-	MyVec3f center = track.GetBoundingBox().GetCenter();
+	MyVec3f center = track.GetTracts()->GetBoundingBox().GetCenter();
 	cout << "Center: " << center[0] << ", " << center[1] << ", " << center[2] << endl;
 	boxOffset[0] = MyVec3f(5, 0, 4);
 	boxOffset[0] += center;
