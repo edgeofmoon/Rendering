@@ -67,7 +67,7 @@ int MyTracks::Read(const std::string& filename){
 			fread(&tractSize, sizeof(int), 1, fp);
 			track.mPoints.resize(tractSize);
 			track.mPointScalars.resize(tractSize);
-			track.mTrackProperties.resize(tractSize);
+			track.mTrackProperties.resize(mHeader.n_properties);
 			for (int j = 0; j< tractSize; j++){
 				track.mPointScalars[j].resize(mHeader.n_scalars);
 				fread(&track.mPoints[j], sizeof(MyVec3f), 1, fp);
@@ -153,6 +153,53 @@ int MyTracks::Read(const std::string& filename){
 	return 1;
 }
 
+int MyTracks::AppendTrackColor(const std::string& filename){
+	string fileExt = filename.substr(filename.find_last_of(".") + 1);
+	if (fileExt != "data") {
+		cout << "Unknown color format.\n";
+		return 0;
+	}
+	ifstream fs(filename);
+	int tractNum = 0;
+	fs >> tractNum;
+	if (tractNum != mHeader.n_count){
+		cout << "New file tract count " << tractNum 
+			<< " mismatches current count " << mHeader.n_count << endl;
+		return 0;
+	}
+	float skipCoord;
+	float tr, tg, tb;
+	string skipLineStr;
+	for (int i = 0; i < mHeader.n_count; i++){
+		if ((int)((i + 1) * 100 / (float)mHeader.n_count)
+			- (int)(i * 100 / (float)mHeader.n_count) >= 1){
+			cout << "Loading: " << i*100.f / mHeader.n_count << "%.\r";
+		}
+		MySingleTrackData& track = mTracks[i];
+		int tractSize = 0;
+		fs >> tractSize;
+		int pStart = mTracks[i].mTrackProperties.size();
+		mTracks[i].mTrackProperties.reserve(pStart + 3);
+		if (tractSize > 0)
+			fs >> skipCoord >> skipCoord >> skipCoord >> tr >> tg >> tb;
+		else{
+			cout << "Track "<< i << " has no vertex, append black color!" << endl;
+			tr = tg = tb = 0;
+		}
+		mTracks[i].mTrackProperties.push_back(tr);
+		mTracks[i].mTrackProperties.push_back(tg);
+		mTracks[i].mTrackProperties.push_back(tb);
+		// skip the rest of the current line: j = 0
+		// and skip the rest vertices: j = 1 ~ traceSize
+		for (int j = 0; j< tractSize; j++){
+			getline(fs, skipLineStr);
+		}
+	}
+	mHeader.n_properties += 3;
+	cout << "Tracks color appending completed.\n";
+	fs.close();
+	return 1;
+}
 
 int MyTracks::Save(const std::string& filename) const{
 	string ext = filename.substr(filename.find_last_of(".") + 1);
@@ -417,6 +464,14 @@ MyVec3f MyTracks::GetCoord(int trackIdx, int pointIdx) const{
 	return mTracks[trackIdx].mPoints[pointIdx];
 }
 
+MyColor4f MyTracks::GetTrackColor(int trackIdx) const{
+	int n = mHeader.n_properties;
+	return MyColor4f(
+		mTracks[trackIdx].mTrackProperties[n - 3],
+		mTracks[trackIdx].mTrackProperties[n - 2],
+		mTracks[trackIdx].mTrackProperties[n - 1], 1);
+}
+
 float MyTracks::GetValue(int trackIdx, int pointIdx) const{
 	if (mTracks[trackIdx].mPointScalars[pointIdx].size() == 3){
 		return 1-mTracks[trackIdx].mPointScalars[pointIdx][2];
@@ -425,6 +480,14 @@ float MyTracks::GetValue(int trackIdx, int pointIdx) const{
 		return mTracks[trackIdx].mPointScalars[pointIdx][0];
 	}
 	else return -1;
+}
+
+MyTensor3f MyTracks::GetTensor(int trackIdx, int pointIdx) const{
+	MyTensor3f t;
+	t.SetEigenValues(&(mTracks[trackIdx].mPointScalars[pointIdx][1]));
+	t.SetEigenVectors(&(mTracks[trackIdx].mPointScalars[pointIdx][4]));
+	assert(t.CheckEigenValueOrder());
+	return t;
 }
 
 float MyTracks::ComputeTrackLength(int trackIdx) const{

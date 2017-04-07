@@ -15,6 +15,7 @@
 #include "MyColor4.h"
 #include "MyVec.h"
 #include "MyBoundingBox.h"
+#include "MyTensor.h"
 
 class MySingleTrackData
 {
@@ -71,6 +72,7 @@ public:
 	inline const MyTrackHeader_Trk& GetHeader() const { return mHeader; };
 
 	int Read(const std::string& filename);
+	int AppendTrackColor(const std::string& filename);
 	int Save(const std::string& filename) const;
 	int SavePartial(const std::string& filename, const std::vector<int>& saveTrackIdx) const;
 
@@ -93,7 +95,9 @@ public:
 	Point GetPoint(int trackIdx, int pointIdx) const;
 #endif
 	MyVec3f GetCoord(int trackIdx, int pointIdx) const;
+	MyColor4f GetTrackColor(int trackIdx) const;
 	float GetValue(int trackIdx, int pointIdx) const;
+	MyTensor3f GetTensor(int trackIdx, int pointIdx) const;
 	float ComputeTrackLength(int trackIdx) const;
 
 protected:

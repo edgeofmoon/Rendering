@@ -34,7 +34,7 @@ public:
 		//	_d[i] = 0;
 		//}
 	};
-	MyVec(T *indata){
+	MyVec(const T *indata){
 		for(int i = 0;i<n;i++){
 			_d[i] = indata[i];
 		}

@@ -39,6 +39,7 @@ int gl_error;
 
 #ifdef TRACK
 MyTractVisBase track;
+MyTractVisBase trackLine;
 #endif
 
 #ifdef MESH
@@ -188,8 +189,7 @@ void drawTracks(int x, int y, int width, int height){
 		MyGraphicsTool::Translate(-box.GetCenter());
 		if (bdrawTracks){
 			track.Show();
-			glColor3f(0, 0, 0);
-			glutSolidSphere(10, 10, 10);
+			trackLine.Show();
 		}
 		else{
 			//track.ShowCapsOnly();
@@ -314,7 +314,7 @@ void switchRenderMode(int mode){
 }
 
 #ifdef TRACK
-int trackShape = 0;
+int trackShape = 2;
 int trackFaces = 20;
 GLUI_Panel* tubeParameterPanel;
 void changeTrackShape(int id){
@@ -323,11 +323,15 @@ void changeTrackShape(int id){
 	switch (trackShape)
 	{
 	case 0:
+		track.SetShape(MyTractVisBase::TrackShape::TRACK_SHAPE_LINE);
+		tubeParameterPanel->disable();
+		break;
+	case 1:
 		track.SetShape(MyTractVisBase::TrackShape::TRACK_SHAPE_TUBE);
 		tubeParameterPanel->enable();
 		break;
-	case 1:
-		track.SetShape(MyTractVisBase::TrackShape::TRACK_SHAPE_LINE);
+	case 2:
+		track.SetShape(MyTractVisBase::TrackShape::TRACK_SHAPE_SUPERQUADRIC);
 		tubeParameterPanel->disable();
 		break;
 	default:
@@ -351,13 +355,17 @@ void resetTrackShape(){
 	}
 	switch (track.GetShape())
 	{
-	case MyTractVisBase::TrackShape::TRACK_SHAPE_TUBE:
-		tubeParameterPanel->enable();
-		trackShape = 0;
-		break;
 	case MyTractVisBase::TrackShape::TRACK_SHAPE_LINE:
 		tubeParameterPanel->disable();
+		trackShape = 0;
+		break;
+	case MyTractVisBase::TrackShape::TRACK_SHAPE_TUBE:
+		tubeParameterPanel->enable();
 		trackShape = 1;
+		break;
+	case MyTractVisBase::TrackShape::TRACK_SHAPE_SUPERQUADRIC:
+		tubeParameterPanel->disable();
+		trackShape = 2;
 		break;
 	default:
 		break;
@@ -458,6 +466,11 @@ void resetRenderingParameters(int mode){
 		lightComponentRatioControl = 1;
 		break;
 	}
+	glui->sync_live();
+	glutPostRedisplay();
+}
+
+void changeCullface(int mode){
 	if (cullface == 1){
 		glEnable(GL_CULL_FACE);
 		glCullFace(GL_BACK);
@@ -465,10 +478,8 @@ void resetRenderingParameters(int mode){
 	else{
 		glDisable(GL_CULL_FACE);
 	}
-	glui->sync_live();
 	glutPostRedisplay();
 }
-
 
 /**************************************** GLUT Callback ********************/
 void myGlutDisplay(){
@@ -671,7 +682,7 @@ int main(int argc, char* argv[])
 	/*         Here's the GLSL code         */
 	/****************************************/
 	geomFb.AddExtraDrawTexture(GL_RGBA32F, GL_RGBA, GL_FLOAT, GL_NEAREST, GL_CLAMP_TO_EDGE);
-	geomFb.AddExtraDrawTexture(GL_RGBA, GL_RGBA, GL_FLOAT, GL_NEAREST, GL_CLAMP_TO_EDGE);
+	geomFb.AddExtraDrawTexture(GL_RGBA32F, GL_RGBA, GL_FLOAT, GL_NEAREST, GL_CLAMP_TO_EDGE);
 	glClampColor(GL_CLAMP_READ_COLOR, GL_FALSE);
 	glClampColor(GL_CLAMP_VERTEX_COLOR, GL_FALSE);
 	glClampColor(GL_CLAMP_FRAGMENT_COLOR, GL_FALSE);
@@ -688,18 +699,30 @@ int main(int argc, char* argv[])
 	trackBall.SetRotationMatrix(MyMatrixf::RotateMatrix(90, 1, 0, 0));
 	trackBall.ScaleMultiply(1.3);
 	MyTracks tractData;
-	tractData.Read("data\\normal_s3.data");
+	//tractData.Read("data\\normal_s3.data");
+	//tractData.Read("C:\\Users\\GuohaoZhang\\Dropbox\\data\\normal_s3.tensorinfo");
+	//tractData.AppendTrackColor("C:\\Users\\GuohaoZhang\\Dropbox\\data\\normal_s3_boy.data");
+	//tractData.Save("C:\\Users\\GuohaoZhang\\Dropbox\\data\\normal_s3_tensorboy.trk");
+	//return 1;
+	tractData.Read("C:\\Users\\GuohaoZhang\\Dropbox\\data\\normal_s3_tensorboy.trk");
 	//tractData.Read("data\\normal_s5.tensorinfo");
+	//tractData.Read("data\\normal_s5_2pt.tensorinfo");
 	//tractData.Read("data\\cFile.tensorinfo");
 	//tractData.Read("C:\\Users\\GuohaoZhang\\Desktop\\tmpdata\\dti.trk");
 	//tractData.Read("C:\\Users\\GuohaoZhang\\Desktop\\tmpdata\\ACR.trk");
 	//tractData.Read("dti_20_0995.data");
 	track.SetTracts(&tractData);
 	//track.SetShape(MyTractVisBase::TRACK_SHAPE_LINE);
-	track.SetShape(MyTractVisBase::TRACK_SHAPE_TUBE);
+	track.SetShape(MyTractVisBase::TrackShape(trackShape+1));
 	track.ComputeGeometry();
 	track.LoadShader();
 	track.LoadGeometry();
+	
+	trackLine.SetTracts(&tractData);
+	trackLine.SetShape(MyTractVisBase::TRACK_SHAPE_LINE);
+	trackLine.ComputeGeometry();
+	trackLine.LoadShader();
+	trackLine.LoadGeometry();
 
 	/*
 	ring.CopyTracksFrom(track);
@@ -779,7 +802,7 @@ int main(int argc, char* argv[])
 	panel[1] = new GLUI_Panel(glui, "Geometry Pass");
 	new GLUI_Button(panel[1], "Reset", 0, resetRenderingParameters);
 	new GLUI_Checkbox(panel[1], "Cull Backface",
-		&cullface, -1, resetRenderingParameters);
+		&cullface, -1, changeCullface);
 	new GLUI_Checkbox(panel[1], "Draw Tracts",
 		&bdrawTracks, -1, reRender);
 	new GLUI_Checkbox(panel[1], "Draw Axes",
@@ -795,8 +818,9 @@ int main(int argc, char* argv[])
 #ifdef TRACK
 	GLUI_RadioGroup* shapeRadioGroup = new GLUI_RadioGroup(panel[1],
 		&trackShape, 0, changeTrackShape);
-	new GLUI_RadioButton(shapeRadioGroup, "Tube");
 	new GLUI_RadioButton(shapeRadioGroup, "Line");
+	new GLUI_RadioButton(shapeRadioGroup, "Tube");
+	new GLUI_RadioButton(shapeRadioGroup, "Superquadric");
 	tubeParameterPanel = new GLUI_Panel(panel[1], "Tube Parameters");
 	new GLUI_StaticText(tubeParameterPanel, "Tube Radius");
 	GLUI_Scrollbar* tubeRadiusSlider = new GLUI_Scrollbar

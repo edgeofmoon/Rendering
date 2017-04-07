@@ -162,6 +162,8 @@
     <ClInclude Include="MyQuarternion.h" />
     <ClInclude Include="MySsaoPass.h" />
     <ClInclude Include="MyString.h" />
+    <ClInclude Include="MySuperquadric.h" />
+    <ClInclude Include="MyTensor.h" />
     <ClInclude Include="MyTrackBall.h" />
     <ClInclude Include="MyTrackRings.h" />
     <ClInclude Include="MyTracks.h" />
@@ -210,6 +212,7 @@
     <ClCompile Include="MyQuarternion.cpp" />
     <ClCompile Include="MySsaoPass.cpp" />
     <ClCompile Include="MyString.cpp" />
+    <ClCompile Include="MySuperquadric.cpp" />
     <ClCompile Include="MyTrackBall.cpp" />
     <ClCompile Include="MyTrackRings.cpp" />
     <ClCompile Include="MyTracks.cpp" />

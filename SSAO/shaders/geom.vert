@@ -5,25 +5,17 @@ uniform mat4x4 projMat;
 uniform mat4x4 normalMat;
 uniform float radius;
 
-uniform vec3 offset0;
-uniform vec3 offset1;
-
 in vec3 position;
 in vec3 normal;
 in vec4 color;
+in vec2 texCoord;
 
 out vec3 fposition;
 out vec3 fnormal;
 out vec4 fcolor;
 //out float finBox;
 out vec3 rawPos;
-
-float inBox(vec3 pos, vec3 low, vec3 high){
-	if(pos.x<low.x || pos.x>high.x) return 0;
-	if(pos.y<low.y || pos.y>high.y) return 0;
-	if(pos.z<low.z || pos.z>high.z) return 0;
-	return 1;
-}
+out vec2 ftexCoord;
 
 void main (void)
 {
@@ -38,6 +30,7 @@ void main (void)
 	fnormal = (normalMat*vec4(normal,0)).xyz;
 	rawPos = position;
 	fcolor = color;
+	ftexCoord = texCoord;
 	vec4 ndcPosition = mvMat*vec4(position+normal*radius,1);
 	fposition = ndcPosition.xyz/ndcPosition.w;
 	gl_Position = projMat*ndcPosition;

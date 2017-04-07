@@ -5,6 +5,7 @@
 #include "MyGraphicsTool.h"
 #include "MyMathHelper.h"
 #include "MyBlackBodyColor.h"
+#include "MySuperquadric.h"
 
 #include <algorithm>
 #include <fstream>
@@ -26,6 +27,13 @@ MyTractVisBase::MyTractVisBase()
 
 MyTractVisBase::~MyTractVisBase()
 {
+	if (glIsVertexArray(mVertexArray)) glDeleteVertexArrays(1, &mVertexArray);
+	if (glIsBuffer(mVertexBuffer)) glDeleteBuffers(1, &mVertexBuffer);
+	if (glIsBuffer(mNormalBuffer))glDeleteBuffers(1, &mNormalBuffer);
+	if (glIsBuffer(mColorBuffer))glDeleteBuffers(1, &mColorBuffer);
+	if (glIsBuffer(mTexCoordBuffer)) glDeleteBuffers(1, &mTexCoordBuffer);
+	//if (glIsBuffer(mRadiusBuffer))glDeleteBuffers(1, &mRadiusBuffer);
+	if (glIsBuffer(mIndexBuffer))glDeleteBuffers(1, &mIndexBuffer);
 }
 
 
@@ -38,6 +46,7 @@ void MyTractVisBase::ResetRenderingParameters(){
 	mTrackRadius = 0.4;
 	mFaces = 20;
 	mShape = TRACK_SHAPE_TUBE;
+	mSuperquadricSkip = 0;
 }
 
 void MyTractVisBase::ComputeTubeGeometry(){
@@ -96,15 +105,9 @@ void MyTractVisBase::ComputeTubeGeometry(){
 		for (int i = 0; i<npoints; i++){
 			MyVec3f p = mTracts->GetCoord(it, i);
 			MyVec3f d;
-			if (i == npoints - 1){
-				d = p - mTracts->GetCoord(it, i - 1);
-			}
-			else if (i == 0){
-				d = mTracts->GetCoord(it, i + 1) - p;
-			}
-			else{
-				d = mTracts->GetCoord(it, i + 1) - mTracts->GetCoord(it, i - 1);
-			}
+			if (i == npoints - 1) d = p - mTracts->GetCoord(it, i - 1);
+			else if (i == 0) d = mTracts->GetCoord(it, i + 1) - p;
+			else d = mTracts->GetCoord(it, i + 1) - mTracts->GetCoord(it, i - 1);
 
 			MyVec3f perpend1 = (pole^d).normalized();
 			MyVec3f perpend2 = (perpend1^d).normalized();
@@ -274,15 +277,9 @@ void MyTractVisBase::ComputeLineGeometry(){
 			float size = 0.4;
 			//float size = 0;
 			MyVec3f d;
-			if (i == npoints - 1){
-				d = p - mTracts->GetCoord(it, i - 1);
-			}
-			else if (i == 0){
-				d = mTracts->GetCoord(it, i + 1) - p;
-			}
-			else{
-				d = mTracts->GetCoord(it, i + 1) - mTracts->GetCoord(it, i - 1);
-			}
+			if (i == npoints - 1) d = p - mTracts->GetCoord(it, i - 1);
+			else if (i == 0) d = mTracts->GetCoord(it, i + 1) - p;
+			else d = mTracts->GetCoord(it, i + 1) - mTracts->GetCoord(it, i - 1);
 
 			MyVec3f perpend1 = (pole^d).normalized();
 			MyVec3f perpend2 = (perpend1^d).normalized();
@@ -318,29 +315,76 @@ void MyTractVisBase::ComputeLineGeometry(){
 	cout << "Computing completed.\n";
 }
 
-void MyTractVisBase::SetNumberFaces(int f){
-	mFaces = f;
+void MyTractVisBase::ComputeSuperquadricGeometry(){
 
+	mIdxOffset.clear();
+	int totalPoints = 0;
+	for (int it = 0; it < mTracts->GetNumTracks(); it++){
+		totalPoints += mTracts->At(it).Size() / (1+mSuperquadricSkip);
+	}
+
+	cout << "Allocating Storage for Geometry...\r";
+	int vCount = MySuperquadric::GetVertexCount();
+	int tCount = MySuperquadric::GetTriangleCount();
+	int totalVertices = totalPoints*vCount;
+	mVertices.clear();
+	mNormals.clear();
+	mVertices.resize(totalVertices);
+	mNormals.resize(totalVertices);
+	mTexCoords.resize(totalVertices);
+	mColors.resize(totalVertices);
+	mIndices.resize(totalPoints*tCount);
+
+	mIdxOffset.clear();
+	mIdxOffset.reserve(mTracts->GetNumTracks());
+	MySuperquadric sqDrawer;
+	sqDrawer.SetScalue(0.4);
+
+	int vOffset = 0;
+	int tOffset = 0;
+	for (int it = 0; it < mTracts->GetNumTracks(); it++){
+		if ((int)((it + 1) * 100 / (float)mTracts->GetNumTracks())
+			- (int)(it * 100 / (float)mTracts->GetNumTracks()) >= 1){
+			cout << "Computing: " << it*100.f / mTracts->GetNumTracks() << "%.          \r";
+		}
+		mIdxOffset << tOffset * 3;
+		for (int i = 0; i<mTracts->At(it).Size(); i += (mSuperquadricSkip + 1)){
+			MyTensor3f t = mTracts->GetTensor(it, i);
+			t.NormalizeEigenVectors();
+			sqDrawer.SetTensor(&t);
+			sqDrawer.SetCenter(mTracts->At(it)[i]);
+			sqDrawer.BuildOn(mVertices, mNormals, mTexCoords, mIndices, vOffset, tOffset);
+			// add color
+			MyColor4f color = mTracts->GetTrackColor(it);
+			for (int ic = 0; ic < vCount; ic++) mColors[vOffset + ic] = color;
+			vOffset += vCount;
+			tOffset += tCount;
+		}
+	}
+	mIdxOffset << tOffset * 3;
+	cout << "Computing completed.\n";
 }
 
 void MyTractVisBase::ClearGeometry(){
 	mVertices.clear();
 	mNormals.clear();
-	//mTexCoords.clear();
+	mTexCoords.clear();
 	//mRadius.clear();
 	mColors.clear();
 	mIndices.clear();
 	mLineIndices.clear();
+
 }
 
 void MyTractVisBase::ComputeGeometry(){
 	ClearGeometry();
-	if (mShape == TRACK_SHAPE_TUBE){
-		this->ComputeTubeGeometry();
-	}
-	else{
-		this->ComputeLineGeometry();
-	}
+	mBoundingBox = mTracts->ComputeBoundingBox(mFiberToDraw);
+	//mShape = TRACK_SHAPE_SUPERQUADRIC;
+
+	if (mShape == TRACK_SHAPE_TUBE) this->ComputeTubeGeometry();
+	else if (mShape == TRACK_SHAPE_LINE) this->ComputeLineGeometry();
+	else if (mShape == TRACK_SHAPE_SUPERQUADRIC) this->ComputeSuperquadricGeometry();
+	else cerr << "Unresolved track shape: " << mShape << endl;
 }
 
 void MyTractVisBase::LoadGeometry(){
@@ -377,16 +421,18 @@ void MyTractVisBase::LoadGeometry(){
 	glBufferData(GL_ARRAY_BUFFER, mColors.size() * sizeof(MyColor4f), &mColors[0].r, GL_STATIC_DRAW);
 	glEnableVertexAttribArray(mColorAttribute);
 	glVertexAttribPointer(mColorAttribute, 4, GL_FLOAT, GL_FALSE, 0, 0);
-	/*
 	// texCoord
-	if (glIsBuffer(mTexCoordBuffer)){
-	glDeleteBuffers(1, &mTexCoordBuffer);
+	if (mTexCoords.size() > 0){
+		if (glIsBuffer(mTexCoordBuffer)){
+			glDeleteBuffers(1, &mTexCoordBuffer);
+		}
+		glGenBuffers(1, &mTexCoordBuffer);
+		glBindBuffer(GL_ARRAY_BUFFER, mTexCoordBuffer);
+		glBufferData(GL_ARRAY_BUFFER, mTexCoords.size() * sizeof(MyVec2f), &mTexCoords[0][0], GL_STATIC_DRAW);
+		glEnableVertexAttribArray(mTexCoordAttribute);
+		glVertexAttribPointer(mTexCoordAttribute, 2, GL_FLOAT, GL_FALSE, 0, 0);
 	}
-	glGenBuffers(1, &mTexCoordBuffer);
-	glBindBuffer(GL_ARRAY_BUFFER, mTexCoordBuffer);
-	glBufferData(GL_ARRAY_BUFFER, mTexCoords.size() * sizeof(MyVec2f), &mTexCoords[0][0], GL_STATIC_DRAW);
-	glEnableVertexAttribArray(mTexCoordAttribute);
-	glVertexAttribPointer(mTexCoordAttribute, 2, GL_FLOAT, GL_FALSE, 0, 0);
+	/*
 	// radius
 	if (glIsBuffer(mRadiusBuffer)){
 	glDeleteBuffers(1, &mRadiusBuffer);
@@ -406,13 +452,14 @@ void MyTractVisBase::LoadGeometry(){
 	}
 	glGenBuffers(1, &mIndexBuffer);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mIndexBuffer);
-	if (mShape == TRACK_SHAPE_TUBE && mIndices.size()>0){
+	if ((mShape == TRACK_SHAPE_TUBE || mShape == TRACK_SHAPE_SUPERQUADRIC) && mIndices.size()>0){
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, mIndices.size() * sizeof(MyVec3i), &mIndices[0][0], GL_STATIC_DRAW);
 	}
 	else if (mShape == TRACK_SHAPE_LINE && mLineIndices.size()>0){
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, mLineIndices.size() * sizeof(int), &mLineIndices[0], GL_STATIC_DRAW);
 	}
 	else{
+		cerr << "Unresoved shape, no geometry index loaded!" << endl;
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, 0, 0, GL_DYNAMIC_DRAW);
 	}
 	// unbind
@@ -444,6 +491,10 @@ void MyTractVisBase::LoadShader(){
 	mColorAttribute = glGetAttribLocation(mShaderProgram, "color");
 	if (mColorAttribute < 0) {
 		cerr << "Shader did not contain the 'color' attribute." << endl;
+	}
+	mTexCoordAttribute = glGetAttribLocation(mShaderProgram, "texCoord");
+	if (mTexCoordAttribute < 0) {
+		cerr << "Shader did not contain the 'texCoord' attribute." << endl;
 	}
 }
 
@@ -507,7 +558,18 @@ void MyTractVisBase::Show(){
 			//glDrawElements(GL_LINE_STRIP, numVertex, GL_UNSIGNED_INT, (const void *)(offset*sizeof(int)));
 		}
 	}
-	else{
+	else if (mShape == TRACK_SHAPE_SUPERQUADRIC){
+		glUniform1f(radiusLocation, 0);
+		for (int i = 0; i < mFiberToDraw.size(); i++){
+			int fiberIdx = mFiberToDraw[i];
+			int offset = mIdxOffset[fiberIdx];
+			int numIndices = (mIdxOffset[fiberIdx + 1] - mIdxOffset[fiberIdx]);
+			glDrawElements(GL_TRIANGLES, numIndices, GL_UNSIGNED_INT, (const void *)(offset*sizeof(int)));
+		}
+		//glDrawElements(GL_LINE_STRIP, mIdxOffset.back() * 3, GL_UNSIGNED_INT, 0);
+	}
+	else if (mShape == TRACK_SHAPE_LINE){
+		glUniform1f(radiusLocation, 0);
 		for (int i = 0; i < mFiberToDraw.size(); i++){
 			int fiberIdx = mFiberToDraw[i];
 			int offset = mIdxOffset[fiberIdx];
@@ -515,6 +577,7 @@ void MyTractVisBase::Show(){
 			glDrawElements(GL_LINE_STRIP, numVertex, GL_UNSIGNED_INT, (const void *)(offset*sizeof(int)));
 		}
 	}
+	else cerr << "Unresolved shape, no elements drawn!" << endl;
 
 	glUseProgram(0);
 	glBindVertexArray(0);

@@ -12,6 +12,7 @@ in vec3 fnormal;
 in vec4 fcolor;
 //in float finBox;
 in vec3 rawPos;
+in vec2 ftexCoord;
 
 layout (location = 0) out vec4 fragColour;
 layout (location = 1) out vec4 gPositionDepth;
@@ -32,9 +33,9 @@ void main(void)
 
 	gPositionDepth.xyz = fposition;
 	gPositionDepth.w = LinearizeDepth(gl_FragCoord.z);
-	gNormal = vec4(normalize(fnormal),1);
-	fragColour = vec4(1,1,1,1);
-	//fragColour = vec4(0,0,1,1);
+	gNormal = vec4(normalize(fnormal),0);
+	fragColour = vec4(ftexCoord, 0, 1);
+	//fragColour = vec4(fcolor);
 	
 	return;
 

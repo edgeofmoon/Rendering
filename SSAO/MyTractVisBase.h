@@ -16,22 +16,39 @@ public:
 	void SetTracts(const MyTracks* tracts);
 	const MyTracks* GetTracts() const { return mTracts; };
 
+	virtual void ComputeGeometry();
+	virtual void LoadGeometry();
+	virtual void LoadShader();
+	virtual void Show();
+
 	// volitile rendering parameters
 	float mTrackRadius;
 	void ResetRenderingParameters();
 
+
+	int GetNumberFaces() const { return mFaces; };
+	void SetNumberFaces(int f) { mFaces = f; };
+
+	TrackShape GetShape() const { return mShape; };
+	void SetShape(TrackShape shape){ mShape = shape; };
+
+	const MyArrayi& GetTractsShown() { return mFiberToDraw; };
+	void SetTractsShown(const MyArrayi& arr){ mFiberToDraw = arr; };
+
+	void ClearGeometry();
+	void ShowCapsOnly();
+
 protected:
 	// preset data
 	const MyTracks* mTracts;
-
-
 	TrackShape mShape;
-	// for geometry
 	int mFaces;
+	int mSuperquadricSkip;
+
+	// for geometry
 	MyArray3f mVertices;
 	MyArray3f mNormals;
-	//MyArray2f mTexCoords;
-	//MyArrayf mRadius;
+	MyArray2f mTexCoords;
 	MyArray<MyColor4f> mColors;
 	MyArray3i mIndices;
 	MyArrayi mLineIndices;
@@ -43,8 +60,7 @@ protected:
 	unsigned int mVertexArray;
 	unsigned int mVertexBuffer;
 	unsigned int mNormalBuffer;
-	//unsigned int mTexCoordBuffer;
-	//unsigned int mRadiusBuffer;
+	unsigned int mTexCoordBuffer;
 	unsigned int mColorBuffer;
 	unsigned int mIndexBuffer;
 	bool mbScreenSpace;
@@ -52,27 +68,14 @@ protected:
 	int mTexUniform;
 	int mNormalAttribute;
 	int mPositionAttribute;
-	//int mTexCoordAttribute;
-	//int mRadiusAttribute;
+	int mTexCoordAttribute;
 	int mColorAttribute;
 
 	void ComputeTubeGeometry();
-	virtual void ComputeLineGeometry();
-
-public:
-	int GetNumberFaces() const { return mFaces; };
-	void SetNumberFaces(int f);
-	void ClearGeometry();
-	virtual void ComputeGeometry();
-	virtual void LoadGeometry();
-	virtual void LoadShader();
-	virtual void Show();
-	void ShowCapsOnly();
-	void SetShape(TrackShape shape){ mShape = shape; };
-	TrackShape GetShape() const { return mShape; };
+	void ComputeLineGeometry();
+	void ComputeSuperquadricGeometry();
 
 	// for filtering
-protected:
 	MyArrayi mFiberToDraw;
 	MyArrayb mFiberDraw;
 
