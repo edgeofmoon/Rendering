@@ -78,20 +78,20 @@ public:
 	}
 
 	T getMax() const{
-		if (r>g && r>b){
+		if (r>=g && r>=b){
 			return r;
 		}
-		if (g>r &&g>b){
+		if (g>=r &&g>=b){
 			return g;
 		}
 		return b;
 	}
 
 	T getMin() const{
-		if (r<g && r<b){
+		if (r<=g && r<=b){
 			return r;
 		}
-		if (g<r &&g<b){
+		if (g<=r &&g<=b){
 			return g;
 		}
 		return b;
@@ -179,9 +179,14 @@ public:
 		g+=m;
 		b+=m;
 	}
-	static const MyColor4<T> black(){return MyColor4<T>(0,0,0,1);};
-	static const MyColor4<T> white(){return MyColor4<T>(1,1,1,1);};
-	static const MyColor4<T> yellow(){return MyColor4<T>(1,1,0,1);};
+	static const MyColor4<T> black(){ return MyColor4<T>(0, 0, 0, 1); };
+	static const MyColor4<T> white(){ return MyColor4<T>(1, 1, 1, 1); };
+	static const MyColor4<T> red(){ return MyColor4<T>(1, 0, 0, 1); };
+	static const MyColor4<T> yellow(){ return MyColor4<T>(1, 1, 0, 1); };
+	static const MyColor4<T> green(){ return MyColor4<T>(0, 1, 0, 1); };
+	static const MyColor4<T> cyan(){ return MyColor4<T>(0, 1, 1, 1); };
+	static const MyColor4<T> blue(){ return MyColor4<T>(0, 0, 1, 1); };
+	static const MyColor4<T> magenta(){ return MyColor4<T>(1, 0, 1, 1); };
 
 public:
 	T r;

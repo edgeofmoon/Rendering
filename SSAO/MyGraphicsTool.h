@@ -96,6 +96,8 @@ public:
 	static void PopMatrix();
 	static void PushProjectionMatrix();
 	static void PopProjectionMatrix();
+	static void PushAllAttributes();
+	static void PopAttributes();
 
 	static void RasterPos(const MyVec3f& pos);
 	

@@ -337,7 +337,7 @@ void MyMesh::CompileShader(){
 	if (mColors.size() < mVertices.size()){
 		mColors.resize(mVertices.size(), MyColor4f(1, 1, 1, 1));
 	}
-	mShaderProgram = InitShader("Shaders\\geom.vert", "Shaders\\geom.frag", "fragColour", "position");
+	mShaderProgram = InitShader("..\\SSAO\\Shaders\\geom.vert", "..\\SSAO\\Shaders\\geom.frag", "fragColour", "position");
 	//mShaderProgram = InitShader("Shaders\\tracks.vert", "Shaders\\tracks.frag", "fragColour");
 
 	mNormalAttribute = glGetAttribLocation(mShaderProgram, "normal");

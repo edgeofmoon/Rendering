@@ -10,7 +10,7 @@
       <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
     </Filter>
     <Filter Include="Shaders">
-      <UniqueIdentifier>{23108efc-9dbc-49ec-8c80-4e6a21e5cf05}</UniqueIdentifier>
+      <UniqueIdentifier>{edac2c9a-6151-4ff1-bd67-3976e826d6cf}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -113,6 +113,18 @@
     <ClInclude Include="MyTensor.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="MyTexture.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MySphere.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MySphereGeometry.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MyBoundingObject.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -199,14 +211,17 @@
     <ClCompile Include="MySuperquadric.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="MyTexture.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="MySphere.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="MySphereGeometry.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="shaders\ssao.frag">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="shaders\ssao.vert">
-      <Filter>Shaders</Filter>
-    </None>
     <None Include="shaders\blur.frag">
       <Filter>Shaders</Filter>
     </None>
@@ -219,16 +234,22 @@
     <None Include="shaders\lighting.vert">
       <Filter>Shaders</Filter>
     </None>
-    <None Include="Shaders\geom.vert">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="Shaders\geom.frag">
+    <None Include="Shaders\ring.frag">
       <Filter>Shaders</Filter>
     </None>
     <None Include="Shaders\ring.vert">
       <Filter>Shaders</Filter>
     </None>
-    <None Include="Shaders\ring.frag">
+    <None Include="shaders\ssao.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\ssao.vert">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\geom.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\geom.vert">
       <Filter>Shaders</Filter>
     </None>
   </ItemGroup>

@@ -24,12 +24,35 @@ void MyPrimitiveDrawer::DrawQuadAt(const MyVec3f& pos0,
 	MyGraphicsTool::EndPrimitive();
 }
 
-void MyPrimitiveDrawer::DrawQuadAtsAt(const std::vector<MyVec3f>& vecs){
+void MyPrimitiveDrawer::DrawQuadsAt(const std::vector<MyVec3f>& vecs){
 	MyGraphicsTool::BeginQuads();
 	for(int i = 0;i<vecs.size();i++){
 		MyGraphicsTool::Vertex(vecs[i]);
 	}
 	MyGraphicsTool::EndPrimitive();
+}
+
+void MyPrimitiveDrawer::DrawTextureOnViewport(unsigned int texture){
+	MyGraphicsTool::PushAllAttributes();
+	MyGraphicsTool::PushProjectionMatrix();
+	MyGraphicsTool::PushMatrix();
+	MyGraphicsTool::LoadProjectionMatrix(&MyMatrixf::OrthographicMatrix(0, 1, 0, 1, 0, 1));
+	MyGraphicsTool::LoadModelViewMatrix(&MyMatrixf::IdentityMatrix());
+	MyGraphicsTool::EnableTexture2D();
+	MyGraphicsTool::BindTexture2D(texture);
+	MyGraphicsTool::BeginTriangleFan();
+	MyVec3f pos[] = { MyVec3f(0, 0, -0.5), MyVec3f(1, 0, -0.5), MyVec3f(1, 1, -0.5), MyVec3f(0, 1, -0.5) };
+	MyVec2f tex[] = { MyVec2f(0, 0), MyVec2f(1, 0), MyVec2f(1, 1), MyVec2f(0, 1) };
+	for (int i = 0; i < 4; i++){
+		MyGraphicsTool::Color(MyColor4f::white());
+		MyGraphicsTool::TextureCoordinate(tex[i]);
+		MyGraphicsTool::Vertex(pos[i]);
+	}
+	MyGraphicsTool::EndPrimitive();
+	MyGraphicsTool::UnbindTexture2D(texture);
+	MyGraphicsTool::PopMatrix();
+	MyGraphicsTool::PopProjectionMatrix();
+	MyGraphicsTool::PopAttributes();
 }
 
 int MyPrimitiveDrawer::GetBitMapTextWidth(const MyString& str){
@@ -143,8 +166,8 @@ void MyPrimitiveDrawer::DrawBitMapTextLarge(const MyVec3f& pos, const std::strin
 	}
 }
 
-void MyPrimitiveDrawer::DrawStrokeText(const MyVec3f& pos, const std::string& text, const MyVec3f& scale){
-	
+void MyPrimitiveDrawer::DrawStrokeText(
+	const MyVec3f& pos, const std::string& text, const MyVec3f& scale){
 	MyGraphicsTool::PushMatrix();
 	MyGraphicsTool::Translate(pos);
 	MyGraphicsTool::Scale(scale);
@@ -152,6 +175,25 @@ void MyPrimitiveDrawer::DrawStrokeText(const MyVec3f& pos, const std::string& te
 		MyGraphicsTool::StrokeChar(text.at(i));
 	}
 	MyGraphicsTool::PopMatrix();
+}
+
+void MyPrimitiveDrawer::DrawStrokeTextOrtho(
+	const MyVec3f& pos, const std::string& text, const MyVec3f& scale){
+	MyMatrixd projMat = MyGraphicsTool::GetProjectionMatrix();
+	MyMatrixd mvMat = MyGraphicsTool::GetModelViewMatrix();
+	MyVec4i viewport = MyGraphicsTool::GetViewport();
+	MyGraphicsTool::PushAllAttributes();
+	MyGraphicsTool::PushProjectionMatrix();
+	MyGraphicsTool::PushMatrix();
+	MyGraphicsTool::LoadProjectionMatrix(&
+		MyMatrixf::OrthographicMatrix(0, viewport[2], 0, viewport[3], 0, 1));
+	MyGraphicsTool::LoadModelViewMatrix(&MyMatrixf::IdentityMatrix());
+	MyVec3f p = MyGraphicsTool::GetProjection(pos, mvMat, projMat, viewport);
+	p[2] = 0;
+	MyPrimitiveDrawer::DrawStrokeText(p, text, scale);
+	MyGraphicsTool::PopMatrix();
+	MyGraphicsTool::PopProjectionMatrix();
+	MyGraphicsTool::PopAttributes();
 }
 
 void MyPrimitiveDrawer::DrawStrokeTextUpDowm(const MyVec3f& pos, const std::string& text, const MyVec3f& scale){
@@ -219,4 +261,12 @@ MyBoundingBox MyPrimitiveDrawer::GetBitMapLargeTextBox(const MyString& text, MyV
 	MyBoundingBox box(offset, trWorldPos);
 	//box.Translate(offset);
 	return box;
+}
+
+float MyPrimitiveDrawer::GetStrokeTextWidth(const MyString& text){
+	float width = 0;
+	for (int i = 0; i < text.size(); i++){
+		width += GetStrokeWidth(text[i]);
+	}
+	return width;
 }

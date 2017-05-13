@@ -20,6 +20,7 @@
 #include <string>
 #include <cstdio>
 #include <cstdlib>
+#include <iomanip>
 #include <iostream>
 #include <thread>
 #include <cassert>
@@ -50,9 +51,9 @@ int MyTracks::Read(const std::string& filename){
 			fclose(fp);
 			return 0;
 		}
-		else printf("Info: %d tracts from file %s\n", mHeader.n_count, filename.c_str());
+		else printf("Loading %d tracts from file %s\r", mHeader.n_count, filename.c_str());
 
-		cout << "Allocating Storage...\r";
+		//cout << "Allocating Storage...\r";
 		mTracks.clear();
 		mTracks.resize(mHeader.n_count);
 		mBoundingBox = MyBoundingBox(MyVec3f(INT_MAX, INT_MAX, INT_MAX), MyVec3f(-INT_MAX, -INT_MAX, -INT_MAX));
@@ -60,7 +61,9 @@ int MyTracks::Read(const std::string& filename){
 		for (int i = 0; i<mHeader.n_count; i++){
 			if ((int)((i + 1) * 100 / (float)mHeader.n_count)
 				- (int)(i * 100 / (float)mHeader.n_count) >= 1){
-				cout << "Loading: " << i*100.f / mHeader.n_count << "%.\r";
+				cout << "Loading: " << i + 1 << "/" << mHeader.n_count 
+					<< std::setprecision(2) << " ("
+					<< i*100.f / mHeader.n_count << "%).\r";
 			}
 			MySingleTrackData& track = mTracks[i];
 			int tractSize = 0;
@@ -80,15 +83,15 @@ int MyTracks::Read(const std::string& filename){
 				fread(&track.mTrackProperties[0], mHeader.n_properties*sizeof(float), 1, fp);
 			}
 		}
-		cout << "Tracks loading completed.\n";
+		cout << mHeader.n_count << " tracks successfully loaded.\t\t\n";
 		fclose(fp);
 	}
 	else if (fileExt == "data"){
 		ifstream fs(filename);
 		fs >> mHeader.n_count;
-		printf("Info: %d tracts from file %s\n", mHeader.n_count, filename.c_str());
+		printf("Loading %d tracts from file %s\r", mHeader.n_count, filename.c_str());
 
-		cout << "Allocating Storage...\r";
+		//cout << "Allocating Storage...\r";
 		mTracks.clear();
 		mTracks.resize(mHeader.n_count);
 		mBoundingBox = MyBoundingBox(MyVec3f(INT_MAX, INT_MAX, INT_MAX), MyVec3f(-INT_MAX, -INT_MAX, -INT_MAX));
@@ -96,7 +99,9 @@ int MyTracks::Read(const std::string& filename){
 		for (int i = 0; i < mHeader.n_count; i++){
 			if ((int)((i + 1) * 100 / (float)mHeader.n_count)
 				- (int)(i * 100 / (float)mHeader.n_count) >= 1){
-				cout << "Loading: " << i*100.f / mHeader.n_count << "%.\r";
+				cout << "Loading: " << i + 1 << "/" << mHeader.n_count
+					<< std::setprecision(2) << " ("
+					<< i*100.f / mHeader.n_count << "%).\r";
 			}
 			MySingleTrackData& track = mTracks[i];
 			int tractSize = 0;
@@ -111,15 +116,15 @@ int MyTracks::Read(const std::string& filename){
 				mBoundingBox.Engulf(track.mPoints[j]);
 			}
 		}
-		cout << "Tracks loading completed.\n";
+		cout << mHeader.n_count << " tracks successfully loaded.\t\t\n";
 		fs.close();
 	}
 	else if (fileExt == "tensorinfo"){
 		ifstream fs(filename);
 		fs >> mHeader.n_count;
-		printf("Info: %d tracts from file %s\n", mHeader.n_count, filename.c_str());
+		printf("Loading %d tracts from file %s\r", mHeader.n_count, filename.c_str());
 
-		cout << "Allocating Storage...\r";
+		//cout << "Allocating Storage...\r";
 		mTracks.clear();
 		mTracks.resize(mHeader.n_count);
 		mBoundingBox = MyBoundingBox(MyVec3f(INT_MAX, INT_MAX, INT_MAX), MyVec3f(-INT_MAX, -INT_MAX, -INT_MAX));
@@ -127,7 +132,9 @@ int MyTracks::Read(const std::string& filename){
 		for (int i = 0; i < mHeader.n_count; i++){
 			if ((int)((i + 1) * 100 / (float)mHeader.n_count)
 				- (int)(i * 100 / (float)mHeader.n_count) >= 1){
-				cout << "Loading: " << i*100.f / mHeader.n_count << "%.\r";
+				cout << "Loading: " << i + 1 << "/" << mHeader.n_count
+					<< std::setprecision(2) << " ("
+					<< i*100.f / mHeader.n_count << "%).\r";
 			}
 			MySingleTrackData& track = mTracks[i];
 			int tractSize = 0;
@@ -146,7 +153,7 @@ int MyTracks::Read(const std::string& filename){
 				mBoundingBox.Engulf(track.mPoints[j]);
 			}
 		}
-		cout << "Tracks loading completed.\n";
+		cout << mHeader.n_count << " tracks successfully loaded.\t\t\n";
 		fs.close();
 	}
 
@@ -399,13 +406,111 @@ MyBoundingBox MyTracks::ComputeBoundingBox(const MyArrayi tractIndices) const{
 	return box;
 }
 
-void MyTracks::GetSampleValueInfo(MyBoundingBox& box, int& nSample, float& valueSum) const{
+bool MyTracks::IsTractIntersected(const MyBoundingObject& bobj, int tractIndex) const{
+	for (int i = 1; i < this->GetNumVertex(tractIndex); i++){
+		if (bobj.IsIntersected(GetCoord(tractIndex, i - 1), GetCoord(tractIndex, i)))
+			return true;
+	}
+	return false;
+}
+
+int MyTracks::CountTractsIntersected(const MyBoundingObject& bobj) const{
+	int rst = 0;
+	for (int it = 0; it < this->GetNumTracks(); it++){
+		if (IsTractIntersected(bobj, it)) rst++;
+	}
+	return rst;
+
+}
+
+int MyTracks::CountTractsIntersected(const MyBoundingObject& bobj, const MyArrayi& indices) const{
+	int rst = 0;
+	for (int it = 0; it < indices.size(); it++){
+		if (IsTractIntersected(bobj, indices[it])) rst++;
+	}
+	return rst;
+
+}
+
+MyArrayi MyTracks::GetTractsIntersected(const MyBoundingObject& bobj) const{
+	MyArrayi rst;
+	for (int it = 0; it < this->GetNumTracks(); it++){
+		if (IsTractIntersected(bobj, it)){
+			rst << it;
+		}
+	}
+	return rst;
+}
+
+MyArrayi MyTracks::GetTractsIntersected(const MyBoundingObject& bobj, const MyArrayi& indices) const{
+	MyArrayi rst;
+	for (int it = 0; it < indices.size(); it++){
+		if (IsTractIntersected(bobj, indices[it])){
+			rst << indices[it];
+		}
+	}
+	return rst;
+}
+
+int MyTracks::CountVertexInBox(const MyBoundingObject& bobj) const{
+	int rst = 0;
+	for (int it = 0; it < this->GetNumTracks(); it++){
+		for (int is = 0; is < this->GetNumVertex(it); is++){
+			MyVec3f p = this->GetCoord(it, is);
+			if (bobj.IsIn(p)){
+				rst++;
+			}
+		}
+	}
+	return rst;
+}
+
+int MyTracks::CountVertexInBox(const MyBoundingObject& bobj, const MyArrayi& indices) const{
+	int rst = 0;
+	for (int it = 0; it < indices.size(); it++){
+		for (int is = 0; is < this->GetNumVertex(indices[it]); is++){
+			MyVec3f p = this->GetCoord(indices[it], is);
+			if (bobj.IsIn(p)){
+				rst++;
+			}
+		}
+	}
+	return rst;
+}
+
+MyArray2i MyTracks::GetVertexInBox(const MyBoundingObject& bobj) const{
+	MyArray2i rst;
+	for (int it = 0; it < this->GetNumTracks(); it++){
+		for (int is = 0; is < this->GetNumVertex(it); is++){
+			MyVec3f p = this->GetCoord(it, is);
+			if (bobj.IsIn(p)){
+				rst << MyVec2i(it, is);
+			}
+		}
+	}
+	return rst;
+}
+
+MyArray2i MyTracks::GetVertexInBox(const MyBoundingObject& bobj, const MyArrayi& indices) const{
+	MyArray2i rst;
+	for (int it = 0; it < indices.size(); it++){
+		for (int is = 0; is < this->GetNumVertex(indices[it]); is++){
+			MyVec3f p = this->GetCoord(indices[it], is);
+			if (bobj.IsIn(p)){
+				rst << MyVec2i(indices[it], is);
+			}
+		}
+	}
+	return rst;
+}
+
+void MyTracks::GetSampleValueInfo(const MyBoundingObject& bobj, int& nSample, float& valueSum) const{
 	nSample = 0;
 	valueSum = 0;
 	for (int it = 0; it < this->GetNumTracks(); it++){
 		for (int is = 0; is < this->GetNumVertex(it); is++){
 			MyVec3f p = this->GetCoord(it, is);
-			if (box.IsIn(p)){
+			if (bobj.IsIn(p)){
 				float value = this->GetValue(it, is);
 				++nSample;
 				valueSum += value;
@@ -414,13 +519,13 @@ void MyTracks::GetSampleValueInfo(MyBoundingBox& box, int& nSample, float& value
 	}
 }
 
-void MyTracks::GetSampleValueInfo(MyBoundingBox& box, const MyArrayi& indices, int& nSample, float& valueSum) const{
+void MyTracks::GetSampleValueInfo(const MyBoundingObject& bobj, const MyArrayi& indices, int& nSample, float& valueSum) const{
 	nSample = 0;
 	valueSum = 0;
 	for (int it = 0; it < indices.size(); it++){
-		for (int is = 0; is < this->GetNumVertex(it); is++){
+		for (int is = 0; is < this->GetNumVertex(indices[it]); is++){
 			MyVec3f p = this->GetCoord(indices[it], is);
-			if (box.IsIn(p)){
+			if (bobj.IsIn(p)){
 				float value = this->GetValue(indices[it], is);
 				++nSample;
 				valueSum += value;
@@ -464,6 +569,10 @@ MyVec3f MyTracks::GetCoord(int trackIdx, int pointIdx) const{
 	return mTracks[trackIdx].mPoints[pointIdx];
 }
 
+MyVec3f MyTracks::GetCoord(const MyVec2i& idx) const{
+	return GetCoord(idx[0], idx[1]);
+}
+
 MyColor4f MyTracks::GetTrackColor(int trackIdx) const{
 	int n = mHeader.n_properties;
 	return MyColor4f(
@@ -486,7 +595,7 @@ MyTensor3f MyTracks::GetTensor(int trackIdx, int pointIdx) const{
 	MyTensor3f t;
 	t.SetEigenValues(&(mTracks[trackIdx].mPointScalars[pointIdx][1]));
 	t.SetEigenVectors(&(mTracks[trackIdx].mPointScalars[pointIdx][4]));
-	assert(t.CheckEigenValueOrder());
+	//assert(t.CheckEigenValueOrder());
 	return t;
 }
 

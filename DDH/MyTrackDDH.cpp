@@ -5,6 +5,7 @@
 #include "MyGraphicsTool.h"
 #include "MyMathHelper.h"
 #include "MyBlackBodyColor.h"
+#include "MySphereDDHGeometry.h"
 
 #include <algorithm>
 #include <fstream>
@@ -16,13 +17,15 @@
 #include <cassert>
 using namespace std;
 
-MyTrackDDH::MyTrackDDH()
+MyTrackDDH::MyTrackDDH() :
+	MyTractVisBase()
 {
 	mStripWidth = 2;
 	mStripDepth = 0.01;
-	mStrokeWidth = 0.25;
+	mStrokeWidth = 0.5;
 	mTaperLength = 1;
-	mDepthCueing = 0;
+	mDepthCueing = 1;
+	mRenderingParameters.BaseColor = MyColor4f(0, 0, 0, 1);
 }
 
 
@@ -85,7 +88,7 @@ void MyTrackDDH::LoadGeometry(){
 void MyTrackDDH::LoadShader(){
 
 	glDeleteProgram(mShaderProgram);
-	mShaderProgram = InitShader("shaders\\ddh.vert", "shaders\\ddh.frag", "fragColour");
+	mShaderProgram = InitShader("..\\DDH\\shaders\\ddh.vert", "..\\DDH\\shaders\\ddh.frag", "fragColour");
 
 	mPositionAttribute = glGetAttribLocation(mShaderProgram, "position");
 	if (mPositionAttribute < 0) {
@@ -98,6 +101,13 @@ void MyTrackDDH::LoadShader(){
 	mTangentAttribute = glGetAttribLocation(mShaderProgram, "tangent");
 	if (mTangentAttribute < 0) {
 		cerr << "Shader did not contain the 'tagent' attribute." << endl;
+	}
+
+	if (mSphereGeometry){
+		MySphereDDHGeometry* sg = dynamic_cast<MySphereDDHGeometry*>(mSphereGeometry);
+		if (sg){
+			sg->CompileShaders();
+		}
 	}
 }
 
@@ -154,6 +164,8 @@ void MyTrackDDH::Show(){
 	//if (mShape == TRACK_SHAPE_TUBE){
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
 	glEnable(GL_DEPTH_TEST);
+	//glDisable(GL_DEPTH_TEST);
+	glDisable(GL_BLEND);
 	//glEnable(GL_CULL_FACE);
 	//glCullFace(GL_BACK);
 	//glEnable(GL_BLEND);
@@ -188,6 +200,8 @@ void MyTrackDDH::Show(){
 	loc = glGetUniformLocation(mShaderProgram, "depthCueing");
 	glUniform1f(loc, mDepthCueing);
 
+	glUniform4fv(glGetUniformLocation(mShaderProgram, "baseColor"), 1, &mRenderingParameters.BaseColor.r);
+
 	for (int i = 0; i < mFiberToDraw.size(); i++){
 		int fiberIdx = mFiberToDraw[i];
 		int offset = mIdxOffset[fiberIdx];
@@ -206,5 +220,14 @@ void MyTrackDDH::Show(){
 
 	glUseProgram(0);
 	glBindVertexArray(0);
+	if (mSphereGeometry){
+		mSphereGeometry->DrawGeometry();
+	}
 	glPopAttrib();
+}
+
+void MyTrackDDH::ResetRenderingParameters(){
+	MyTractVisBase::ResetRenderingParameters();
+	mRenderingParameters.BaseColor = MyColor4f(0, 0, 0, 1);
+	mRenderingParameters.Shape = MyTractVisBase::TRACK_SHAPE_LINE;
 }

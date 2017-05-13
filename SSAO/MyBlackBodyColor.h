@@ -9,6 +9,7 @@ public:
 
 	static unsigned int GetTexture();
 	static unsigned int mTexture;
-	static float mData[512][3];
+	static float mData_512_3[512][3];
+	static float mData_1024_3[1024][3];
 };
 

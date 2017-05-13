@@ -235,8 +235,6 @@ void MyMathHelper::TransposeMatrix4x4ColMaj(const float m[16], float transOut[16
 }
 
 MyVec3f MyMathHelper::MatMulVec(const MyMatrixf& mat, const MyVec3f& vec){
-	float d[16];
-	memcpy(d, mat.GetData(), 16 * sizeof(float));
 	MyVec4f rst(0,0,0,0);
 	MyVec4f _vec4(vec[0], vec[1], vec[2], 1);
 	for (int i = 0; i < 4; i++){
@@ -247,9 +245,39 @@ MyVec3f MyMathHelper::MatMulVec(const MyMatrixf& mat, const MyVec3f& vec){
 	return MyVec3f(rst[0] / rst[3], rst[1] / rst[3], rst[2] / rst[3]);
 }
 
+MyVec4f MyMathHelper::MatMulVec(const MyMatrixf& mat, const MyVec4f& vec){
+	MyVec4f rst(0, 0, 0, 0);
+	for (int i = 0; i < 4; i++){
+		for (int j = 0; j < 4; j++){
+			rst[i] += mat.At(i, j)*vec[j];
+		}
+	}
+	return rst;
+}
+
 MyMatrixf MyMathHelper::InverseMatrix4x4ColMaj(const MyMatrixf& mat){
 	float inverse[16];
 	MyMatrixf rmjMat = mat.Transpose();
 	InvertMatrix4x4ColMaj(rmjMat.GetData(), inverse);
 	return MyMatrixf(inverse, 4, 4).Transpose();
+}
+
+float MyMathHelper::PointToLineSegmentDistance(const MyVec3f& p, 
+	const MyVec3f& lineStart, const MyVec3f& lineEnd){
+	MyVec3f cp = ClosestPointOnLineSegment(p, lineStart, lineEnd);
+	return (p - cp).norm();
+}
+
+// source: http://geomalgorithms.com/a02-_lines.html
+MyVec3f MyMathHelper::ClosestPointOnLineSegment(const MyVec3f& p,
+	const MyVec3f& lineStart, const MyVec3f& lineEnd){
+	MyVec3f v = lineStart - lineEnd;
+	MyVec3f w = p - lineEnd;
+	float c1 = w * v;
+	if (c1 <= 0) return lineEnd;
+	float c2 = v * v;
+	if (c2 <= c1) return lineStart;
+	float b = c1 / c2;
+	MyVec3f Pb = lineEnd + b * v;
+	return Pb;
 }

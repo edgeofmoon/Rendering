@@ -26,7 +26,7 @@ using namespace std;
 #include "MyBlackBodyColor.h"
 #include "MyPrimitiveDrawer.h"
 #include "MyBitmap.h"
-
+#include "MyTexture.h"
 #include "MySsaoPass.h"
 #include "MyBlurPass.h"
 #include "MyLightingPass.h"
@@ -314,7 +314,7 @@ void switchRenderMode(int mode){
 }
 
 #ifdef TRACK
-int trackShape = 2;
+int trackShape = 1;
 int trackFaces = 20;
 GLUI_Panel* tubeParameterPanel;
 void changeTrackShape(int id){
@@ -699,6 +699,9 @@ int main(int argc, char* argv[])
 	trackBall.SetRotationMatrix(MyMatrixf::RotateMatrix(90, 1, 0, 0));
 	trackBall.ScaleMultiply(1.3);
 	MyTracks tractData;
+	MyBitmap bitmap;
+	bitmap.Open("..\\SSAO\\data\\diverging.bmp");
+	gTex = MyTexture::MakeGLTexture(&bitmap);
 	//tractData.Read("data\\normal_s3.data");
 	//tractData.Read("C:\\Users\\GuohaoZhang\\Dropbox\\data\\normal_s3.tensorinfo");
 	//tractData.AppendTrackColor("C:\\Users\\GuohaoZhang\\Dropbox\\data\\normal_s3_boy.data");
@@ -712,6 +715,7 @@ int main(int argc, char* argv[])
 	//tractData.Read("C:\\Users\\GuohaoZhang\\Desktop\\tmpdata\\ACR.trk");
 	//tractData.Read("dti_20_0995.data");
 	track.SetTracts(&tractData);
+	track.SetTexture(gTex);
 	//track.SetShape(MyTractVisBase::TRACK_SHAPE_LINE);
 	track.SetShape(MyTractVisBase::TrackShape(trackShape+1));
 	track.ComputeGeometry();
@@ -723,21 +727,6 @@ int main(int argc, char* argv[])
 	trackLine.ComputeGeometry();
 	trackLine.LoadShader();
 	trackLine.LoadGeometry();
-
-	/*
-	ring.CopyTracksFrom(track);
-	ring.SetShape(MyTracks::TRACK_SHAPE_TUBE);
-	ring.ComputeGeometry();
-	ring.LoadShader();
-	ring.LoadGeometry();
-
-
-	trackLine.CopyTracksFrom(track);
-	trackLine.SetShape(MyTracks::TRACK_SHAPE_LINE);
-	trackLine.ComputeGeometry();
-	trackLine.LoadShader();
-	trackLine.LoadGeometry();
-	*/
 
 	MyVec3f center = track.GetTracts()->GetBoundingBox().GetCenter();
 	cout << "Center: " << center[0] << ", " << center[1] << ", " << center[2] << endl;

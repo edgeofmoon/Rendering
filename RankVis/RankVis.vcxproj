@@ -1,0 +1,293 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{9743E891-7792-48AC-AA2E-F912DD97BEF1}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>RankVis</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v120</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v120</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v120</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v120</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <LinkIncremental>true</LinkIncremental>
+    <IncludePath>..\SSAO;..\DDH;..\LineAO;..\Curvature;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
+    <LibraryPath>..\SSAO;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);</LibraryPath>
+    <SourcePath>..\SSAO;..\DDH;..\LineAO;..\Curvature;$(VC_SourcePath);</SourcePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <LinkIncremental>false</LinkIncremental>
+    <IncludePath>..\SSAO;..\DDH;..\LineAO;..\Curvature;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
+    <LibraryPath>..\SSAO;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);</LibraryPath>
+    <SourcePath>..\SSAO;..\DDH;..\LineAO;..\Curvature;$(VC_SourcePath);</SourcePath>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>freeglut.lib;glui32d.lib;glew32.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalDependencies>freeglut.lib;glui32.lib;glew32.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="..\DDH\MySphereDDHGeometry.h" />
+    <ClInclude Include="..\DDH\MyTrackDDH.h" />
+    <ClInclude Include="..\DDH\MyTubeDDH.h" />
+    <ClInclude Include="..\LineAO\MyLineAO.h" />
+    <ClInclude Include="..\LineAO\MySphereAOGeometry.h" />
+    <ClInclude Include="..\SSAO\MyArray.h" />
+    <ClInclude Include="..\SSAO\MyBitmap.h" />
+    <ClInclude Include="..\SSAO\MyBlackBodyColor.h" />
+    <ClInclude Include="..\SSAO\MyBlurPass.h" />
+    <ClInclude Include="..\SSAO\MyBoundingBox.h" />
+    <ClInclude Include="..\SSAO\MyBoundingObject.h" />
+    <ClInclude Include="..\SSAO\MyBox.h" />
+    <ClInclude Include="..\SSAO\MyColor4.h" />
+    <ClInclude Include="..\SSAO\MyFrameBuffer.h" />
+    <ClInclude Include="..\SSAO\MyGraphicsTool.h" />
+    <ClInclude Include="..\SSAO\MyImage.h" />
+    <ClInclude Include="..\SSAO\MyLightingPass.h" />
+    <ClInclude Include="..\SSAO\MyLine.h" />
+    <ClInclude Include="..\SSAO\MyMathHelper.h" />
+    <ClInclude Include="..\SSAO\MyMatrix.h" />
+    <ClInclude Include="..\SSAO\MyMesh.h" />
+    <ClInclude Include="..\SSAO\MyPolyLine.h" />
+    <ClInclude Include="..\SSAO\MyPrimitiveDrawer.h" />
+    <ClInclude Include="..\SSAO\MyQuadGeometry.h" />
+    <ClInclude Include="..\SSAO\MyQuarternion.h" />
+    <ClInclude Include="..\SSAO\MySphere.h" />
+    <ClInclude Include="..\SSAO\MySphereGeometry.h" />
+    <ClInclude Include="..\SSAO\MySsaoPass.h" />
+    <ClInclude Include="..\SSAO\MyString.h" />
+    <ClInclude Include="..\SSAO\MySuperquadric.h" />
+    <ClInclude Include="..\SSAO\MyTensor.h" />
+    <ClInclude Include="..\SSAO\MyTexture.h" />
+    <ClInclude Include="..\SSAO\MyTrackBall.h" />
+    <ClInclude Include="..\SSAO\MyTrackRings.h" />
+    <ClInclude Include="..\SSAO\MyTracks.h" />
+    <ClInclude Include="..\SSAO\MyTractVisBase.h" />
+    <ClInclude Include="..\SSAO\MyUtility.h" />
+    <ClInclude Include="..\SSAO\MyVec.h" />
+    <ClInclude Include="..\SSAO\OSCB.h" />
+    <ClInclude Include="..\SSAO\Shader.h" />
+    <ClInclude Include="..\SSAO\svd.h" />
+    <ClInclude Include="CIEDE2000.h" />
+    <ClInclude Include="MyButton.h" />
+    <ClInclude Include="MyColorConverter.h" />
+    <ClInclude Include="MyColorLegend.h" />
+    <ClInclude Include="MyConstants.h" />
+    <ClInclude Include="MyLogTable.h" />
+    <ClInclude Include="MyNumberArea.h" />
+    <ClInclude Include="MyRenderingLog.h" />
+    <ClInclude Include="MyTaskBoxDrawer.h" />
+    <ClInclude Include="MyTextArea.h" />
+    <ClInclude Include="MyToggleButton.h" />
+    <ClInclude Include="MyUI.h" />
+    <ClInclude Include="MyUIObject.h" />
+    <ClInclude Include="MyVisData.h" />
+    <ClInclude Include="MyVisEnum.h" />
+    <ClInclude Include="MyVisInfo.h" />
+    <ClInclude Include="MyVisRankingApp.h" />
+    <ClInclude Include="MyVisTract.h" />
+    <ClInclude Include="MyVisTrialManager.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\DDH\MySphereDDHGeometry.cpp" />
+    <ClCompile Include="..\DDH\MyTrackDDH.cpp" />
+    <ClCompile Include="..\DDH\MyTubeDDH.cpp" />
+    <ClCompile Include="..\LineAO\MyLineAO.cpp" />
+    <ClCompile Include="..\LineAO\MySphereAOGeometry.cpp" />
+    <ClCompile Include="..\SSAO\MyBitmap.cpp" />
+    <ClCompile Include="..\SSAO\MyBlackBodyColor.cpp" />
+    <ClCompile Include="..\SSAO\MyBlurPass.cpp" />
+    <ClCompile Include="..\SSAO\MyBoundingBox.cpp" />
+    <ClCompile Include="..\SSAO\MyFrameBuffer.cpp" />
+    <ClCompile Include="..\SSAO\MyGraphicsTool.cpp" />
+    <ClCompile Include="..\SSAO\MyImage.cpp" />
+    <ClCompile Include="..\SSAO\MyLightingPass.cpp" />
+    <ClCompile Include="..\SSAO\MyMathHelper.cpp" />
+    <ClCompile Include="..\SSAO\MyMesh.cpp" />
+    <ClCompile Include="..\SSAO\MyPrimitiveDrawer.cpp" />
+    <ClCompile Include="..\SSAO\MyQuadGeometry.cpp" />
+    <ClCompile Include="..\SSAO\MyQuarternion.cpp" />
+    <ClCompile Include="..\SSAO\MySphere.cpp" />
+    <ClCompile Include="..\SSAO\MySphereGeometry.cpp" />
+    <ClCompile Include="..\SSAO\MySsaoPass.cpp" />
+    <ClCompile Include="..\SSAO\MyString.cpp" />
+    <ClCompile Include="..\SSAO\MySuperquadric.cpp" />
+    <ClCompile Include="..\SSAO\MyTexture.cpp" />
+    <ClCompile Include="..\SSAO\MyTrackBall.cpp" />
+    <ClCompile Include="..\SSAO\MyTrackRings.cpp" />
+    <ClCompile Include="..\SSAO\MyTracks.cpp" />
+    <ClCompile Include="..\SSAO\MyTractVisBase.cpp" />
+    <ClCompile Include="..\SSAO\OSCB.cpp" />
+    <ClCompile Include="..\SSAO\Shader.cpp" />
+    <ClCompile Include="..\SSAO\svd.c" />
+    <ClCompile Include="appTest.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="CIEDE2000.cpp" />
+    <ClCompile Include="colorMapTest.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="MyButton.cpp" />
+    <ClCompile Include="MyColorConverter.cpp" />
+    <ClCompile Include="MyColorLegend.cpp" />
+    <ClCompile Include="MyConstants.cpp" />
+    <ClCompile Include="MyLogTable.cpp" />
+    <ClCompile Include="MyNumberArea.cpp" />
+    <ClCompile Include="MyRenderingLog.cpp" />
+    <ClCompile Include="MyTaskBoxDrawer.cpp" />
+    <ClCompile Include="MyTextArea.cpp" />
+    <ClCompile Include="MyToggleButton.cpp" />
+    <ClCompile Include="MyUI.cpp" />
+    <ClCompile Include="MyUIObject.cpp" />
+    <ClCompile Include="MyVisData.cpp" />
+    <ClCompile Include="MyVisEnum.cpp" />
+    <ClCompile Include="MyVisInfo.cpp" />
+    <ClCompile Include="MyVisRankingApp.cpp" />
+    <ClCompile Include="MyVisRankingApp_DataGen.cpp" />
+    <ClCompile Include="MyVisRankingApp_GL.cpp" />
+    <ClCompile Include="MyVisRankingApp_UI.cpp" />
+    <ClCompile Include="MyVisTract.cpp" />
+    <ClCompile Include="MyVisTrialManager.cpp" />
+    <ClCompile Include="parameterTest.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\SSAO\shaders\blur.frag" />
+    <None Include="..\SSAO\shaders\blur.vert" />
+    <None Include="..\SSAO\Shaders\geom.frag" />
+    <None Include="..\SSAO\Shaders\geom.vert" />
+    <None Include="..\SSAO\shaders\lighting.frag" />
+    <None Include="..\SSAO\shaders\lighting.vert" />
+    <None Include="..\SSAO\Shaders\ring.frag" />
+    <None Include="..\SSAO\Shaders\ring.vert" />
+    <None Include="..\SSAO\shaders\ssao.frag" />
+    <None Include="..\SSAO\shaders\ssao.vert" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

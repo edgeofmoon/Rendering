@@ -20,20 +20,39 @@ using namespace std;
 #include "GL\glew.h"
 #include <GL/freeglut.h>
 
-MyTractVisBase::MyTractVisBase()
-{
+MyTractVisBase::RenderingParameters MyTractVisBase::DefaultRenderingParameters = {
+	MyTractVisBase::TRACK_SHAPE_TUBE,
+	20,
+	0,
+	0,
+	MyColor4f(1, 1, 1, 0),
+	0,
+	MyColor4f(0.5, 0.5, 0.5, 0),
+	1,
+	0,
+	1,
+	0,
+	32,
+	1,
+	0,
+	0,
+	0
+};
+
+MyTractVisBase::MyTractVisBase(){
 	ResetRenderingParameters();
 }
 
 MyTractVisBase::~MyTractVisBase()
 {
+	if (glIsProgram(mShaderProgram)) glDeleteProgram(mShaderProgram);
 	if (glIsVertexArray(mVertexArray)) glDeleteVertexArrays(1, &mVertexArray);
 	if (glIsBuffer(mVertexBuffer)) glDeleteBuffers(1, &mVertexBuffer);
-	if (glIsBuffer(mNormalBuffer))glDeleteBuffers(1, &mNormalBuffer);
-	if (glIsBuffer(mColorBuffer))glDeleteBuffers(1, &mColorBuffer);
+	if (glIsBuffer(mNormalBuffer)) glDeleteBuffers(1, &mNormalBuffer);
 	if (glIsBuffer(mTexCoordBuffer)) glDeleteBuffers(1, &mTexCoordBuffer);
-	//if (glIsBuffer(mRadiusBuffer))glDeleteBuffers(1, &mRadiusBuffer);
-	if (glIsBuffer(mIndexBuffer))glDeleteBuffers(1, &mIndexBuffer);
+	if (glIsBuffer(mColorBuffer)) glDeleteBuffers(1, &mColorBuffer);
+	if (glIsBuffer(mValueBuffer)) glDeleteBuffers(1, &mValueBuffer);
+	if (glIsBuffer(mIndexBuffer)) glDeleteBuffers(1, &mIndexBuffer);
 }
 
 
@@ -43,10 +62,9 @@ void MyTractVisBase::SetTracts(const MyTracks* tracts){
 }
 
 void MyTractVisBase::ResetRenderingParameters(){
-	mTrackRadius = 0.4;
-	mFaces = 20;
-	mShape = TRACK_SHAPE_TUBE;
-	mSuperquadricSkip = 0;
+	mTrackRadius = 0.2;
+	mRenderingParameters = DefaultRenderingParameters;
+	mSphereGeometry = NULL;
 }
 
 void MyTractVisBase::ComputeTubeGeometry(){
@@ -56,30 +74,28 @@ void MyTractVisBase::ComputeTubeGeometry(){
 	for (int it = 0; it < mTracts->GetNumTracks(); it++){
 		totalPoints += mTracts->At(it).Size();
 	}
-	totalPoints *= (mFaces + 1);
+	totalPoints *= (mRenderingParameters.Faces + 1);
 
 	// for caps
-	totalPoints += mTracts->GetNumTracks()*(1 + mFaces) * 2;
+	totalPoints += mTracts->GetNumTracks()*(1 + mRenderingParameters.Faces) * 2;
 
 	cout << "Allocating Storage for Geometry...\r";
 
 	mVertices.resize(totalPoints);
 	mNormals.resize(totalPoints);
-	//mTexCoords.resize(totalPoints);
+	mTexCoords.resize(totalPoints);
 	//mRadius.resize(totalPoints);
 	mColors.resize(totalPoints);
+	mValues.resize(totalPoints);
 
 	float R = 0;
 
 	for (int it = 0; it < mTracts->GetNumTracks(); it++){
-		if ((int)((it + 1) * 100 / (float)mTracts->GetNumTracks())
-			- (int)(it * 100 / (float)mTracts->GetNumTracks()) >= 1){
-			cout << "Computing: " << it*100.f / mTracts->GetNumTracks() << "%.          \r";
-		}
+		PrintProgress(it, mTracts->GetNumTracks(), 1);
 		int npoints = mTracts->At(it).Size();
 
 		const float myPI = 3.1415926f;
-		float dangle = 2 * myPI / mFaces;
+		float dangle = 2 * myPI / mRenderingParameters.Faces;
 		MyVec3f pole(0.6, 0.8, 0);
 
 		MyArray3f candicates;
@@ -112,36 +128,47 @@ void MyTractVisBase::ComputeTubeGeometry(){
 			MyVec3f perpend1 = (pole^d).normalized();
 			MyVec3f perpend2 = (perpend1^d).normalized();
 			//if ((perpend1^perpend2)*d < 0) dangle = -dangle;
-			for (int is = 0; is<mFaces; is++){
+			float fa = mTracts->GetTensor(it, i).GetFA();
+			if (fa > 1) fa = 1;
+			else if (fa < 0) fa = 0;
+			for (int is = 0; is<mRenderingParameters.Faces; is++){
 				float angle = dangle*is;
 				MyVec3f pt = sin(angle)*perpend1 + cos(angle)*perpend2;
-				mVertices[currentIdx + i*(mFaces + 1) + is] = pt * R + p;
-				mNormals[currentIdx + i*(mFaces + 1) + is] = pt;
-				//mTexCoords[currentIdx + i*(mFaces + 1) + is] = MyVec2f(i, is / (float)mFaces);
-				//mRadius[currentIdx + i*(mFaces + 1) + is] = size;
+				mVertices[currentIdx + i*(mRenderingParameters.Faces + 1) + is] = pt * R + p;
+				mNormals[currentIdx + i*(mRenderingParameters.Faces + 1) + is] = pt;
+				mColors[currentIdx + i*(mRenderingParameters.Faces + 1) + is] = mTracts->GetTrackColor(it);
+				mTexCoords[currentIdx + i*(mRenderingParameters.Faces + 1) + is] = MyVec2f(i, is / (float)mRenderingParameters.Faces);
+				mValues[currentIdx + i*(mRenderingParameters.Faces + 1) + is] = fa;
+				/*
 				if (mTracts->GetHeader().n_scalars == 3){
-					mColors[currentIdx + i*(mFaces + 1) + is] = MyColor4f(
+					mColors[currentIdx + i*(mRenderingParameters.Faces + 1) + is] = MyColor4f(
 						mTracts->At(it).mPointScalars[i][0], mTracts->At(it).mPointScalars[i][1],
 						mTracts->At(it).mPointScalars[i][2], 1);
 				}
 				else if (mTracts->GetHeader().n_scalars == 13){
-					mColors[currentIdx + i*(mFaces + 1) + is] = MyColor4f(
+					mColors[currentIdx + i*(mRenderingParameters.Faces + 1) + is] = MyColor4f(
 						1, 1, 1 - mTracts->At(it).mPointScalars[i][0], 1);
 				}
-				else mColors[currentIdx + i*(mFaces + 1) + is] = MyColor4f(1, 1, 1, 1);
+				else mColors[currentIdx + i*(mRenderingParameters.Faces + 1) + is] = MyColor4f(1, 1, 1, 1);
+				*/
 			}
-			mVertices[currentIdx + i*(mFaces + 1) + mFaces] = mVertices[currentIdx + i*(mFaces + 1)];
-			mNormals[currentIdx + i*(mFaces + 1) + mFaces] = mNormals[currentIdx + i*(mFaces + 1)];
-			//mTexCoords[currentIdx + i*(mFaces + 1) + mFaces] = MyVec2f(i, 1);
-			//mRadius[currentIdx + i*(mFaces + 1) + mFaces] = mRadius[currentIdx + i*(mFaces + 1)];
-			mColors[currentIdx + i*(mFaces + 1) + mFaces] = mColors[currentIdx + i*(mFaces + 1)];
+			mVertices[currentIdx + i*(mRenderingParameters.Faces + 1) + mRenderingParameters.Faces] = mVertices[currentIdx + i*(mRenderingParameters.Faces + 1)];
+			mNormals[currentIdx + i*(mRenderingParameters.Faces + 1) + mRenderingParameters.Faces] = mNormals[currentIdx + i*(mRenderingParameters.Faces + 1)];
+			//mTexCoords[currentIdx + i*(mRenderingParameters.Faces + 1) + mRenderingParameters.Faces] = MyVec2f(i, 1);
+			//mRadius[currentIdx + i*(mRenderingParameters.Faces + 1) + mRenderingParameters.Faces] = mRadius[currentIdx + i*(mRenderingParameters.Faces + 1)];
+			mColors[currentIdx + i*(mRenderingParameters.Faces + 1) + mRenderingParameters.Faces] = mColors[currentIdx + i*(mRenderingParameters.Faces + 1)];
+			mTexCoords[currentIdx + i*(mRenderingParameters.Faces + 1) + mRenderingParameters.Faces] = MyVec2f(i, 1);
+			mValues[currentIdx + i*(mRenderingParameters.Faces + 1) + mRenderingParameters.Faces] = fa;
 		}
 
 		mIdxOffset << currentIdx;
-		currentIdx += npoints*(mFaces + 1);
+		currentIdx += npoints*(mRenderingParameters.Faces + 1);
 
 		// add front cap
 		{
+			float fa = mTracts->GetTensor(it, 0).GetFA();
+			if (fa > 1) fa = 1;
+			else if (fa < 0) fa = 0;
 			MyVec3f p = mTracts->GetCoord(it, 0);
 			MyVec3f d = mTracts->GetCoord(it, 1) - p;
 			d.normalize();
@@ -149,21 +176,28 @@ void MyTractVisBase::ComputeTubeGeometry(){
 			MyVec3f perpend2 = (perpend1^d).normalized();
 			mVertices[currentIdx] = p;
 			mNormals[currentIdx] = -d;
-			mColors[currentIdx] = mColors[currentIdx - npoints*(mFaces + 1)];
-			for (int is = 0; is < mFaces; is++){
+			mColors[currentIdx] = mColors[currentIdx - npoints*(mRenderingParameters.Faces + 1)];
+			mTexCoords[currentIdx] = MyVec2f(0, 0.5);
+			mValues[currentIdx] = fa;
+			for (int is = 0; is < mRenderingParameters.Faces; is++){
 				float angle = dangle*is;
 				MyVec3f pt = sin(angle)*perpend1 + cos(angle)*perpend2;
 				MyVec3f pe = pt*R + p;
 				mVertices[currentIdx + is + 1] = pe;
 				mNormals[currentIdx + is + 1] = pt;
 				//mNormals[currentIdx + is + 1] = -d;
-				mColors[currentIdx + is + 1] = mColors[currentIdx - npoints*(mFaces + 1)];
+				mColors[currentIdx + is + 1] = mColors[currentIdx - npoints*(mRenderingParameters.Faces + 1)];
+				mTexCoords[currentIdx + is + 1] = MyVec2f(0, is / (float)mRenderingParameters.Faces);
+				mValues[currentIdx + is + 1] = fa;
 			}
 		}
 
 		// add back cap
-		currentIdx += mFaces + 1;
+		currentIdx += mRenderingParameters.Faces + 1;
 		{
+			float fa = mTracts->GetTensor(it, npoints - 1).GetFA();
+			if (fa > 1) fa = 1;
+			else if (fa < 0) fa = 0;
 			MyVec3f p = mTracts->GetCoord(it, npoints - 1);
 			MyVec3f d = mTracts->GetCoord(it, npoints - 2) - p;
 			d.normalize();
@@ -171,51 +205,55 @@ void MyTractVisBase::ComputeTubeGeometry(){
 			MyVec3f perpend2 = (perpend1^d).normalized();
 			mVertices[currentIdx] = p;
 			mNormals[currentIdx] = -d;
-			mColors[currentIdx] = mColors[currentIdx - (mFaces + 2)];
-			for (int is = 0; is < mFaces; is++){
+			mColors[currentIdx] = mColors[currentIdx - (mRenderingParameters.Faces + 2)];
+			mTexCoords[currentIdx] = MyVec2f(0, 0.5);
+			mValues[currentIdx] = fa;
+			for (int is = 0; is < mRenderingParameters.Faces; is++){
 				float angle = dangle*is;
 				MyVec3f pt = sin(angle)*perpend1 + cos(angle)*perpend2;
 				MyVec3f pe = pt*R + p;
 				mVertices[currentIdx + is + 1] = pe;
 				mNormals[currentIdx + is + 1] = pt;
 				//mNormals[currentIdx + is + 1] = -d;
-				mColors[currentIdx + is + 1] = mColors[currentIdx - (mFaces + 2)];
+				mColors[currentIdx + is + 1] = mColors[currentIdx - (mRenderingParameters.Faces + 2)];
+				mTexCoords[currentIdx + is + 1] = MyVec2f(0, is / (float)mRenderingParameters.Faces);
+				mValues[currentIdx + is + 1] = fa;
 			}
 		}
-		currentIdx += mFaces + 1;
+		currentIdx += mRenderingParameters.Faces + 1;
 	}
 	// index
 	mIndices.clear();
 	for (int it = 0; it<mTracts->GetNumTracks(); it++){
 		int offset = mIdxOffset[it];
 		for (int i = 1; i<mTracts->GetNumVertex(it); i++){
-			for (int j = 0; j < mFaces; j++){
+			for (int j = 0; j < mRenderingParameters.Faces; j++){
 				/*
 				// wrong direction!
-				mIndices << MyVec3i((i - 1)*(mFaces + 1) + j + offset,
-				(i)*(mFaces + 1) + j + offset,
-				(i)*(mFaces + 1) + (j + 1) + offset);
-				mIndices << MyVec3i((i - 1)*(mFaces + 1) + j + offset,
-				(i)*(mFaces + 1) + (j + 1) + offset,
-				(i - 1)*(mFaces + 1) + (j + 1) + offset);
+				mIndices << MyVec3i((i - 1)*(mRenderingParameters.Faces + 1) + j + offset,
+				(i)*(mRenderingParameters.Faces + 1) + j + offset,
+				(i)*(mRenderingParameters.Faces + 1) + (j + 1) + offset);
+				mIndices << MyVec3i((i - 1)*(mRenderingParameters.Faces + 1) + j + offset,
+				(i)*(mRenderingParameters.Faces + 1) + (j + 1) + offset,
+				(i - 1)*(mRenderingParameters.Faces + 1) + (j + 1) + offset);
 				*/
 				// fixed direction
-				mIndices << MyVec3i((i - 1)*(mFaces + 1) + j + offset,
-					(i)*(mFaces + 1) + (j + 1) + offset,
-					(i)*(mFaces + 1) + j + offset);
-				mIndices << MyVec3i((i - 1)*(mFaces + 1) + j + offset,
-					(i - 1)*(mFaces + 1) + (j + 1) + offset,
-					(i)*(mFaces + 1) + (j + 1) + offset);
+				mIndices << MyVec3i((i - 1)*(mRenderingParameters.Faces + 1) + j + offset,
+					(i)*(mRenderingParameters.Faces + 1) + (j + 1) + offset,
+					(i)*(mRenderingParameters.Faces + 1) + j + offset);
+				mIndices << MyVec3i((i - 1)*(mRenderingParameters.Faces + 1) + j + offset,
+					(i - 1)*(mRenderingParameters.Faces + 1) + (j + 1) + offset,
+					(i)*(mRenderingParameters.Faces + 1) + (j + 1) + offset);
 			}
 		}
 		// add caps
-		offset += mTracts->GetNumVertex(it)*(mFaces + 1);
-		for (int j = 0; j < mFaces; j++){
-			mIndices << MyVec3i(offset, offset + (j + 1) % (mFaces)+1, offset + j + 1);
+		offset += mTracts->GetNumVertex(it)*(mRenderingParameters.Faces + 1);
+		for (int j = 0; j < mRenderingParameters.Faces; j++){
+			mIndices << MyVec3i(offset, offset + (j + 1) % (mRenderingParameters.Faces)+1, offset + j + 1);
 		}
-		offset += 1 + mFaces;
-		for (int j = 0; j < mFaces; j++){
-			mIndices << MyVec3i(offset, offset + (j + 1) % (mFaces)+1, offset + j + 1);
+		offset += 1 + mRenderingParameters.Faces;
+		for (int j = 0; j < mRenderingParameters.Faces; j++){
+			mIndices << MyVec3i(offset, offset + (j + 1) % (mRenderingParameters.Faces)+1, offset + j + 1);
 		}
 	}
 	cout << "Computing completed.\n";
@@ -237,19 +275,18 @@ void MyTractVisBase::ComputeLineGeometry(){
 	mVertices.reserve(totalPoints);
 	mNormals.reserve(totalPoints);
 	mColors.reserve(totalPoints);
+	mTexCoords.reserve(totalPoints);
+	mValues.reserve(totalPoints);
 
 
 	mIdxOffset.clear();
 	mIdxOffset.reserve(mTracts->GetNumTracks());
 	for (int it = 0; it < mTracts->GetNumTracks(); it++){
-		if ((int)((it + 1) * 100 / (float)mTracts->GetNumTracks())
-			- (int)(it * 100 / (float)mTracts->GetNumTracks()) >= 1){
-			cout << "Computing: " << it*100.f / mTracts->GetNumTracks() << "%.          \r";
-		}
+		PrintProgress(it, mTracts->GetNumTracks(), 1);
 		int npoints = mTracts->At(it).Size();
 
 		const float myPI = 3.1415926f;
-		float dangle = 2 * myPI / mFaces;
+		float dangle = 2 * myPI / mRenderingParameters.Faces;
 		MyVec3f pole(0.6, 0.8, 0);
 
 		MyArray3f candicates;
@@ -286,17 +323,15 @@ void MyTractVisBase::ComputeLineGeometry(){
 
 			//mVertices[currentIdx + i] = p;
 			//mNormals[currentIdx + i] = perpend1;
-			mVertices.push_back(p);
-			mNormals.push_back(perpend1);
-			if (mTracts->GetHeader().n_scalars == 3){
-				MyColor4f color(
-					mTracts->At(it).mPointScalars[i][0], mTracts->At(it).mPointScalars[i][1],
-					mTracts->At(it).mPointScalars[i][2], 1);
-				mColors.push_back(color);
-			}
-			else {
-				mColors.push_back(MyColor4f(1, 1, 1, 1));
-			}
+			mVertices << p;
+			// normal is tangent
+			//mNormals << perpend1;
+			mNormals << d.normalized();
+			mColors << mTracts->GetTrackColor(it);
+			mTexCoords << MyVec2f(i, 0);
+			float fa = mTracts->GetTensor(it, i).GetFA();
+			if (fa > 1) fa = 1;
+			mValues << fa;
 		}
 
 		mIdxOffset << currentIdx;
@@ -320,35 +355,32 @@ void MyTractVisBase::ComputeSuperquadricGeometry(){
 	mIdxOffset.clear();
 	int totalPoints = 0;
 	for (int it = 0; it < mTracts->GetNumTracks(); it++){
-		totalPoints += mTracts->At(it).Size() / (1+mSuperquadricSkip);
+		totalPoints += mTracts->At(it).Size() / (1 + mRenderingParameters.SuperquadricSkip);
 	}
 
 	cout << "Allocating Storage for Geometry...\r";
 	int vCount = MySuperquadric::GetVertexCount();
 	int tCount = MySuperquadric::GetTriangleCount();
 	int totalVertices = totalPoints*vCount;
-	mVertices.clear();
-	mNormals.clear();
 	mVertices.resize(totalVertices);
 	mNormals.resize(totalVertices);
-	mTexCoords.resize(totalVertices);
 	mColors.resize(totalVertices);
+	mTexCoords.resize(totalVertices);
+	mValues.resize(totalVertices);
 	mIndices.resize(totalPoints*tCount);
 
 	mIdxOffset.clear();
 	mIdxOffset.reserve(mTracts->GetNumTracks());
 	MySuperquadric sqDrawer;
-	sqDrawer.SetScalue(0.4);
+	sqDrawer.SetScale(mTrackRadius*sqrt(6.f));
 
 	int vOffset = 0;
 	int tOffset = 0;
 	for (int it = 0; it < mTracts->GetNumTracks(); it++){
-		if ((int)((it + 1) * 100 / (float)mTracts->GetNumTracks())
-			- (int)(it * 100 / (float)mTracts->GetNumTracks()) >= 1){
-			cout << "Computing: " << it*100.f / mTracts->GetNumTracks() << "%.          \r";
-		}
+		PrintProgress(it, mTracts->GetNumTracks(), 1);
 		mIdxOffset << tOffset * 3;
-		for (int i = 0; i<mTracts->At(it).Size(); i += (mSuperquadricSkip + 1)){
+		for (int i = 0; i<mTracts->At(it).Size(); 
+			i += (mRenderingParameters.SuperquadricSkip + 1)){
 			MyTensor3f t = mTracts->GetTensor(it, i);
 			t.NormalizeEigenVectors();
 			sqDrawer.SetTensor(&t);
@@ -357,6 +389,11 @@ void MyTractVisBase::ComputeSuperquadricGeometry(){
 			// add color
 			MyColor4f color = mTracts->GetTrackColor(it);
 			for (int ic = 0; ic < vCount; ic++) mColors[vOffset + ic] = color;
+			// add value
+			float fa = t.GetFA();
+			if (fa>1) fa = 1;
+			else if (fa < 0) fa = 0;
+			for (int ic = 0; ic < vCount; ic++) mValues[vOffset + ic] = fa;
 			vOffset += vCount;
 			tOffset += tCount;
 		}
@@ -365,12 +402,46 @@ void MyTractVisBase::ComputeSuperquadricGeometry(){
 	cout << "Computing completed.\n";
 }
 
+void MyTractVisBase::SetToInfluence(int idx){
+	MyArray<float*> influences = { &mRenderingParameters.ColorInfluence, &mRenderingParameters.ValueToTextureInfluence,
+		&mRenderingParameters.ValueToSizeInfluence, &mRenderingParameters.ValueToTextureRatioInfluence};
+	for (int i = 0; i < influences.size(); i++){
+		*(influences[i]) = 0;
+	}
+	if (idx >= 0 && idx < 4){
+		*(influences[idx]) = 1;
+	}
+}
+
+MyArrayf MyTractVisBase::GetInfluences() const{
+	MyArrayf influences = { mRenderingParameters.ColorInfluence, 
+		mRenderingParameters.ValueToTextureInfluence,
+		mRenderingParameters.ValueToSizeInfluence, 
+		mRenderingParameters.ValueToTextureRatioInfluence };
+	return influences;
+}
+
+void MyTractVisBase::SetInfluences(const MyArrayf& influences){
+	MyArray<float*> ifPtr = { &mRenderingParameters.ColorInfluence, 
+		&mRenderingParameters.ValueToTextureInfluence,
+		&mRenderingParameters.ValueToSizeInfluence, 
+		&mRenderingParameters.ValueToTextureRatioInfluence };
+	for (int i = 0; i < influences.size() && i<4; i++){
+		*(ifPtr[i]) = influences[i];
+	}
+}
+
+void MyTractVisBase::UpdateBoundingBox(){
+	mBoundingBox = mTracts->ComputeBoundingBox(mFiberToDraw);
+}
+
 void MyTractVisBase::ClearGeometry(){
 	mVertices.clear();
 	mNormals.clear();
 	mTexCoords.clear();
 	//mRadius.clear();
 	mColors.clear();
+	mValues.clear();
 	mIndices.clear();
 	mLineIndices.clear();
 
@@ -378,13 +449,45 @@ void MyTractVisBase::ClearGeometry(){
 
 void MyTractVisBase::ComputeGeometry(){
 	ClearGeometry();
-	mBoundingBox = mTracts->ComputeBoundingBox(mFiberToDraw);
 	//mShape = TRACK_SHAPE_SUPERQUADRIC;
+	TrackShape shape = this->GetShape();
+	if (shape == TRACK_SHAPE_TUBE) this->ComputeTubeGeometry();
+	else if (shape == TRACK_SHAPE_LINE) this->ComputeLineGeometry();
+	else if (shape == TRACK_SHAPE_SUPERQUADRIC) this->ComputeSuperquadricGeometry();
+	else cerr << "Unresolved track shape: " << shape << endl;
+}
 
-	if (mShape == TRACK_SHAPE_TUBE) this->ComputeTubeGeometry();
-	else if (mShape == TRACK_SHAPE_LINE) this->ComputeLineGeometry();
-	else if (mShape == TRACK_SHAPE_SUPERQUADRIC) this->ComputeSuperquadricGeometry();
-	else cerr << "Unresolved track shape: " << mShape << endl;
+void MyTractVisBase::Show(){
+	glPushAttrib(GL_ALL_ATTRIB_BITS);
+	float pixelHaloWidth = this->GetPixelHaloWidth();
+	if (pixelHaloWidth == 0) DrawGeometry();
+	else{
+		MyColor4f baseColor = this->GetBaseColor();
+		float ab = GetAmbient();
+		float lineWidth;
+		glGetFloatv(GL_LINE_WIDTH, &lineWidth);
+		glLineWidth(lineWidth + pixelHaloWidth);
+		glEnable(GL_CULL_FACE);
+		glCullFace(GL_FRONT);
+		glPolygonMode(GL_BACK, GL_LINE);
+		if (this->GetShape() == TRACK_SHAPE_TUBE
+			|| this->GetShape() == TRACK_SHAPE_SUPERQUADRIC){
+			glLineWidth(pixelHaloWidth);
+		}
+		SetBaseColor(this->GetPixelHaloColor());
+		// wash out to white
+		SetAmbient(100);
+		DrawGeometry();
+		glDisable(GL_BLEND);
+		glPolygonMode(GL_FRONT, GL_FILL);
+		glCullFace(GL_BACK);
+		glDepthFunc(GL_LEQUAL);
+		SetBaseColor(baseColor);
+		SetAmbient(ab);
+		glLineWidth(lineWidth);
+		DrawGeometry();
+	}
+	glPopAttrib();
 }
 
 void MyTractVisBase::LoadGeometry(){
@@ -432,6 +535,17 @@ void MyTractVisBase::LoadGeometry(){
 		glEnableVertexAttribArray(mTexCoordAttribute);
 		glVertexAttribPointer(mTexCoordAttribute, 2, GL_FLOAT, GL_FALSE, 0, 0);
 	}
+	// value
+	if (mValues.size() > 0){
+		if (glIsBuffer(mValueBuffer)){
+			glDeleteBuffers(1, &mValueBuffer);
+		}
+		glGenBuffers(1, &mValueBuffer);
+		glBindBuffer(GL_ARRAY_BUFFER, mValueBuffer);
+		glBufferData(GL_ARRAY_BUFFER, mValues.size() * sizeof(float), &mValues[0], GL_STATIC_DRAW);
+		glEnableVertexAttribArray(mValueAttribute);
+		glVertexAttribPointer(mValueAttribute, 1, GL_FLOAT, GL_FALSE, 0, 0);
+	}
 	/*
 	// radius
 	if (glIsBuffer(mRadiusBuffer)){
@@ -452,10 +566,10 @@ void MyTractVisBase::LoadGeometry(){
 	}
 	glGenBuffers(1, &mIndexBuffer);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mIndexBuffer);
-	if ((mShape == TRACK_SHAPE_TUBE || mShape == TRACK_SHAPE_SUPERQUADRIC) && mIndices.size()>0){
+	if ((this->GetShape() == TRACK_SHAPE_TUBE || this->GetShape() == TRACK_SHAPE_SUPERQUADRIC) && mIndices.size()>0){
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, mIndices.size() * sizeof(MyVec3i), &mIndices[0][0], GL_STATIC_DRAW);
 	}
-	else if (mShape == TRACK_SHAPE_LINE && mLineIndices.size()>0){
+	else if (this->GetShape() == TRACK_SHAPE_LINE && mLineIndices.size()>0){
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, mLineIndices.size() * sizeof(int), &mLineIndices[0], GL_STATIC_DRAW);
 	}
 	else{
@@ -472,12 +586,8 @@ void MyTractVisBase::LoadGeometry(){
 }
 
 void MyTractVisBase::LoadShader(){
-	if (mShape == TRACK_SHAPE_LINE){
-		//	return;
-	}
-
-	glDeleteProgram(mShaderProgram);
-	mShaderProgram = InitShader("Shaders\\geom.vert", "Shaders\\geom.frag", "fragColour", "position");
+	if(glIsProgram(mShaderProgram)) glDeleteProgram(mShaderProgram);
+	mShaderProgram = InitShader("..\\SSAO\\Shaders\\geom.vert", "..\\SSAO\\Shaders\\geom.frag", "fragColour", "position");
 	//mShaderProgram = InitShader("Shaders\\tracks.vert", "Shaders\\tracks.frag", "fragColour");
 
 	mNormalAttribute = glGetAttribLocation(mShaderProgram, "normal");
@@ -496,12 +606,17 @@ void MyTractVisBase::LoadShader(){
 	if (mTexCoordAttribute < 0) {
 		cerr << "Shader did not contain the 'texCoord' attribute." << endl;
 	}
+	mValueAttribute = glGetAttribLocation(mShaderProgram, "value");
+	if (mValueAttribute < 0) {
+		cerr << "Shader did not contain the 'value' attribute." << endl;
+	}
 }
 
-void MyTractVisBase::Show(){
+void MyTractVisBase::DrawGeometry(){
 	//if (mShape == TRACK_SHAPE_TUBE){
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
 	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_TEXTURE_2D);
 	//glEnable(GL_CULL_FACE);
 	//glCullFace(GL_BACK);
 	//glEnable(GL_BLEND);
@@ -530,13 +645,27 @@ void MyTractVisBase::Show(){
 	glUniform3f(colorLocation, 1, 1, 1);
 
 	int radiusLocation = glGetUniformLocation(mShaderProgram, "radius");
-	glUniform1f(radiusLocation, mTrackRadius);
+	int shapeLocation = glGetUniformLocation(mShaderProgram, "shape");
+	glUniform1i(shapeLocation, int(this->GetShape()));
 
 	int textureLocation = glGetUniformLocation(mShaderProgram, "colorTex");
 	glUniform1i(textureLocation, 0);
 	glActiveTexture(GL_TEXTURE0 + 0);
-	unsigned int texture = MyBlackBodyColor::GetTexture();
-	glBindTexture(GL_TEXTURE_1D, texture);
+	//unsigned int texture = MyBlackBodyColor::GetTexture();
+	//glBindTexture(GL_TEXTURE_1D, texture);
+	glBindTexture(GL_TEXTURE_2D, mRenderingParameters.Texture);
+
+	glUniform4fv(glGetUniformLocation(mShaderProgram, "baseColor"), 1, &mRenderingParameters.BaseColor.r);
+	glUniform1f(glGetUniformLocation(mShaderProgram, "lightIntensity"), mRenderingParameters.LightIntensity);
+	glUniform1f(glGetUniformLocation(mShaderProgram, "ambient"), mRenderingParameters.Ambient);
+	glUniform1f(glGetUniformLocation(mShaderProgram, "diffuse"), mRenderingParameters.Diffuse);
+	glUniform1f(glGetUniformLocation(mShaderProgram, "specular"), mRenderingParameters.Specular);
+	glUniform1f(glGetUniformLocation(mShaderProgram, "shininess"), mRenderingParameters.Shininess);
+
+	glUniform1f(glGetUniformLocation(mShaderProgram, "colorInfluence"), mRenderingParameters.ColorInfluence);
+	glUniform1f(glGetUniformLocation(mShaderProgram, "valueToSizeInfluence"), mRenderingParameters.ValueToSizeInfluence);
+	glUniform1f(glGetUniformLocation(mShaderProgram, "valueToTextureInfluence"), mRenderingParameters.ValueToTextureInfluence);
+	glUniform1f(glGetUniformLocation(mShaderProgram, "valueToTextureRatioInfluence"), mRenderingParameters.ValueToTextureRatioInfluence);
 
 #ifdef RIC
 	glEnable(GL_TEXTURE_3D);
@@ -545,20 +674,21 @@ void MyTractVisBase::Show(){
 	glActiveTexture(GL_TEXTURE0 + 0);
 	glBindTexture(GL_TEXTURE_3D, mFilterVolumeTexture);
 #endif
-	if (mShape == TRACK_SHAPE_TUBE){
+	if (this->GetShape() == TRACK_SHAPE_TUBE){
+		glUniform1f(radiusLocation, mTrackRadius);
 		//this has no cap considered
 		for (int i = 0; i < mFiberToDraw.size(); i++){
 			int fiberIdx = mFiberToDraw[i];
-			//int offset = (mIdxOffset[fiberIdx] / (mFaces + 1) - fiberIdx)*mFaces * 6;
-			//int numVertex = (this->GetNumVertex(fiberIdx) - 1)*(mFaces + 0) * 6;
+			//int offset = (mIdxOffset[fiberIdx] / (mRenderingParameters.Faces + 1) - fiberIdx)*mRenderingParameters.Faces * 6;
+			//int numVertex = (this->GetNumVertex(fiberIdx) - 1)*(mRenderingParameters.Faces + 0) * 6;
 			// add cap offset
-			int offset = (mIdxOffset[fiberIdx] / (mFaces + 1) - fiberIdx * 2)*mFaces * 6;
-			int numVertex = (mTracts->GetNumVertex(fiberIdx) - 1)*(mFaces + 0) * 6 + mFaces * 6;
+			int offset = (mIdxOffset[fiberIdx] / (mRenderingParameters.Faces + 1) - fiberIdx * 2)*mRenderingParameters.Faces * 6;
+			int numVertex = (mTracts->GetNumVertex(fiberIdx) - 1)*(mRenderingParameters.Faces + 0) * 6 + mRenderingParameters.Faces * 6;
 			glDrawElements(GL_TRIANGLES, numVertex, GL_UNSIGNED_INT, (const void *)(offset*sizeof(int)));
 			//glDrawElements(GL_LINE_STRIP, numVertex, GL_UNSIGNED_INT, (const void *)(offset*sizeof(int)));
 		}
 	}
-	else if (mShape == TRACK_SHAPE_SUPERQUADRIC){
+	else if (this->GetShape() == TRACK_SHAPE_SUPERQUADRIC){
 		glUniform1f(radiusLocation, 0);
 		for (int i = 0; i < mFiberToDraw.size(); i++){
 			int fiberIdx = mFiberToDraw[i];
@@ -568,7 +698,7 @@ void MyTractVisBase::Show(){
 		}
 		//glDrawElements(GL_LINE_STRIP, mIdxOffset.back() * 3, GL_UNSIGNED_INT, 0);
 	}
-	else if (mShape == TRACK_SHAPE_LINE){
+	else if (this->GetShape() == TRACK_SHAPE_LINE){
 		glUniform1f(radiusLocation, 0);
 		for (int i = 0; i < mFiberToDraw.size(); i++){
 			int fiberIdx = mFiberToDraw[i];
@@ -578,6 +708,22 @@ void MyTractVisBase::Show(){
 		}
 	}
 	else cerr << "Unresolved shape, no elements drawn!" << endl;
+
+	if (mSphereGeometry){
+		glUniform1f(radiusLocation, 0);
+		glUniform1i(shapeLocation, 2);
+		glUniform1f(glGetUniformLocation(mShaderProgram, "colorInfluence"), 0);
+		glUniform1f(glGetUniformLocation(mShaderProgram, "valueToSizeInfluence"), 0);
+		glUniform1f(glGetUniformLocation(mShaderProgram, "valueToTextureInfluence"), 0);
+		glUniform1f(glGetUniformLocation(mShaderProgram, "valueToTextureRatioInfluence"), 0);
+		//glEnable(GL_CULL_FACE);
+		//glCullFace(GL_FRONT);
+		//glPolygonMode(GL_BACK, GL_LINE);
+		glLineWidth(mRenderingParameters.PixelHaloWidth);
+		mSphereGeometry->DrawGeometry();
+		//glPolygonMode(GL_FRONT, GL_FILL);
+		//glCullFace(GL_BACK);
+	}
 
 	glUseProgram(0);
 	glBindVertexArray(0);
@@ -628,7 +774,7 @@ void MyTractVisBase::ShowCapsOnly(){
 	glUniform3f(colorLocation, 1, 1, 1);
 
 	int radiusLocation = glGetUniformLocation(mShaderProgram, "radius");
-	if (mShape == TRACK_SHAPE_LINE){
+	if (this->GetShape() == TRACK_SHAPE_LINE){
 		glUniform1f(radiusLocation, 0);
 	}
 	else{
@@ -642,13 +788,13 @@ void MyTractVisBase::ShowCapsOnly(){
 	glActiveTexture(GL_TEXTURE0 + 0);
 	glBindTexture(GL_TEXTURE_3D, mFilterVolumeTexture);
 #endif
-	if (mShape == TRACK_SHAPE_TUBE){
+	if (this->GetShape() == TRACK_SHAPE_TUBE){
 		//this has no cap considered
 		for (int i = 0; i < mFiberToDraw.size(); i++){
 			int fiberIdx = mFiberToDraw[i];
-			int offset = (mIdxOffset[fiberIdx] / (mFaces + 1) - fiberIdx * 2)*mFaces * 6;
-			offset += (mTracts->GetNumVertex(fiberIdx) - 1)*(mFaces + 0) * 6;
-			int numVertex = mFaces * 6;
+			int offset = (mIdxOffset[fiberIdx] / (mRenderingParameters.Faces + 1) - fiberIdx * 2)*mRenderingParameters.Faces * 6;
+			offset += (mTracts->GetNumVertex(fiberIdx) - 1)*(mRenderingParameters.Faces + 0) * 6;
+			int numVertex = mRenderingParameters.Faces * 6;
 			glDrawElements(GL_TRIANGLES, numVertex, GL_UNSIGNED_INT, (const void *)(offset*sizeof(int)));
 		}
 	}
@@ -656,6 +802,13 @@ void MyTractVisBase::ShowCapsOnly(){
 	glUseProgram(0);
 	glBindVertexArray(0);
 	glPopAttrib();
+}
+
+void MyTractVisBase::PrintProgress(float current, float all, float step){
+	if ((int)((current + step) * 100 / all)
+		- (int)(current * 100 / all) >= 1){
+		cout << "Computing: " << current * 100 / all << "%.          \r";
+	}
 }
 
 #ifdef RIC
@@ -745,13 +898,13 @@ void MyTracks::FilterByVolumeMask(Array3D<float>& mask){
 	int it = mFiberToDraw[itt];
 	int offset = mIdxOffset[it];
 	for (int i = 1; i<this->GetNumVertex(it); i++){
-	for (int j = 0; j <= mFaces; j++){
-	mIndices << MyVec3i((i - 1)*(mFaces + 1) + j % (mFaces + 1) + offset,
-	(i)*(mFaces + 1) + j % (mFaces + 1) + offset,
-	(i)*(mFaces + 1) + (j + 1) % (mFaces + 1) + offset);
-	mIndices << MyVec3i((i - 1)*(mFaces + 1) + j % (mFaces + 1) + offset,
-	(i)*(mFaces + 1) + (j + 1) % (mFaces + 1) + offset,
-	(i - 1)*(mFaces + 1) + (j + 1) % (mFaces + 1) + offset);
+	for (int j = 0; j <= mRenderingParameters.Faces; j++){
+	mIndices << MyVec3i((i - 1)*(mRenderingParameters.Faces + 1) + j % (mRenderingParameters.Faces + 1) + offset,
+	(i)*(mRenderingParameters.Faces + 1) + j % (mRenderingParameters.Faces + 1) + offset,
+	(i)*(mRenderingParameters.Faces + 1) + (j + 1) % (mRenderingParameters.Faces + 1) + offset);
+	mIndices << MyVec3i((i - 1)*(mRenderingParameters.Faces + 1) + j % (mRenderingParameters.Faces + 1) + offset,
+	(i)*(mRenderingParameters.Faces + 1) + (j + 1) % (mRenderingParameters.Faces + 1) + offset,
+	(i - 1)*(mRenderingParameters.Faces + 1) + (j + 1) % (mRenderingParameters.Faces + 1) + offset);
 	}
 	}
 	}

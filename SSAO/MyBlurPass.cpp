@@ -21,7 +21,7 @@ void MyBlurPass::CompileShader(){
 	if (glIsProgram(mShaderProgram)){
 		glDeleteProgram(mShaderProgram);
 	}
-	mShaderProgram = InitShader("Shaders\\blur.vert", "Shaders\\blur.frag", "fragColour");
+	mShaderProgram = InitShader("..\\SSAO\\Shaders\\blur.vert", "..\\SSAO\\Shaders\\blur.frag", "fragColour");
 
 	int loc = glGetAttribLocation(mShaderProgram, "position");
 	if (loc < 0) {

@@ -81,7 +81,7 @@ MyVec3f MyGraphicsTool::GetProjection(const MyVec3f& worldCoord,
 	const MyMatrixd& modelViewMat, const MyMatrixd& projectionMat, const MyVec4i& viewport){
 	double wx, wy, wz;
 	gluProject((double)worldCoord[0],(double)worldCoord[1],(double)worldCoord[2],
-		modelViewMat.GetData(),projectionMat.GetData(),
+		modelViewMat.Transpose().GetData(), projectionMat.Transpose().GetData(),
 		viewport.d(), &wx, &wy, &wz);
 	return MyVec3f(wx,wy,wz);
 }
@@ -350,6 +350,14 @@ void MyGraphicsTool::PopProjectionMatrix(){
 	glMatrixMode(GL_PROJECTION);
 	glPopMatrix();
     glMatrixMode(GL_MODELVIEW);
+}
+
+void MyGraphicsTool::PushAllAttributes(){
+	glPushAttrib(GL_ALL_ATTRIB_BITS);
+}
+
+void MyGraphicsTool::PopAttributes(){
+	glPopAttrib();
 }
 
 void MyGraphicsTool::RasterPos(const MyVec3f& pos){

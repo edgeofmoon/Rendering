@@ -25,8 +25,13 @@ public:
 
 	static MyVec3f MatMulVec(const MyMatrixf& mat, const MyVec3f& vec);
 
+	static MyVec4f MatMulVec(const MyMatrixf& mat, const MyVec4f& vec);
+
 	static MyMatrixf InverseMatrix4x4ColMaj(const MyMatrixf& mat);
 
+	static float PointToLineSegmentDistance(const MyVec3f& p, const MyVec3f& lineStart, const MyVec3f& lineEnd);
+
+	static MyVec3f ClosestPointOnLineSegment(const MyVec3f& p, const MyVec3f& lineStart, const MyVec3f& lineEnd);
 protected:
 	static MyArrayi Factorials;
 };

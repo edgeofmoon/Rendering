@@ -42,7 +42,7 @@ void MyLightingPass::ResetRenderingParameters(){
 void MyLightingPass::CompileShader(){
 
 	glDeleteProgram(mShaderProgram);
-	mShaderProgram = InitShader("Shaders\\lighting.vert", "Shaders\\lighting.frag", "fragColour");
+	mShaderProgram = InitShader("..\\SSAO\\Shaders\\lighting.vert", "..\\SSAO\\Shaders\\lighting.frag", "fragColour");
 
 	int loc = glGetAttribLocation(mShaderProgram, "position");
 	if (loc < 0) {

@@ -23,8 +23,8 @@ public:
 
 	float mLineAOTotalStrength;
 	int mBlurRadius;
-	float mLineWidth;
 
+	virtual inline unsigned int GetShaderProgram() const { return mLineShader; };
 protected:
 	void ComputeTubeGeometry();
 	void ComputeLineGeometry();

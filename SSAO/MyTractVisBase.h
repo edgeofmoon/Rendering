@@ -1,6 +1,7 @@
 #pragma once
 
 #include "MyTracks.h"
+#include "MySphereGeometry.h"
 
 class MyTractVisBase
 {
@@ -13,6 +14,30 @@ public:
 		TRACK_SHAPE_TUBE = 2,
 		TRACK_SHAPE_SUPERQUADRIC = 3
 	};
+
+	typedef struct RenderingParameters_t{
+		TrackShape Shape;
+		int Faces;
+		int SuperquadricSkip;
+		unsigned int Texture;
+		MyColor4f PixelHaloColor;
+		float PixelHaloWidth;
+
+		// material
+		MyColor4f BaseColor;
+		float LightIntensity;
+		float Ambient;
+		float Diffuse;
+		float Specular;
+		float Shininess;
+
+		// encoding
+		float ColorInfluence;
+		float ValueToTextureInfluence;
+		float ValueToSizeInfluence;
+		float ValueToTextureRatioInfluence;
+	}RenderingParameters;
+
 	void SetTracts(const MyTracks* tracts);
 	const MyTracks* GetTracts() const { return mTracts; };
 
@@ -23,33 +48,76 @@ public:
 
 	// volitile rendering parameters
 	float mTrackRadius;
-	void ResetRenderingParameters();
+	const RenderingParameters& GetRenderingParamters() const { return mRenderingParameters; };
+	void SetRenderingParamters(const RenderingParameters& r){ mRenderingParameters = r; };
+	virtual void ResetRenderingParameters();
 
+	int GetNumberFaces() const { return mRenderingParameters.Faces; };
+	void SetNumberFaces(int f) { mRenderingParameters.Faces = f; };
 
-	int GetNumberFaces() const { return mFaces; };
-	void SetNumberFaces(int f) { mFaces = f; };
-
-	TrackShape GetShape() const { return mShape; };
-	void SetShape(TrackShape shape){ mShape = shape; };
+	TrackShape GetShape() const { return mRenderingParameters.Shape; };
+	void SetShape(TrackShape shape){ mRenderingParameters.Shape = shape; };
 
 	const MyArrayi& GetTractsShown() { return mFiberToDraw; };
 	void SetTractsShown(const MyArrayi& arr){ mFiberToDraw = arr; };
 
+	void SetTexture(unsigned int texture){ mRenderingParameters.Texture = texture; };
+	unsigned int GetTexture() const { return mRenderingParameters.Texture; }
+
+	void SetPixelHaloColor(const MyColor4f& c){ mRenderingParameters.PixelHaloColor = c; };
+	MyColor4f GetPixelHaloColor() const { return mRenderingParameters.PixelHaloColor; };
+
+	void SetPixelHaloWidth(float w){ mRenderingParameters.PixelHaloWidth = w; };
+	float GetPixelHaloWidth() const{ return mRenderingParameters.PixelHaloWidth; };
+
+	void SetSphereGeometry(MySphereGeometry* sg){ mSphereGeometry = sg; };
+	MySphereGeometry* GetSphereGeometry() const { return mSphereGeometry; };
+
+	void SetBaseColor(const MyColor4f& c){ mRenderingParameters.BaseColor = c; };
+	MyColor4f GetBaseColor() const { return mRenderingParameters.BaseColor; };
+	void SetLightIntensity(float li){ mRenderingParameters.LightIntensity = li; };
+	float GetLightIntensity() const{ return mRenderingParameters.LightIntensity; };
+	void SetAmbient(float ab) { mRenderingParameters.Ambient = ab; };
+	float GetAmbient() const { return mRenderingParameters.Ambient; };
+
+	void SetColorInfluence(float ci){ mRenderingParameters.ColorInfluence = ci; };
+	void SetValueToTextureInfluence(float vt){ mRenderingParameters.ValueToTextureInfluence = vt; };
+	void SetValueToSizeInfluence(float vs){ mRenderingParameters.ValueToSizeInfluence = vs; };
+	void SetValueToTextureRatioInfluence(float vtr){ mRenderingParameters.ValueToTextureRatioInfluence = vtr; };
+	void ClearInfluences() {
+		mRenderingParameters.ColorInfluence
+			= mRenderingParameters.ValueToTextureInfluence
+			= mRenderingParameters.ValueToSizeInfluence
+			= mRenderingParameters.ValueToTextureRatioInfluence
+			= 0;
+	};
+	void SetToInfluence(int idx);
+	MyArrayf GetInfluences() const;
+	void SetInfluences(const MyArrayf& influences);
+
+	void UpdateBoundingBox();
+	MyBoundingBox GetBoundingBox() const{ return mBoundingBox; };
+
+	virtual inline unsigned int GetShaderProgram() const { return mShaderProgram; };
+
 	void ClearGeometry();
+	void DrawGeometry();
 	void ShowCapsOnly();
+
+	static RenderingParameters DefaultRenderingParameters;
 
 protected:
 	// preset data
 	const MyTracks* mTracts;
-	TrackShape mShape;
-	int mFaces;
-	int mSuperquadricSkip;
-
+	RenderingParameters mRenderingParameters;
+	MySphereGeometry* mSphereGeometry;
+	
 	// for geometry
 	MyArray3f mVertices;
 	MyArray3f mNormals;
 	MyArray2f mTexCoords;
 	MyArray<MyColor4f> mColors;
+	MyArrayf mValues;
 	MyArray3i mIndices;
 	MyArrayi mLineIndices;
 	MyArrayi mIdxOffset;
@@ -62,6 +130,7 @@ protected:
 	unsigned int mNormalBuffer;
 	unsigned int mTexCoordBuffer;
 	unsigned int mColorBuffer;
+	unsigned int mValueBuffer;
 	unsigned int mIndexBuffer;
 	bool mbScreenSpace;
 
@@ -70,10 +139,13 @@ protected:
 	int mPositionAttribute;
 	int mTexCoordAttribute;
 	int mColorAttribute;
+	int mValueAttribute;
 
 	void ComputeTubeGeometry();
 	void ComputeLineGeometry();
 	void ComputeSuperquadricGeometry();
+
+	void PrintProgress(float current, float all, float step);
 
 	// for filtering
 	MyArrayi mFiberToDraw;

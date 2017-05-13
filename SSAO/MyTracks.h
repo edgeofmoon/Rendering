@@ -15,6 +15,7 @@
 #include "MyColor4.h"
 #include "MyVec.h"
 #include "MyBoundingBox.h"
+#include "MyBoundingObject.h"
 #include "MyTensor.h"
 
 class MySingleTrackData
@@ -85,8 +86,17 @@ public:
 	int GetNumVertex(int trackIdx) const;
 	MyBoundingBox ComputeBoundingBox(const MyArrayi tractIndices) const;
 	MyBoundingBox GetBoundingBox() const { return mBoundingBox; };
-	void GetSampleValueInfo(MyBoundingBox& box, int& nSample, float& valueSum) const;
-	void GetSampleValueInfo(MyBoundingBox& box, const MyArrayi& indices, int& nSample, float& valueSum) const;
+	bool IsTractIntersected(const MyBoundingObject& bobj, int tractIndex) const;
+	int CountTractsIntersected(const MyBoundingObject& bobj) const;
+	int CountTractsIntersected(const MyBoundingObject& bobj, const MyArrayi& indices) const;
+	MyArrayi GetTractsIntersected(const MyBoundingObject& bobj) const;
+	MyArrayi GetTractsIntersected(const MyBoundingObject& bobj, const MyArrayi& indices) const;
+	int CountVertexInBox(const MyBoundingObject& bobj) const;
+	int CountVertexInBox(const MyBoundingObject& bobj, const MyArrayi& indices) const;
+	MyArray2i GetVertexInBox(const MyBoundingObject& bobj) const;
+	MyArray2i GetVertexInBox(const MyBoundingObject& bobj, const MyArrayi& indices) const;
+	void GetSampleValueInfo(const MyBoundingObject& bobj, int& nSample, float& valueSum) const;
+	void GetSampleValueInfo(const MyBoundingObject& bobj, const MyArrayi& indices, int& nSample, float& valueSum) const;
 
 	void FilterByTrackLength(const std::vector<int>& inset, float threshold[2], std::vector<int>& outset) const;
 	void FilterByIndexSkip(const std::vector<int>& inset, float skipRatio, std::vector<int>& outset) const;
@@ -95,6 +105,7 @@ public:
 	Point GetPoint(int trackIdx, int pointIdx) const;
 #endif
 	MyVec3f GetCoord(int trackIdx, int pointIdx) const;
+	MyVec3f GetCoord(const MyVec2i& idx) const;
 	MyColor4f GetTrackColor(int trackIdx) const;
 	float GetValue(int trackIdx, int pointIdx) const;
 	MyTensor3f GetTensor(int trackIdx, int pointIdx) const;

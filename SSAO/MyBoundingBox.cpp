@@ -2,6 +2,7 @@
 #include "MyPrimitiveDrawer.h"
 #include <algorithm>
 #include <cmath>
+using namespace std;
 
 MyBoundingBox::MyBoundingBox(void)
 	:mLowPos(0.f, 0.f, 0.f), mHighPos(0.f, 0.f, 0.f)
@@ -15,6 +16,12 @@ MyBoundingBox::MyBoundingBox(const MyVec3f& low,const MyVec3f& high){
 }
 MyBoundingBox::~MyBoundingBox(void)
 {
+}
+
+MyBoundingBox::MyBoundingBox(const MyVec3f& center, float size){
+	MyVec3f offset(size / 2, size / 2, size / 2);
+	mLowPos = center - offset;
+	mHighPos = center + offset;
 }
 
 MyBoundingBox::MyBoundingBox(const MyVec3f& center, float width, float height, float depth){
@@ -35,6 +42,43 @@ void MyBoundingBox::Engulf(const MyVec3f& pos){
 	if(pos[0]>mHighPos[0]) mHighPos[0] = pos[0];
 	if(pos[1]>mHighPos[1]) mHighPos[1] = pos[1];
 	if(pos[2]>mHighPos[2]) mHighPos[2] = pos[2];
+}
+
+bool MyBoundingBox::IsIntersected(const MyVec3f& st, const MyVec3f& ed) const{
+	// Get line midpoint and extent
+	MyVec3f lst = st - GetCenter();
+	MyVec3f led = ed - GetCenter();
+	MyVec3f size(GetRange(0), GetRange(1), GetRange(2));
+	MyVec3f LMid = (lst + led) * 0.5f;
+	MyVec3f L = (lst - LMid);
+	MyVec3f LExt(fabs(L[0]), fabs(L[1]), fabs(L[2]));
+
+	// Use Separating Axis Test
+	// Separation vector from box center to line center is LMid, since the line is in box space
+	if (fabs(LMid[0]) > size[0] + LExt[0]) return false;
+	if (fabs(LMid[1]) > size[1] + LExt[1]) return false;
+	if (fabs(LMid[2]) > size[2] + LExt[2]) return false;
+	// Crossproducts of line and each axis
+	if (fabs(LMid[1] * L[2] - LMid[2] * L[1])  >  (size[1] * LExt[2] + size[2] * LExt[1])) return false;
+	if (fabs(LMid[0] * L[2] - LMid[2] * L[0])  >  (size[0] * LExt[2] + size[2] * LExt[0])) return false;
+	if (fabs(LMid[0] * L[1] - LMid[1] * L[0])  >  (size[0] * LExt[1] + size[1] * LExt[0])) return false;
+	// No separating axis, the line intersects
+	return true;
+}
+
+void MyBoundingBox::Translate(const MyVec3f& offset){
+	mLowPos += offset;
+	mHighPos += offset;
+}
+
+void MyBoundingBox::Expand(float e){
+	expand(e, 0);
+	expand(e, 1);
+	expand(e, 2);
+}
+
+MyBoundingObject* MyBoundingBox::MakeCopy() const{
+	return new MyBoundingBox(mLowPos, mHighPos);
 }
 
 void MyBoundingBox::Engulf(const MyBoundingBox& box){
@@ -94,7 +138,7 @@ void MyBoundingBox::Show(){
 	quads.push_back(vecs[6]);
 	quads.push_back(vecs[2]);
 
-	MyPrimitiveDrawer::DrawQuadAtsAt(quads);
+	MyPrimitiveDrawer::DrawQuadsAt(quads);
 }
 
 const MyVec3f& MyBoundingBox::operator[](int i) const{
@@ -179,10 +223,7 @@ MyArray3f* MyBoundingBox::MakeRandomPositions(int n) const{
 	}
 	return arr;
 }
-void MyBoundingBox::Translate(const MyVec3f& offset){
-	mLowPos += offset;
-	mHighPos += offset;
-}
+
 
 void MyBoundingBox::Scale(float sc){
 //	MyVec3f center = this->GetCenter();
@@ -193,8 +234,16 @@ void MyBoundingBox::Scale(float sc){
 }
 
 void MyBoundingBox::expand(float amount, int dim){
-	expandHigh(amount,dim);
-	expandLow(amount,dim);
+	// incase of shrink
+	if ((mHighPos[dim] - mLowPos[dim]) / 2 < -amount){
+		float mid = (mHighPos[dim] / 2 + mLowPos[dim]) / 2;
+		mHighPos[dim] = mid;
+		mLowPos[dim] = mid;
+	}
+	else{
+		expandHigh(amount, dim);
+		expandLow(amount, dim);
+	}
 }
 
 void MyBoundingBox::expandHigh(float amount, int dim){

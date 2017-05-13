@@ -343,11 +343,14 @@ bool MyArray<T>::isSmallerByIndex(int a, int b){
 }
 
 typedef MyArray<int> MyArrayi;
+typedef MyArray<unsigned int> MyArrayui;
 typedef MyArray<MyVec2i> MyArray2i;
 typedef MyArray<MyVec3i> MyArray3i;
 typedef MyArray<float> MyArrayf;
 typedef MyArray<MyVec2f> MyArray2f;
 typedef MyArray<MyVec3f> MyArray3f;
 typedef MyArray<MyVec4f> MyArray4f;
-typedef MyArray<MyString> MyArrayStr;
 typedef MyArray<bool> MyArrayb;
+typedef MyArray<char> MyArrayc;
+typedef MyArray<unsigned char> MyArrayuc;
+typedef MyArray<MyString> MyArrayStr;

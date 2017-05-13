@@ -15,6 +15,8 @@ public:
 	virtual void Show();
 	virtual void LoadGeometry();
 
+	virtual void ResetRenderingParameters();
+
 	float mStripWidth;
 	float mStripDepth;
 	float mStrokeWidth;

@@ -30,4 +30,8 @@ namespace OSCB{
 	std::vector<std::string> get_all_files_names_within_folder(std::string folder);
 
 	std::string BrowseFolder(std::string saved_path);
+
+	void MakePath(const std::string& path);
+
+	void MakeCopy(const std::string& srcFileName, const std::string& newFileName);
 }

@@ -27,7 +27,7 @@ public:
 	inline const MyVec3f& GetCenter() const { return mCenter; };
 	inline void SetTensor(const MyTensor3f* tensor){ mTensor = tensor; };
 	inline const MyTensor3f* GetTensor() const { return mTensor; };
-	inline void SetScalue(float s) { mScale = s; };
+	inline void SetScale(float s) { mScale = s; };
 	inline float GetScale() const { return mScale; };
 
 	void Build();

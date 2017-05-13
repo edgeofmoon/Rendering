@@ -28,11 +28,74 @@ MyTubeDDH::MyTubeDDH()
 MyTubeDDH::~MyTubeDDH()
 {
 }
+void MyTubeDDH::LoadShader(){
+
+	glDeleteProgram(mShaderProgram);
+	mShaderProgram = InitShader("..\\DDH\\shaders\\geom.vert", "..\\DDH\\shaders\\geom.frag", "fragColour");
+
+	mPositionAttribute = glGetAttribLocation(mShaderProgram, "position");
+	if (mPositionAttribute < 0) {
+		cerr << "Shader did not contain the 'position' attribute." << endl;
+	}
+	mNormalAttribute = glGetAttribLocation(mShaderProgram, "normal");
+	if (mNormalAttribute < 0) {
+		cerr << "Shader did not contain the 'normal' attribute." << endl;
+	}
+	mColorAttribute = glGetAttribLocation(mShaderProgram, "color");
+	if (mColorAttribute < 0) {
+		cerr << "Shader did not contain the 'color' attribute." << endl;
+	}
+}
+
+
+void MyTubeDDH::LoadGeometry(){
+	if (glIsVertexArray(mVertexArray)){
+		glDeleteVertexArrays(1, &mVertexArray);
+	}
+	glGenVertexArrays(1, &mVertexArray);
+	glBindVertexArray(mVertexArray);
+	// vertex
+	if (glIsBuffer(mVertexBuffer)){
+		glDeleteBuffers(1, &mVertexBuffer);
+	}
+	glGenBuffers(1, &mVertexBuffer);
+	glBindBuffer(GL_ARRAY_BUFFER, mVertexBuffer);
+	glBufferData(GL_ARRAY_BUFFER, mVertices.size() * sizeof(MyVec3f), &mVertices[0][0], GL_STATIC_DRAW);
+	glEnableVertexAttribArray(mPositionAttribute);
+	glVertexAttribPointer(mPositionAttribute, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	// normal
+	if (glIsBuffer(mNormalBuffer)){
+		glDeleteBuffers(1, &mNormalBuffer);
+	}
+	glGenBuffers(1, &mNormalBuffer);
+	glBindBuffer(GL_ARRAY_BUFFER, mNormalBuffer);
+	glBufferData(GL_ARRAY_BUFFER, mNormals.size() * sizeof(MyVec3f), &mNormals[0][0], GL_STATIC_DRAW);
+	glEnableVertexAttribArray(mNormalAttribute);
+	glVertexAttribPointer(mNormalAttribute, 3, GL_FLOAT, GL_FALSE, 0, 0);
+
+	// index
+	if (glIsBuffer(mIndexBuffer)){
+		glDeleteBuffers(1, &mIndexBuffer);
+	}
+	glGenBuffers(1, &mIndexBuffer);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mIndexBuffer);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, mIndices.size() * sizeof(MyVec3i), &mIndices[0][0], GL_STATIC_DRAW);
+
+	// unbind
+	glBindVertexArray(0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
+	// now free everything
+	ClearGeometry();
+}
+
 
 void MyTubeDDH::Show(){
 	//if (mShape == TRACK_SHAPE_TUBE){
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
 	glEnable(GL_DEPTH_TEST);
+	//glDisable(GL_DEPTH_TEST);
 	//glEnable(GL_CULL_FACE);
 	//glCullFace(GL_BACK);
 	//glEnable(GL_BLEND);
@@ -60,25 +123,26 @@ void MyTubeDDH::Show(){
 	int radiusLocation = glGetUniformLocation(mShaderProgram, "radius");
 	glUniform1f(radiusLocation, mTrackRadius);
 
+	glUniform4fv(glGetUniformLocation(mShaderProgram, "baseColor"), 1, &mRenderingParameters.BaseColor.r);
+	glUniform1f(glGetUniformLocation(mShaderProgram, "lightIntensity"), mRenderingParameters.LightIntensity);
+	glUniform1f(glGetUniformLocation(mShaderProgram, "ambient"), mRenderingParameters.Ambient);
+	glUniform1f(glGetUniformLocation(mShaderProgram, "diffuse"), mRenderingParameters.Diffuse);
+	glUniform1f(glGetUniformLocation(mShaderProgram, "specular"), mRenderingParameters.Specular);
+	glUniform1f(glGetUniformLocation(mShaderProgram, "shininess"), mRenderingParameters.Shininess);
+
 	radiusLocation = glGetUniformLocation(mShaderProgram, "depthCueing");
 	glUniform1f(radiusLocation, mDepthCueing);
 
-#ifdef RIC
-	glEnable(GL_TEXTURE_3D);
-	int filterVolLocation = glGetUniformLocation(mShaderProgram, "filterVol");
-	glUniform1i(filterVolLocation, 0);
-	glActiveTexture(GL_TEXTURE0 + 0);
-	glBindTexture(GL_TEXTURE_3D, mFilterVolumeTexture);
-#endif
-	if (mShape == TRACK_SHAPE_TUBE){
+	if (mRenderingParameters.Shape == TRACK_SHAPE_TUBE){
 		//this has no cap considered
+		int nFaces = mRenderingParameters.Faces;
 		for (int i = 0; i < mFiberToDraw.size(); i++){
 			int fiberIdx = mFiberToDraw[i];
 			//int offset = (mIdxOffset[fiberIdx] / (mFaces + 1) - fiberIdx)*mFaces * 6;
 			//int numVertex = (this->GetNumVertex(fiberIdx) - 1)*(mFaces + 0) * 6;
 			// add cap offset
-			int offset = (mIdxOffset[fiberIdx] / (mFaces + 1) - fiberIdx * 2)*mFaces * 6;
-			int numVertex = (mTracts->GetNumVertex(fiberIdx) - 1)*(mFaces + 0) * 6 + mFaces * 6;
+			int offset = (mIdxOffset[fiberIdx] / (nFaces + 1) - fiberIdx * 2)*nFaces * 6;
+			int numVertex = (mTracts->GetNumVertex(fiberIdx) - 1)*(nFaces + 0) * 6 + nFaces * 6;
 			glDrawElements(GL_TRIANGLES, numVertex, GL_UNSIGNED_INT, (const void *)(offset*sizeof(int)));
 		}
 	}

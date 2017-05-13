@@ -109,8 +109,10 @@ public:
 		for(i = 0;i<m && i<n; i++){
 			tmp[i] = _d[i];
 		}
-		for(i; i<m || i<n;i++){
-			tmp[i] = t;
+		if (m > n){
+			for (i; i<m; i++){
+				tmp[i] = t;
+			}
 		}
 		return tmp;
 	}

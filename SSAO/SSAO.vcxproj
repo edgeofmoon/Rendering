@@ -146,6 +146,7 @@
     <ClInclude Include="MyBlackBodyColor.h" />
     <ClInclude Include="MyBlurPass.h" />
     <ClInclude Include="MyBoundingBox.h" />
+    <ClInclude Include="MyBoundingObject.h" />
     <ClInclude Include="MyBox.h" />
     <ClInclude Include="MyColor4.h" />
     <ClInclude Include="MyFrameBuffer.h" />
@@ -160,10 +161,13 @@
     <ClInclude Include="MyPrimitiveDrawer.h" />
     <ClInclude Include="MyQuadGeometry.h" />
     <ClInclude Include="MyQuarternion.h" />
+    <ClInclude Include="MySphere.h" />
+    <ClInclude Include="MySphereGeometry.h" />
     <ClInclude Include="MySsaoPass.h" />
     <ClInclude Include="MyString.h" />
     <ClInclude Include="MySuperquadric.h" />
     <ClInclude Include="MyTensor.h" />
+    <ClInclude Include="MyTexture.h" />
     <ClInclude Include="MyTrackBall.h" />
     <ClInclude Include="MyTrackRings.h" />
     <ClInclude Include="MyTracks.h" />
@@ -210,9 +214,12 @@
     <ClCompile Include="MyPrimitiveDrawer.cpp" />
     <ClCompile Include="MyQuadGeometry.cpp" />
     <ClCompile Include="MyQuarternion.cpp" />
+    <ClCompile Include="MySphere.cpp" />
+    <ClCompile Include="MySphereGeometry.cpp" />
     <ClCompile Include="MySsaoPass.cpp" />
     <ClCompile Include="MyString.cpp" />
     <ClCompile Include="MySuperquadric.cpp" />
+    <ClCompile Include="MyTexture.cpp" />
     <ClCompile Include="MyTrackBall.cpp" />
     <ClCompile Include="MyTrackRings.cpp" />
     <ClCompile Include="MyTracks.cpp" />
@@ -234,14 +241,14 @@
   <ItemGroup>
     <None Include="shaders\blur.frag" />
     <None Include="shaders\blur.vert" />
+    <None Include="Shaders\geom.frag" />
+    <None Include="Shaders\geom.vert" />
     <None Include="shaders\lighting.frag" />
     <None Include="shaders\lighting.vert" />
     <None Include="Shaders\ring.frag" />
     <None Include="Shaders\ring.vert" />
     <None Include="shaders\ssao.frag" />
     <None Include="shaders\ssao.vert" />
-    <None Include="Shaders\geom.frag" />
-    <None Include="Shaders\geom.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

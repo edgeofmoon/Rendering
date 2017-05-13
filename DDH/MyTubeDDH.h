@@ -8,6 +8,9 @@ public:
 	~MyTubeDDH();
 
 	float mDepthCueing;
+	virtual void LoadShader();
+	//virtual void ComputeGeometry();
 	virtual void Show();
+	virtual void LoadGeometry();
 };
 

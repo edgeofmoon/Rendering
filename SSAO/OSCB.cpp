@@ -119,3 +119,15 @@ std::string OSCB::BrowseFolder(std::string saved_path)
 
 	return "";
 }
+
+void OSCB::MakePath(const std::string& path){
+	std::string command("mkdir ");
+	command += path;
+	system(command.c_str());
+}
+
+void OSCB::MakeCopy(const std::string& srcFileName, const std::string& newFileName){
+	std::string command("cp ");
+	command += (srcFileName + " " + newFileName);
+	system(command.c_str());
+}

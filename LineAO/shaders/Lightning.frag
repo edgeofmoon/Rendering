@@ -26,16 +26,17 @@ vec4 blur() {
 
 	return sum / ((2*blurX+1) * (2*blurY+1));
 }
-float linearizeDepth(float d){
-	float f = 200;
-	float n = 1;
-	float z = (2 * n) / (f + n - d * (f - n));
-	return z;
-}
+
 void main() {
+	float alpha = texture( gColor, TexCoords ).a;
+	if(alpha == 0) discard;
 	vec4 ao = blur();
 	fragColour.xyz = texture( gColor, TexCoords ).rgb * ao.x;
-	//fragColour.xyz = ao.xyz;
-	//fragColour.xyz = texture( gColor, TexCoords ).rgb;
-	fragColour.w = texture( gColor, TexCoords ).a;
+	//fragColour.xyz = texture( gNDMap, TexCoords ).www;
+	//fragColour.xyz = texture( gZoomMap, TexCoords ).rgb;
+	//fragColour.xyz = vec3(ao);
+	fragColour.a = alpha;
+	float depth = texture( gNDMap, TexCoords ).a;
+	//float depth = unlinearizeDepth(ao.a);
+	gl_FragDepth = depth;
 }

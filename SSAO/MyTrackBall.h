@@ -90,6 +90,8 @@ public:
 
 	void ScaleMotion(int x, int y);
 
+	void SetScaleRange(float mis, float mas);
+
 	float GetScaleFromMotion(int x, int y) const;
 
 	void SetRotationMatrix(const MyMatrixf& mat);
@@ -100,6 +102,7 @@ public:
 
 	void ResetTranslate();
 	void ResetScale();
+	void ResetRotate();
 	void Translate(const MyVec3f& offset);
 	void ScaleAdd(float dy);
 	void ScaleMultiply(float dy);
@@ -113,6 +116,8 @@ protected:
 	float mButtonY;
 	float mAngle;
 
+	MyVec2f mScaleRange;
+
 	MyVec3f mLastPos;
 	MyVec3f mAxis;
 	MyVec3f mOrigin;
@@ -125,6 +130,6 @@ protected:
 	int mWidth;
 	int mHeight;
 
-	bool mTracking;
+	bool mRotating;
 };
 

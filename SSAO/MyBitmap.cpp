@@ -81,6 +81,10 @@ int MyBitmap::Open(const MyString& filename){
 		goto ERR_EXIT;
 	}
 
+	// switch from BGR to RGB
+	for (int i = 0; i < mWidth*mHeight; i++){
+		std::swap(mData[i * 3], mData[i * 3 + 2]);
+	}
 	fclose(fp);
 	return 1;
 
@@ -170,7 +174,7 @@ unsigned char* MyBitmap::MakePixelBufferRGBA() const{
 	}
 	return rst;
 }
-
+#include "MyArray.h"
 const unsigned char* MyBitmap::GetPixelBufferRGB() const{
 	return mData;
 }

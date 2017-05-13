@@ -717,7 +717,8 @@ int main(int argc, char* argv[])
 	//tractData.Read("data\\normal_s5.tensorinfo");
 	//tractData.Read("data\\cFile.tensorinfo");
 	//tractData.Read("C:\\Users\\GuohaoZhang\\Desktop\\tmpdata\\dti.trk");
-	tractData.Read("C:\\Users\\GuohaoZhang\\Desktop\\tmpdata\\ACR.trk");
+	//tractData.Read("C:\\Users\\GuohaoZhang\\Desktop\\tmpdata\\ACR.trk");
+	tractData.Read("C:\\Users\\GuohaoZhang\\Dropbox\\data\\normal_s3_tensorboy.trk");
 	//tractData.Read("dti_20_0995.data");
 	track.SetTracts(&tractData);
 	//track.SetShape(MyTractVisBase::TRACK_SHAPE_LINE);

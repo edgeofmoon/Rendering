@@ -40,6 +40,7 @@ int gl_error;
 
 #ifdef TRACK
 MyLineAO track;
+float lineWidth = 1;
 #endif
 
 #ifdef MESH
@@ -189,6 +190,7 @@ void drawTracks(int x, int y, int width, int height){
 		MyBoundingBox box = track.GetTracts()->GetBoundingBox();
 		MyGraphicsTool::Translate(-box.GetCenter());
 		if (bdrawTracks){
+			glLineWidth(lineWidth);
 			track.Show();
 		}
 		else{
@@ -620,11 +622,12 @@ int main(int argc, char* argv[])
 	trackBall.SetRotationMatrix(MyMatrixf::RotateMatrix(90, 1, 0, 0));
 	trackBall.ScaleMultiply(1.3);
 	MyTracks tractData;
-	tractData.Read("..\\SSAO\\data\\normal_s3.data");
+	//tractData.Read("..\\SSAO\\data\\normal_s3.data");
+	//tractData.Read("C:\\Users\\GuohaoZhang\\Dropbox\\data\\normal_s3_tensorboy.trk");
 	//tractData.Read("data\\normal_s5.tensorinfo");
 	//tractData.Read("data\\cFile.tensorinfo");
 	//tractData.Read("C:\\Users\\GuohaoZhang\\Desktop\\tmpdata\\dti.trk");
-	//tractData.Read("C:\\Users\\GuohaoZhang\\Desktop\\tmpdata\\ACR.trk");
+	tractData.Read("C:\\Users\\GuohaoZhang\\Desktop\\tmpdata\\ACR.trk");
 	//tractData.Read("dti_20_0995.data");
 	track.SetTracts(&tractData);
 	track.SetShape(MyTractVisBase::TRACK_SHAPE_LINE);
@@ -727,7 +730,7 @@ int main(int argc, char* argv[])
 	new GLUI_StaticText(tubeParameterPanel, "Line Width");
 	GLUI_Scrollbar* lineWidthSlider = new GLUI_Scrollbar
 		(lineParameterPanel, "Line Width", GLUI_SCROLL_HORIZONTAL,
-		&(track.mLineWidth), -1, reRender);
+		&(lineWidth), -1, reRender);
 	lineWidthSlider->set_float_limits(0, 4);
 
 	glutMainLoop();

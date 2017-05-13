@@ -5,21 +5,34 @@ uniform mat4x4 projMat;
 uniform mat4x4 normalMat;
 uniform float radius;
 uniform sampler2D colorTex;
+uniform vec4 baseColor = vec4(0.5,0.5,0.5,1);
 
+// lighting
+uniform float lightIntensity = 1.0;
+uniform float ambient = 0.4;
+uniform float diffuse = 0.6;
+uniform float specular = 0.0;
+uniform float shininess = 32;
+
+// encoding related
+uniform float colorInfluence = 1.0;
+uniform float valueToSizeInfluence = 0.0;
+uniform float valueToTextureInfluence = 0.0;
+uniform float valueToTextureRatioInfluence = 0.0;
 
 in vec3 fposition;
 in vec3 fnormal;
 in vec4 fcolor;
-//in float finBox;
-in vec3 rawPos;
 in vec2 ftexCoord;
+in float fvalue;
 
 layout (location = 0) out vec4 fragColour;
-layout (location = 1) out vec4 gPositionDepth;
-layout (location = 2) out vec4 gNormal;
+//layout (location = 1) out vec4 gPositionDepth;
+//layout (location = 2) out vec4 gNormal;
 
 const float NEAR = 1;
-const float FAR = 200;
+const float FAR = 300;
+
 
 float LinearizeDepth(float depth)
 {
@@ -28,85 +41,39 @@ float LinearizeDepth(float depth)
     //return NEAR + depth * (FAR - NEAR);	
 }
 
+vec3 GetLightedColor(vec3 color){
+	vec3 lightDir = vec3(0,0,1);
+	float diffusion = diffuse*clamp(dot(fnormal,lightDir),0,1);
+	//float diffusion = diffuse*abs(dot(normal,lightDir));
+	diffusion = max(diffusion, 0.0)*lightIntensity;     
+	vec3 eyeDir = normalize(-fposition);
+	vec3 hv = normalize(-reflect(lightDir,fnormal));
+	float specule = specular*pow(max(dot(hv,eyeDir),0.0),shininess);
+	//vec3 hv = normalize(eyeDir+lightDir);
+	//float specular = specular*pow(max(dot(hv,normal),0.0),shininess);
+	specule = max(specule, 0.0)*lightIntensity;
+	vec3 rst;
+	rst = color*(ambient+diffusion);
+	rst += vec3(specule);
+	return rst;
+}
+
 void main(void)
 {
 
-	gPositionDepth.xyz = fposition;
-	gPositionDepth.w = LinearizeDepth(gl_FragCoord.z);
-	gNormal = vec4(normalize(fnormal),0);
-	fragColour = vec4(ftexCoord, 0, 1);
-	//fragColour = vec4(fcolor);
-	
-	return;
-
-	//fragColour = vec4(texture(colorTex, (fposition.xy)/6).rgb, 0.5);
-
-	/*
-	// strip pattern
-	float freq = 1;
-	if(mod(rawPos.x, 1/freq)<0.2){
-		fragColour = vec4(0, 0, 0, 1);
+	//gPositionDepth.xyz = fposition;
+	//gPositionDepth.w = LinearizeDepth(gl_FragCoord.z);
+	//gNormal = vec4(normalize(fnormal),0);
+	vec4 texColor = vec4(texture2D(colorTex, vec2(fvalue,0.5)).xyz, 1)*valueToTextureInfluence;
+	float texRatio = step(mod(ftexCoord.x*4, 1), fvalue);
+	vec4 texRatioColor = vec4(texRatio, texRatio, texRatio, 1)*valueToTextureRatioInfluence;
+	vec4 color = fcolor*colorInfluence;
+	fragColour = texColor+texRatioColor+color;
+	if(colorInfluence+valueToTextureInfluence+valueToTextureRatioInfluence==0){
+		fragColour = baseColor;
 	}
-	else if(mod(rawPos.y, 1/freq)<0.2){
-		fragColour = vec4(0, 0, 0, 1);
-	}
-	else if(mod(rawPos.z, 1/freq)<0.2){
-		fragColour = vec4(0, 0, 0, 1);
-	}
-	else{
-		fragColour = vec4(1, 1, 1, 1);
-	}
-	*/
-
-	/*
-	// code for tube
-	if(radius>0.5){
-		discard;
-	}
-	fragColour = vec4(texture(colorTex, (0.8-fcolor.b)/0.8).rgb, 1);
-	fragColour = vec4(0.5, 0.5, 0.5, 0.5);
-	*/
-
-	/*
-	// code for line-ring in box
-	if(finBox > 0.5) discard;
-	if(radius < 0.5){
-		discard;
-	}
-	fragColour = vec4(0.5, 0.5, 0.5, 0.5);
-	*/
-
-	/*
-	// code for tube/line mix
-	if(finBox>0.5 && radius>0.5){
-		discard;
-	}
-	if(finBox<0.5 && radius<0.5){
-		discard;
-	}
-	gPositionDepth.xyz = fposition;
-	gPositionDepth.w = LinearizeDepth(gl_FragCoord.z);
-	gNormal = vec4(normalize(fnormal),1);
-	if(radius>0.5){
-		fragColour = vec4(0.5, 0.5, 0.5, 0.5);
-	}
-	else fragColour = vec4(texture(colorTex, (0.8-fcolor.b)/0.8).rgb, 1);
-	
-	*/
-
-	/*
-	// code for pixel line halo
-	if(finBox>0.5){
-		discard;
-	}
-	gPositionDepth.xyz = fposition;
-	gPositionDepth.w = LinearizeDepth(gl_FragCoord.z);
-	gNormal = vec4(normalize(fnormal),1);
-	// radius = 1, halo
-	if(radius<0.5){
-		fragColour = vec4(1,1,1,1);
-	}
-	// radius = 0, line
-	else fragColour = vec4(0.5,0.5,0.5, 1);
-	*/
+	fragColour.xyz = GetLightedColor(fragColour.xyz);
+	fragColour.a = baseColor.a;
+	//fragColour.xyz = fnormal;
+	//fragColour = vec4(texture2D(colorTex, gl_FragCoord.xy/1000).xyz, 1);
 }

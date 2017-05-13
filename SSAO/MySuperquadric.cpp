@@ -106,7 +106,7 @@ void MySuperquadric::BuildOn(MyArray3f& vertices, MyArray3f& normals,
 	for (int i = 0; i <= MeshDetailY; i++){
 		MyVec3f normal = normals[i + idxOffset];
 		normals[i + idxOffset] += normals[i + idxOffset + MeshDetailX*(MeshDetailY + 1)];
-		normals[i + idxOffset + MeshDetailX*(MeshDetailY + 1)] += normal;
+		normals[i + idxOffset + MeshDetailX*(MeshDetailY + 1)] = normals[i + idxOffset];
 	}
 	for (int i = 0; i < GetVertexCount(); i++){
 		normals[i+idxOffset].normalize();

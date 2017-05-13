@@ -5,6 +5,7 @@ uniform mat4x4 projMat;
 uniform mat4x4 normalMat;
 uniform float radius;
 uniform float depthCueing = 1;
+uniform vec4 baseColor = vec4(0.5,0.5,0.5,1);
 
 in vec3 position;
 in vec3 normal;
@@ -18,7 +19,7 @@ out vec3 rawPos;
 
 void main (void)
 {
-	fnormal = (normalMat*vec4(normal,0)).xyz;
+	fnormal = normalize((normalMat*vec4(normal,0)).xyz);
 	rawPos = position;
 	fcolor = color;
 	vec4 p = mvMat*vec4(position,1);

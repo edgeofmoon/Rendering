@@ -9,22 +9,30 @@ public:
 	MyTensor3(){};
 	~MyTensor3(){};
 
+	inline void SetEigenValue(unsigned int idx, const T& val){
+		mEigenValues[idx] = val;
+	}
+
 	inline void SetEigenValues(const T* vals){
-		mEigenValues[0] = vals[0];
-		mEigenValues[1] = vals[1];
-		mEigenValues[2] = vals[2];
+		SetEigenValue(0, vals[0]);
+		SetEigenValue(1, vals[1]);
+		SetEigenValue(2, vals[2]);
 	};
 
+	inline void SetEigenVector(unsigned int idx, const MyVec<T, 3>& vec){
+		mEigenVectors[idx] = vec;
+	}
+
 	inline void SetEigenVectors(const MyVec<T, 3>* vecs){
-		mEigenVectors[0] = vecs[0];
-		mEigenVectors[1] = vecs[1];
-		mEigenVectors[2] = vecs[2];
+		SetEigenVector(0, vecs[0]);
+		SetEigenVector(1, vecs[1]);
+		SetEigenVector(2, vecs[2]);
 	};
 
 	inline void SetEigenVectors(const T* v){
-		mEigenVectors[0] = MyVec<T, 3>(v[0], v[1], v[2]);
-		mEigenVectors[1] = MyVec<T, 3>(v[3], v[4], v[5]);
-		mEigenVectors[2] = MyVec<T, 3>(v[6], v[7], v[8]);
+		SetEigenVector(0, MyVec<T, 3>(v[0], v[1], v[2]));
+		SetEigenVector(1, MyVec<T, 3>(v[3], v[4], v[5]));
+		SetEigenVector(2, MyVec<T, 3>(v[6], v[7], v[8]));
 	};
 
 	void NormalizeEigenVectors() {

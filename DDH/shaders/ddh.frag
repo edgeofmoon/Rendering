@@ -9,6 +9,7 @@ uniform float stripDepth;
 uniform float strokeWidth;
 uniform float taperLength;
 uniform float depthCueing;
+uniform vec4 baseColor = vec4(0,0,0,1);
 
 in vec3 ftexcoord;
 in vec3 fnormal;
@@ -43,11 +44,21 @@ vec3 getLighted(vec3 color){
 	return color*(ambient+diffusion) + vec3(specular);  
 }
 
+
+// output range n/f~1
 float linearizeDepth(float d){
 	float f = 300;
 	float n = 1;
 	float z = (2 * n) / (f + n - d * (f - n));
 	return z;
+}
+
+// output range -1~1
+float unlinearizeDepth(float z){
+	float f = 300;
+	float n = 1;
+	float d = -((2 * n) / z - f - n) / (f - n);
+	return d;
 }
 
 void main (void)
@@ -61,14 +72,18 @@ void main (void)
 	if(side*stripWidth>thres){
 		depthOffset = side*stripDepth;
 		//fragColour = vec4(1,1,1,1);
-		fragColour = vec4(1,1,1,1);
+		// set alpha to 0 to mark it as halo
+		fragColour = vec4(1,1,1,0);
 	}
 	else {
 		//fragColour = vec4(getLighted(vec3(0.5,0.5,0.5)),1);
-		fragColour = vec4(0,0,0,1);
+		fragColour = baseColor;
 	}
 	
 	//gl_FragDepth = linearizeDepth(gl_FragCoord.z)+depthOffset*10;
-	gl_FragDepth = dz+depthOffset;
+	gl_FragDepth = unlinearizeDepth(dz+depthOffset);
+	//gl_FragDepth = gl_FragCoord.z;
+	//gl_FragDepth = (dz+depthOffset);
+	//gl_FragDepth = gl_FragCoord.z
 	//fragColour = vec4(0,0,1-ftexcoord.y,1);
 }

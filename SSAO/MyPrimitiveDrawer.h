@@ -21,7 +21,8 @@ public:
 		const MyVec3f& pos1,
 		const MyVec3f& pos2,
 		const MyVec3f& pos3);
-	static void DrawQuadAtsAt(const std::vector<MyVec3f>& vecs);
+	static void DrawQuadsAt(const std::vector<MyVec3f>& vecs);
+	static void DrawTextureOnViewport(unsigned int texture);
 
 	static int GetBitMapTextWidth(const MyString& str);
 	static int GetBitMapTextLargeWidth(const MyString& str);
@@ -36,11 +37,13 @@ public:
 	static void DrawBitMapText(const MyVec3f& pos, const std::string& text, int alignment = 0);
 	static void DrawBitMapTextLarge(const MyVec3f& pos, const std::string& text, int alignment = 0);
 	static void DrawStrokeText(const MyVec3f& pos, const std::string& text, const MyVec3f& scale = MyVec3f(1.f,1.f,1.f));
+	static void DrawStrokeTextOrtho(const MyVec3f& pos, const std::string& text, const MyVec3f& scale = MyVec3f(1.f, 1.f, 1.f));
 	static void DrawStrokeTextUpDowm(const MyVec3f& pos, const std::string& text, const MyVec3f& scale = MyVec3f(1.f,1.f,1.f));
 	static void Draw(const MyPolyline<float,3>& polyline);
 	static void Draw(const MyPolyline<float,2>& polyline);
 
 	static MyBoundingBox GetBitMapTextBox(const MyString& text, MyVec3f offset = MyVec3f::zero());
 	static MyBoundingBox GetBitMapLargeTextBox(const MyString& text, MyVec3f offset = MyVec3f::zero());
+	static float GetStrokeTextWidth(const MyString& text);
 };
 

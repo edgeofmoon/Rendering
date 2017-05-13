@@ -37,7 +37,7 @@ void MySsaoPass::ResetRenderingParameters(){
 void MySsaoPass::CompileShader(){
 
 	glDeleteProgram(mShaderProgram);
-	mShaderProgram = InitShader("Shaders\\ssao.vert", "Shaders\\ssao.frag", "fragColour");
+	mShaderProgram = InitShader("..\\SSAO\\Shaders\\ssao.vert", "..\\SSAO\\Shaders\\ssao.frag", "fragColour");
 
 	int loc = glGetAttribLocation(mShaderProgram, "position");
 	if (loc < 0) {

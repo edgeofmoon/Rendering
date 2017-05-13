@@ -10,6 +10,8 @@ public:
 
 	void Destory();
 	void SetSize(int width, int height);
+	inline int GetWidth() const { return mWidth; };
+	inline int GetHeight() const { return mHeight; };
 	void Clear();
 	void Build();
 	void AddExtraDrawTexture(int internamFormat, int format, int type, int filter, int wrap);
