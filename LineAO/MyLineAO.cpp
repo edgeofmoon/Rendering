@@ -555,12 +555,12 @@ void MyLineAO::lineShadingPass() const {
 	int radiusLocation = glGetUniformLocation(mLineShader, "radius");
 	glUniform1f(radiusLocation, mTrackRadius);
 
-	glUniform4fv(glGetUniformLocation(mShaderProgram, "baseColor"), 1, &mRenderingParameters.BaseColor.r);
-	glUniform1f(glGetUniformLocation(mShaderProgram, "lightIntensity"), mRenderingParameters.LightIntensity);
-	glUniform1f(glGetUniformLocation(mShaderProgram, "ambient"), mRenderingParameters.Ambient);
-	glUniform1f(glGetUniformLocation(mShaderProgram, "diffuse"), mRenderingParameters.Diffuse);
-	glUniform1f(glGetUniformLocation(mShaderProgram, "specular"), mRenderingParameters.Specular);
-	glUniform1f(glGetUniformLocation(mShaderProgram, "shininess"), mRenderingParameters.Shininess);
+	glUniform4fv(glGetUniformLocation(mLineShader, "baseColor"), 1, &mRenderingParameters.BaseColor.r);
+	glUniform1f(glGetUniformLocation(mLineShader, "lightIntensity"), mRenderingParameters.LightIntensity);
+	glUniform1f(glGetUniformLocation(mLineShader, "ambient"), mRenderingParameters.Ambient);
+	glUniform1f(glGetUniformLocation(mLineShader, "diffuse"), mRenderingParameters.Diffuse);
+	glUniform1f(glGetUniformLocation(mLineShader, "specular"), mRenderingParameters.Specular);
+	glUniform1f(glGetUniformLocation(mLineShader, "shininess"), mRenderingParameters.Shininess);
 
 	int shapeLoc = glGetUniformLocation(mLineShader, "hasNormal");
 

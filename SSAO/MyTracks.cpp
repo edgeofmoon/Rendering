@@ -58,12 +58,13 @@ int MyTracks::Read(const std::string& filename){
 		mTracks.resize(mHeader.n_count);
 		mBoundingBox = MyBoundingBox(MyVec3f(INT_MAX, INT_MAX, INT_MAX), MyVec3f(-INT_MAX, -INT_MAX, -INT_MAX));
 
-		for (int i = 0; i<mHeader.n_count; i++){
+		std::streamsize ss = std::cout.precision();
+		std::cout.precision(2);
+		for (int i = 0; i < mHeader.n_count; i++){
 			if ((int)((i + 1) * 100 / (float)mHeader.n_count)
 				- (int)(i * 100 / (float)mHeader.n_count) >= 1){
-				cout << "Loading: " << i + 1 << "/" << mHeader.n_count 
-					<< std::setprecision(2) << " ("
-					<< i*100.f / mHeader.n_count << "%).\r";
+				cout << "Loading: " << i + 1 << "/" << mHeader.n_count
+					<< " (" << i*100.f / mHeader.n_count << "%).\r";
 			}
 			MySingleTrackData& track = mTracks[i];
 			int tractSize = 0;
@@ -83,6 +84,7 @@ int MyTracks::Read(const std::string& filename){
 				fread(&track.mTrackProperties[0], mHeader.n_properties*sizeof(float), 1, fp);
 			}
 		}
+		std::cout.precision(ss);
 		cout << mHeader.n_count << " tracks successfully loaded.\t\t\n";
 		fclose(fp);
 	}
@@ -96,12 +98,13 @@ int MyTracks::Read(const std::string& filename){
 		mTracks.resize(mHeader.n_count);
 		mBoundingBox = MyBoundingBox(MyVec3f(INT_MAX, INT_MAX, INT_MAX), MyVec3f(-INT_MAX, -INT_MAX, -INT_MAX));
 
+		std::streamsize ss = std::cout.precision();
+		std::cout.precision(2);
 		for (int i = 0; i < mHeader.n_count; i++){
 			if ((int)((i + 1) * 100 / (float)mHeader.n_count)
 				- (int)(i * 100 / (float)mHeader.n_count) >= 1){
 				cout << "Loading: " << i + 1 << "/" << mHeader.n_count
-					<< std::setprecision(2) << " ("
-					<< i*100.f / mHeader.n_count << "%).\r";
+					<< " (" << i*100.f / mHeader.n_count << "%).\r";
 			}
 			MySingleTrackData& track = mTracks[i];
 			int tractSize = 0;
@@ -116,6 +119,7 @@ int MyTracks::Read(const std::string& filename){
 				mBoundingBox.Engulf(track.mPoints[j]);
 			}
 		}
+		std::cout.precision(ss);
 		cout << mHeader.n_count << " tracks successfully loaded.\t\t\n";
 		fs.close();
 	}
@@ -129,12 +133,13 @@ int MyTracks::Read(const std::string& filename){
 		mTracks.resize(mHeader.n_count);
 		mBoundingBox = MyBoundingBox(MyVec3f(INT_MAX, INT_MAX, INT_MAX), MyVec3f(-INT_MAX, -INT_MAX, -INT_MAX));
 
+		std::streamsize ss = std::cout.precision();
+		std::cout.precision(2);
 		for (int i = 0; i < mHeader.n_count; i++){
 			if ((int)((i + 1) * 100 / (float)mHeader.n_count)
 				- (int)(i * 100 / (float)mHeader.n_count) >= 1){
 				cout << "Loading: " << i + 1 << "/" << mHeader.n_count
-					<< std::setprecision(2) << " ("
-					<< i*100.f / mHeader.n_count << "%).\r";
+					<< " (" << i*100.f / mHeader.n_count << "%).\r";
 			}
 			MySingleTrackData& track = mTracks[i];
 			int tractSize = 0;
@@ -153,6 +158,7 @@ int MyTracks::Read(const std::string& filename){
 				mBoundingBox.Engulf(track.mPoints[j]);
 			}
 		}
+		std::cout.precision(ss);
 		cout << mHeader.n_count << " tracks successfully loaded.\t\t\n";
 		fs.close();
 	}
@@ -579,6 +585,13 @@ MyColor4f MyTracks::GetTrackColor(int trackIdx) const{
 		mTracks[trackIdx].mTrackProperties[n - 3],
 		mTracks[trackIdx].mTrackProperties[n - 2],
 		mTracks[trackIdx].mTrackProperties[n - 1], 1);
+}
+
+MyColor4f MyTracks::GetPointColor(int trackIdx, int vIdx) const{
+	return MyColor4f(
+		mTracks[trackIdx].mPointScalars[vIdx][0],
+		mTracks[trackIdx].mPointScalars[vIdx][1],
+		mTracks[trackIdx].mPointScalars[vIdx][2], 1);
 }
 
 float MyTracks::GetValue(int trackIdx, int pointIdx) const{

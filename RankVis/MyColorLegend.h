@@ -25,6 +25,8 @@ public:
 
 	float ComputeArcLength() const;
 	float ComputeArcLengthInterpolated(int nSample) const;
+	void CutFromCenterByArcLength(float arcLength);
+	MyArray<MyColor4f> ComputeCutFromCenterByArcLength(float arcLength);
 
 	static MyColor4f GetColorBlending(const MyColor4f& c1, float a1, 
 		const MyColor4f& c2, float a2, InterpolationMethod m = RGB_LINEAR);

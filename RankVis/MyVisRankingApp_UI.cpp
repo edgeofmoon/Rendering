@@ -35,6 +35,12 @@ using namespace MyVisEnum;
 #define UI_ANSWER_HIGH 1
 #define UI_ANSWER_LOW -1
 
+#define LEGEND_LEFT 0.1
+#define LEGEND_BOTTOM 0.2
+#define LEGEND_WIDTH 0.05
+#define LEGEND_HEIGHT 0.6
+#define LEGEND_TICKSIZE 0.005
+
 void MyVisRankingApp::ActivateUI(MyUIObject* ui){
 	if (ui && mTaskUIs.HasOne(ui)){
 		ui->ResetStatus();
@@ -133,7 +139,7 @@ void MyVisRankingApp::UI_ConfidenceSelected(int idx){
 	if (button && button->GetEventBit() & PUSHED_BIT){
 		button->ClearEventBit();
 		mConfidenceSelected = idx + 1;
-		if (mAnswerSelected >= 0 || mTextArea_Input.IsEnabled()){
+		if (mAnswerSelected >= 0 || !mTextArea_Input.IsHidden()){
 			mButton_Next.Enable();
 		}
 	}
@@ -322,6 +328,8 @@ void MyVisRankingApp::UIInit(){
 		+ MyString(UI_ANSWER_LOW) + " and " + MyString(UI_ANSWER_HIGH));
 	mTextArea_ConfidenceHint.SetText("Please select your confidence level in your answer: 1 = least confident, 7 = most confident.");
 	mTextArea_Input.SetMaxSize(20);
+	mTextArea_Input.SetHidden(true);
+	mTextArea_Input.Disable();
 	mTextArea_InputHint.SetConstant(true);
 	mTextArea_Transition.SetConstant(true);
 	mTextArea_Hint.SetConstant(true);
@@ -332,11 +340,15 @@ void MyVisRankingApp::UIInit(){
 
 void MyVisRankingApp::UIUpdate(){
 	const MyVisInfo& visInfo = mTrialManager.GetCurrentVisData()->GetVisInfo();
+	for (auto ui : mTaskUIs) DeactivateUI(ui);
 	mTaskUIs.clear();
 	if (visInfo.IsEmpty()){
 		mTaskUIs << &mButton_Next
 			<< &mTextArea_Transition
 			<< &mTextArea_Progress;
+		ActivateUI(&mButton_Next);
+		ActivateUI(&mTextArea_Transition);
+		ActivateUI(&mTextArea_Progress);
 		mTextArea_Transition.SetText(visInfo.GetTaskTransitionString());
 	}
 	else{
@@ -421,6 +433,7 @@ void MyVisRankingApp::UIUpdate(){
 		}
 		mTextArea_Hint.SetText(visInfo.GetTaskHintString());
 		mTaskUIs << &mTextArea_Answer;
+		ActivateUI(&mTextArea_Answer);
 		mTextArea_Answer.ClearText();
 	}
 	mTextArea_Progress.SetText(mTrialManager.GetProgresInfoString());
@@ -489,7 +502,7 @@ void MyVisRankingApp::DrawHighlightedTracts(MyTractVisBase* tractVis,
 	if(sg) baseSphereColor = sg->GetColor();
 	tractVis->SetTractsShown(tractIndices);
 	tractVis->SetBaseColor(color);
-	tractVis->SetAmbient(1);
+	tractVis->SetAmbient(10);
 	tractVis->ClearInfluences();
 	if (sg) sg->SetColor(color);
 	tractVis->Show();
@@ -568,5 +581,63 @@ void MyVisRankingApp::DrawTractIndicators(){
 			+ MyVec3f(0, 0, 1)*mSphereSelectors[i].GetRadius();
 		MyPrimitiveDrawer::DrawStrokeTextOrtho( charPos, MyString(1, char('1' + i)));
 	}
+	MyGraphicsTool::PopAttributes();
+}
+
+void MyVisRankingApp::DrawLegend(){
+	const MyVisInfo& visInfo = mTrialManager.GetCurrentVisData()->GetVisInfo();
+	if (visInfo.GetVisTask() != FA || visInfo.IsEmpty() || mbPaused) return;
+	unsigned int texture;
+	if (visInfo.GetEncoding() == COLOR) texture = mColorTexture;
+	else if (visInfo.GetEncoding() == VALUE) texture = mValueTexture;
+	else return;
+	MyGraphicsTool::PushAllAttributes();
+	MyGraphicsTool::PushProjectionMatrix();
+	MyGraphicsTool::PushMatrix();
+	MyGraphicsTool::SetViewport(MyUI::mUIViewport);
+	MyGraphicsTool::LoadProjectionMatrix(
+		//&MyMatrixf::OrthographicMatrix(0, 1, 0, 1, 0, 1));
+		&MyMatrixf::OrthographicMatrix(0, 1, 0, 1, 0, 1));
+	MyGraphicsTool::LoadModelViewMatrix(&MyMatrixf::IdentityMatrix());
+	glDisable(GL_LIGHTING);
+	glEnable(GL_TEXTURE_2D);
+	glBindTexture(GL_TEXTURE_2D, texture);
+	glColor3f(1, 1, 1);
+	glBegin(GL_TRIANGLE_FAN);
+	glTexCoord2f(0, 1);
+	glVertex2f(LEGEND_LEFT, LEGEND_BOTTOM);
+	glTexCoord2f(0, 0);
+	glVertex2f(LEGEND_LEFT + LEGEND_WIDTH, LEGEND_BOTTOM);
+	glTexCoord2f(1, 0);
+	glVertex2f(LEGEND_LEFT + LEGEND_WIDTH, LEGEND_BOTTOM + LEGEND_HEIGHT);
+	glTexCoord2f(1, 1);
+	glVertex2f(LEGEND_LEFT, LEGEND_BOTTOM + LEGEND_HEIGHT);
+	glEnd();
+
+	glLineWidth(2 * mCanvasScaleX);
+	glColor3f(0, 0, 0);
+	glDisable(GL_TEXTURE_2D);
+	glBegin(GL_LINE_LOOP);
+	glVertex2f(LEGEND_LEFT, LEGEND_BOTTOM);
+	glVertex2f(LEGEND_LEFT + LEGEND_WIDTH, LEGEND_BOTTOM);
+	glVertex2f(LEGEND_LEFT + LEGEND_WIDTH, LEGEND_BOTTOM + LEGEND_HEIGHT);
+	glVertex2f(LEGEND_LEFT, LEGEND_BOTTOM + LEGEND_HEIGHT);
+	glEnd();
+
+	glColor3f(0, 0, 0);
+	for (int i = 0; i <= 8; i++){
+		glLineWidth(1 * mCanvasScaleX);
+		glBegin(GL_LINES);
+		glVertex2f(LEGEND_LEFT + LEGEND_WIDTH, LEGEND_BOTTOM + i / 8.f*LEGEND_HEIGHT);
+		glVertex2f(LEGEND_LEFT + LEGEND_WIDTH + LEGEND_TICKSIZE, LEGEND_BOTTOM + i / 8.f*LEGEND_HEIGHT);
+		glEnd();
+		MyString numStr((i + 2) / 10.f);
+		glLineWidth(2 * mCanvasScaleX);
+		MyPrimitiveDrawer::DrawBitMapTextLarge(MyVec3f(LEGEND_LEFT + LEGEND_WIDTH + LEGEND_TICKSIZE,
+			LEGEND_BOTTOM + i / 8.f*LEGEND_HEIGHT - MyPrimitiveDrawer::GetBitmapHeight('0') / (2.f*mWindowHeight), 0),
+			numStr, 0);
+	}
+	MyGraphicsTool::PopMatrix();
+	MyGraphicsTool::PopProjectionMatrix();
 	MyGraphicsTool::PopAttributes();
 }

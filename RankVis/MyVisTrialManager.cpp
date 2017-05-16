@@ -155,8 +155,8 @@ void MyVisTrialManager::GenerateVisInfo_Experiment_Random(){
 }
 
 void MyVisTrialManager::GenerateVisInfo_LightingProfile(){
-	MyArray<Shape> visShapes = { TUBE, LINE };
-	MyArray<VisCue> visCues = { AMBIENT_OCCULUSION, DEPTH , BASIC, ENCODING };
+	MyArray<Shape> visShapes = { LINE, TUBE };
+	MyArray<VisCue> visCues = { BASIC, AMBIENT_OCCULUSION, DEPTH, ENCODING };
 	MyArray<Bundle> dataBundles = { CC, CST, IFO, ILF };
 	MyArray<FiberCover> dataCovers = { WHOLE, BUNDLE };
 	for (int i = 0; i < 8; i++){

@@ -12,6 +12,7 @@
 using namespace std;
 using namespace MyVisEnum;
 
+/*
 #define SCALE_LINE_AO		1
 #define SCALE_LINE_BASIC	1
 #define SCALE_LINE_DEPTH	1
@@ -20,8 +21,8 @@ using namespace MyVisEnum;
 #define SCALE_TUBE_BASIC	1
 #define SCALE_TUBE_DEPTH	1
 #define SCALE_TUBE_ENCODING	1
+*/
 
-/*
 #define SCALE_LINE_AO		1.942544853
 #define SCALE_LINE_BASIC	1
 #define SCALE_LINE_DEPTH	1
@@ -30,7 +31,6 @@ using namespace MyVisEnum;
 #define SCALE_TUBE_BASIC	1
 #define SCALE_TUBE_DEPTH	1.005692041
 #define SCALE_TUBE_ENCODING	1.000280219
-*/
 
 MyVisTract::MyVisTract()
 	:mVisData(NULL), mTractVis(NULL), mTractVis_Aux(NULL){

@@ -732,7 +732,7 @@ int main(int argc, char* argv[])
 	//tractData.Read("data\\normal_s3.data");
 	tractData.Read("C:\\Users\\GuohaoZhang\\Dropbox\\data\\normal_s4.tensorinfo");
 	tractData.AppendTrackColor("C:\\Users\\GuohaoZhang\\Dropbox\\data\\normal_s4_boy.data");
-	tractData.Save("C:\\Users\\GuohaoZhang\\Dropbox\\data\\normal_s4_tensorboy_RevZ.trk");
+	tractData.Save("C:\\Users\\GuohaoZhang\\Dropbox\\data\\normal_s4_tensorboy.trk");
 	return 1;
 	tractData.Read("C:\\Users\\GuohaoZhang\\Dropbox\\data\\normal_s3_tensorboy_RevZ.trk");
 	//tractData.Read("data\\normal_s5.tensorinfo");

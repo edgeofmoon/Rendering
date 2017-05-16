@@ -4,7 +4,7 @@
 
 class MyFrameBuffer{
 public:
-	MyFrameBuffer(){};
+	MyFrameBuffer();
 	MyFrameBuffer(int width, int height);
 	~MyFrameBuffer();
 

@@ -39,6 +39,7 @@ MyArray<MyColorLegend::InterpolationMethod> methods = {
 	MyColorLegend::HSV_LINEAR
 };
 
+void reload();
 
 void print(char c, int n){
 	while (n--){
@@ -210,6 +211,17 @@ void myGlutKeyboard(unsigned char key, int x, int y){
 				if (sampleIdx > maxSampleIdx) sampleIdx = maxSampleIdx;
 				Update();
 				break;
+			case 'f':
+			case 'F':
+				legends[colorIdx].CutFromCenterByArcLength(160.f);
+				sampleIdx = 0;
+				Update();
+				break;
+			case 'r':
+			case 'R':
+				reload();
+				Update();
+				break;
 		}
 	}
 	glutPostRedisplay();
@@ -231,55 +243,6 @@ int init(int argc, char* argv[]){
 	glutKeyboardFunc(myGlutKeyboard);
 	glutSpecialFunc(myGlutSpecialInput);
 	return 1;
-}
-
-void tractStats();
-
-int main(int argc, char* argv[]){
-	tractStats();
-	return 1;
-	init(argc, argv);
-	MyTexture::SetInterpolateMethod(GL_NEAREST);
-	MyBitmap bitmap;
-	legends.resize(10);
-	int idx = 0;
-	legends[idx++].SetColorsFromData(&MyBlackBodyColor::mData_1024_3[0][0], 3, 1024, 1);
-	legends[idx++].SetColorsFromData(&MyConstants::BlackBodyExtended[0][0], 3, 1024, 1);
-	bitmap.Open("..\\SSAO\\data\\isoluminant.bmp");
-	legends[idx++].SetColorsFromData(bitmap.GetPixelBufferRGB(), 3, bitmap.GetWidth(), bitmap.GetHeight());
-	//legends[1].SetColorsFromData(&MyConstants::IsoluminanceMap[0][0], 3, 33, 1);
-	MyArray<MyColor4f> colors = legends[idx-1].GetColors();
-	for (int i = 0; i < colors.size(); i++){
-		MyColorConverter::Lab lab = MyColorConverter::rgb2lab(colors[i]);
-		lab.l = 50;
-		colors[i] = MyColorConverter::lab2rgb(lab);
-	}
-	legends[idx++].SetColors(colors);
-	//bitmap.Open("..\\SSAO\\data\\monoLuminance.bmp");
-	//legends[3].SetColorsFromData(bitmap.GetPixelBufferRGB(), 3, bitmap.GetWidth(), bitmap.GetHeight());
-	legends[idx++].SetColorsFromData(&MyConstants::MonoluminanceMap[0][0], 3, 1024, 1);
-	legends[idx++].SetColorsFromData(&MyConstants::MonoluminanceExtended[0][0], 3, 1024, 1);
-	colors = legends[idx-2].GetColors();
-	for (int i = 0; i < colors.size(); i++){
-		MyColorConverter::Lab lab = MyColorConverter::rgb2lab(colors[i]);
-		lab.l = float(i)/(colors.size()-1)*100;
-		colors[i] = MyColorConverter::lab2rgb(lab);
-	}
-	legends[idx++].SetColors(colors);
-	legends[idx++].SetColorsFromData(&MyConstants::DivergingSmooth[0][0], 3, 1024, 1);
-	legends[idx++].SetColorsFromData(&MyConstants::DivergingBent[0][0], 3, 1024, 1);
-
-	int nhsv = colors.size();
-	MyArrayf hsvs;
-	for (int i = 0; i < nhsv; i++){
-		MyColorConverter::Hsv hsv(10, i / float(nhsv - 1), 1.f);
-		MyColor4f c = MyColorConverter::hsv2rgb(hsv);
-		hsvs << c.r << c.g << c.b;
-	}
-	legends[idx++].SetColorsFromData(&hsvs[0], 3, 1024, 1);
-
-	Update();
-	glutMainLoop();
 }
 
 void PrintColorInfo(){
@@ -331,11 +294,65 @@ void tractStats(){
 	ofile.close();
 	*/
 	ofile.open("segLen.txt");
+	ofile << "SegLength" + tab + "LinearAni" + tab + "PlanAni" + tab + "SphereAni" << endl;
 	for (int i = 0; i < tracts.GetNumTracks(); i++){
 		for (int j = 1; j < tracts.GetNumVertex(i); j++){
 			MyTensor3f tensor = tracts.GetTensor(i, j);
-			ofile << (tracts.GetCoord(i, j) - tracts.GetCoord(i, j - 1)).norm() << endl;
+			ofile << (tracts.GetCoord(i, j) - tracts.GetCoord(i, j - 1)).norm() << tab
+				<< tensor.GetLinearAnisotropy() << tab
+				<< tensor.GetPlanarAnisotropy() << tab
+				<< tensor.GetSphericalAnisotropy() << endl;
 		}
 	}
 	ofile.close();
+}
+
+void reload(){
+	MyBitmap bitmap;
+	int idx = 0;
+	legends[idx++].SetColorsFromData(&MyBlackBodyColor::mData_1024_3[0][0], 3, 1024, 1);
+	legends[idx++].SetColorsFromData(&MyConstants::BlackBodyExtended[0][0], 3, 1024, 1);
+	bitmap.Open("..\\SSAO\\data\\isoluminant.bmp");
+	legends[idx++].SetColorsFromData(bitmap.GetPixelBufferRGB(), 3, bitmap.GetWidth(), bitmap.GetHeight());
+	//legends[1].SetColorsFromData(&MyConstants::IsoluminanceMap[0][0], 3, 33, 1);
+	MyArray<MyColor4f> colors = legends[idx - 1].GetColors();
+	for (int i = 0; i < colors.size(); i++){
+		MyColorConverter::Lab lab = MyColorConverter::rgb2lab(colors[i]);
+		lab.l = 50;
+		colors[i] = MyColorConverter::lab2rgb(lab);
+	}
+	legends[idx++].SetColors(colors);
+	//bitmap.Open("..\\SSAO\\data\\monoLuminance.bmp");
+	//legends[3].SetColorsFromData(bitmap.GetPixelBufferRGB(), 3, bitmap.GetWidth(), bitmap.GetHeight());
+	legends[idx++].SetColorsFromData(&MyConstants::MonoluminanceMap[0][0], 3, 1024, 1);
+	legends[idx++].SetColorsFromData(&MyConstants::MonoluminanceExtended[0][0], 3, 1024, 1);
+	colors = legends[idx - 2].GetColors();
+	for (int i = 0; i < colors.size(); i++){
+		MyColorConverter::Lab lab = MyColorConverter::rgb2lab(colors[i]);
+		lab.l = float(i) / (colors.size() - 1) * 100;
+		colors[i] = MyColorConverter::lab2rgb(lab);
+	}
+	legends[idx++].SetColors(colors);
+	legends[idx++].SetColorsFromData(&MyConstants::DivergingSmooth[0][0], 3, 1024, 1);
+	legends[idx++].SetColorsFromData(&MyConstants::DivergingBent[0][0], 3, 1024, 1);
+
+	int nhsv = colors.size();
+	MyArrayf hsvs;
+	for (int i = 0; i < nhsv; i++){
+		MyColorConverter::Hsv hsv(10, i / float(nhsv - 1), 1.f);
+		MyColor4f c = MyColorConverter::hsv2rgb(hsv);
+		hsvs << c.r << c.g << c.b;
+	}
+	legends[idx++].SetColorsFromData(&hsvs[0], 3, 1024, 1);
+}
+
+int main(int argc, char* argv[]){
+	//tractStats();
+	//return 1;
+	init(argc, argv);
+	MyTexture::SetInterpolateMethod(GL_NEAREST);
+	legends.resize(10);
+	reload();
+	Update();
+	glutMainLoop();
 }

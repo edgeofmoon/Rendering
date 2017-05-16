@@ -107,6 +107,7 @@ public:
 	MyVec3f GetCoord(int trackIdx, int pointIdx) const;
 	MyVec3f GetCoord(const MyVec2i& idx) const;
 	MyColor4f GetTrackColor(int trackIdx) const;
+	MyColor4f GetPointColor(int trackIdx, int vIdx) const;
 	float GetValue(int trackIdx, int pointIdx) const;
 	MyTensor3f GetTensor(int trackIdx, int pointIdx) const;
 	float ComputeTrackLength(int trackIdx) const;

@@ -121,6 +121,33 @@ float MyColorLegend::ComputeArcLengthInterpolated(int nSample) const{
 	return ComputeArcLength(samples);
 }
 
+void MyColorLegend::CutFromCenterByArcLength(float arcLength){
+	mColors = ComputeCutFromCenterByArcLength(arcLength);
+}
+
+MyArray<MyColor4f> MyColorLegend::ComputeCutFromCenterByArcLength(float arcLength){
+	MyArrayf de = ComputeDeltaE00(mColors);
+	MyArrayf sums(de.size() + 1, 0);
+	for (int i = 0; i < de.size(); i++){
+		sums[i + 1] += sums[i] + de[i];
+	}
+	float accLen = 0;
+	int n = mColors.size();
+	int pL = (n - 1) / 2;
+	int pR = n / 2;
+	while(pL>0 && pR<n){
+		float curLength = sums[pR] - sums[pL];
+		if (curLength >= arcLength) break;
+		pR++;
+		pL--;
+	}
+	MyArray<MyColor4f> rst;
+	for (int x = pL; x <= pR; x++){
+		rst.push_back(mColors[x]);
+	}
+	return rst;
+}
+
 float MyColorLegend::ComputeArcLength(const MyArray<MyColor4f>& colors){
 	if (colors.size() < 2) return 0;
 	float rst = 0;

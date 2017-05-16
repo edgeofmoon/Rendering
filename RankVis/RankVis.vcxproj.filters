@@ -9,14 +9,10 @@
       <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
       <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
     </Filter>
-    <Filter Include="Resource Files">
-      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
-      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
-    </Filter>
     <Filter Include="Shaders">
       <UniqueIdentifier>{d2c0144c-33a0-48bf-839b-d04345f739a6}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\Test">
+    <Filter Include="MainTest">
       <UniqueIdentifier>{7959f324-2554-4755-925b-932d5cb1865f}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
@@ -201,6 +197,12 @@
     <ClInclude Include="MyColorConverter.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\SSAO\MyTrackVisLabelled.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MyEventLog.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="MyVisEnum.cpp">
@@ -363,13 +365,25 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="appTest.cpp">
-      <Filter>Source Files\Test</Filter>
+      <Filter>MainTest</Filter>
     </ClCompile>
     <ClCompile Include="parameterTest.cpp">
-      <Filter>Source Files\Test</Filter>
+      <Filter>MainTest</Filter>
     </ClCompile>
     <ClCompile Include="colorMapTest.cpp">
-      <Filter>Source Files\Test</Filter>
+      <Filter>MainTest</Filter>
+    </ClCompile>
+    <ClCompile Include="openMPtest.cpp">
+      <Filter>MainTest</Filter>
+    </ClCompile>
+    <ClCompile Include="tractView.cpp">
+      <Filter>MainTest</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SSAO\MyTractVisLabelled.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="MyEventLog.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

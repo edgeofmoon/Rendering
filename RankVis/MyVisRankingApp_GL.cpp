@@ -2,10 +2,12 @@
 #include "MyBitmap.h"
 #include "MyTexture.h"
 #include "MyPrimitiveDrawer.h"
+#include "MyColorConverter.h"
 
 #include <GL/glew.h>
 #include <GL/freeglut.h>
 
+#include <omp.h>
 #include <iostream>
 using namespace std;
 
@@ -17,6 +19,7 @@ void MyVisRankingApp::HandleGlutDisplay(){
 	EndProfileRendering();
 	mLogs.StartTrial();
 	if (mDisplayEndToNext) Next();
+	mEventLog.LogItem( "Display" );
 }
 
 void MyVisRankingApp::HandleGlutKeyboard(unsigned char key, int x, int y){
@@ -24,11 +27,21 @@ void MyVisRankingApp::HandleGlutKeyboard(unsigned char key, int x, int y){
 	else if (HandleDebugKey(key)) {}
 	else ProcessKey_DataGen(key);
 	RequestRedisplay();
+	mEventLog.LogItem(
+		"Key" + MyEventLog::Decimer
+		+ MyString(key) + MyEventLog::Decimer
+		+ MyString(x) + MyEventLog::Decimer
+		+ MyString(y));
 }
 
 void MyVisRankingApp::HandleGlutSpecialKeyboard(unsigned char key, int x, int y){
 	UIProcessSpecialKey(key, x, y);
 	RequestRedisplay();
+	mEventLog.LogItem(
+		"SpecialKey" + MyEventLog::Decimer
+		+ MyString(key) + MyEventLog::Decimer
+		+ MyString(x) + MyEventLog::Decimer
+		+ MyString(y));
 }
 
 void MyVisRankingApp::HandleGlutMouseWheel(int button, int dir, int x, int y){
@@ -41,6 +54,12 @@ void MyVisRankingApp::HandleGlutMouseWheel(int button, int dir, int x, int y){
 			mTrackBall.ScaleMultiply(1 / 1.05);
 	}
 	RequestRedisplay();
+	mEventLog.LogItem(
+		"MouseWheel" + MyEventLog::Decimer
+		+ MyString(button) + MyEventLog::Decimer
+		+ MyString(dir) + MyEventLog::Decimer
+		+ MyString(x) + MyEventLog::Decimer
+		+ MyString(y));
 }
 
 void MyVisRankingApp::HandleGlutMouse(int button, int state, int x, int y){
@@ -61,6 +80,12 @@ void MyVisRankingApp::HandleGlutMouse(int button, int state, int x, int y){
 		}
 		RequestRedisplay();
 	}
+	mEventLog.LogItem(
+		"MouseButton" + MyEventLog::Decimer
+		+ MyString(button) + MyEventLog::Decimer
+		+ MyString(state) + MyEventLog::Decimer
+		+ MyString(x) + MyEventLog::Decimer
+		+ MyString(y));
 }
 
 void MyVisRankingApp::HandleGlutMotion(int x, int y){
@@ -70,12 +95,20 @@ void MyVisRankingApp::HandleGlutMotion(int x, int y){
 		}
 	}
 	RequestRedisplay();
+	mEventLog.LogItem(
+		"MouseMotion" + MyEventLog::Decimer
+		+ MyString(x) + MyEventLog::Decimer
+		+ MyString(y));
 }
 
 void MyVisRankingApp::HandleGlutPassiveMotion(int x, int y){
 	if (UIProcessMouseMove(x, y)){
 		RequestRedisplay();
 	}
+	mEventLog.LogItem(
+		"MousePassive" + MyEventLog::Decimer
+		+ MyString(x) + MyEventLog::Decimer
+		+ MyString(y));
 }
 
 void MyVisRankingApp::HandleGlutReshape(int x, int y){
@@ -89,6 +122,10 @@ void MyVisRankingApp::HandleGlutReshape(int x, int y){
 	UIResize(x, y);
 	mVisTract.Resize(mCanvasWidth, mCanvasHeight);
 	RequestRedisplay();
+	mEventLog.LogItem(
+		"Reshape" + MyEventLog::Decimer
+		+ MyString(x) + MyEventLog::Decimer
+		+ MyString(y));
 }
 
 void MyVisRankingApp::RequestRedisplay(){
@@ -129,11 +166,11 @@ int MyVisRankingApp::HandleDebugKey(unsigned char key){
 			cout << "Lightness balance: " << (mbLightnessBalance ? "ON" : "OFF") << endl;
 			break;
 		case ']':
-			mTargetBrightness += 0.1;
+			mTargetBrightness += 1.0;
 			cout << "Brightness: " << mBrightness << endl;
 			break;
 		case '[':
-			mTargetBrightness -= 0.1;
+			mTargetBrightness -= 1.0;
 			cout << "Brightness: " << mBrightness << endl;
 			break;
 		case '0':
@@ -170,12 +207,12 @@ void MyVisRankingApp::ResizeRenderBuffer(int w, int h){
 }
 
 void MyVisRankingApp::BrightnessBalance(){
-	if (mbComputeBrightness || mbComputeTotalAlpha || mbComputeBrightness){
+	if (mbComputeBrightness || mbComputeTotalAlpha || mbLightnessBalance){
 		mColorBuffer.resize(mCanvasWidth*mCanvasHeight);
 		//glReadPixels(0, 0, mCanvasWidth, mCanvasHeight, GL_RGBA, GL_FLOAT, &mColorBuffer[0]);
 		glBindTexture(GL_TEXTURE_2D, mFrameBuffer.GetColorTexture());
 		glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_FLOAT, &mColorBuffer[0]);
-		if (mbComputeBrightness || mbComputeBrightness){
+		if (mbComputeBrightness || mbLightnessBalance){
 			mBrightness = mRawBightness = ComputeGeometryAverageValue();
 			cout << "Brightness: " << mRawBightness << endl;
 		}
@@ -191,7 +228,7 @@ void MyVisRankingApp::BrightnessBalance(){
 				cout << "Overlapping: " << overlappintRatio << endl;
 			}
 		}
-		if (mbComputeBrightness){
+		if (mbLightnessBalance){
 			ScaleImageLightness(mTargetBrightness / mRawBightness);
 			mBrightness = ComputeGeometryAverageValue();
 			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, mCanvasWidth, mCanvasHeight, 0,
@@ -204,14 +241,16 @@ void MyVisRankingApp::BrightnessBalance(){
 
 float MyVisRankingApp::ComputeTotalAlpha(){
 	float sum = 0;
+#pragma omp parallel for default(shared) reduction(+:sum)
 	for (int i = 0; i < mColorBuffer.size(); i++){
 		sum += mColorBuffer[i].a;
 	}
 	return sum;
 }
 
-float MyVisRankingApp::ComputeTotalPixelDraw(){
-	float sum = 0;
+int MyVisRankingApp::ComputeTotalPixelDraw(){
+	int sum = 0;
+#pragma omp parallel for default(shared) reduction(+:sum)
 	for (int i = 0; i < mColorBuffer.size(); i++){
 		sum += (mColorBuffer[i].a > 0 ? 1 : 0);
 	}
@@ -220,25 +259,45 @@ float MyVisRankingApp::ComputeTotalPixelDraw(){
 
 float MyVisRankingApp::ComputeAverageValue(){
 	float sum = 0;
+#pragma omp parallel for default(shared) reduction(+:sum)
 	for (int i = 0; i < mColorBuffer.size(); i++){
-		sum += mColorBuffer[i].getL();
+		//MyColorConverter::Lab lab = MyColorConverter::rgb2lab(mColorBuffer[i]);
+		//sum += lab.l;
+		sum += (mColorBuffer[i].r + mColorBuffer[i].g + mColorBuffer[i].b) / 3;
 	}
 	return sum / mColorBuffer.size();
 }
 
 float MyVisRankingApp::ComputeGeometryAverageValue(){
 	float sum = 0;
-	float count = 0;
+#pragma omp parallel for default(shared) reduction(+:sum)
 	for (int i = 0; i < mColorBuffer.size(); i++){
-		sum += mColorBuffer[i].getL()*mColorBuffer[i].a;
-		count += mColorBuffer[i].a;
+		if (mColorBuffer[i].a > 0){
+			//MyColorConverter::Lab lab = MyColorConverter::rgb2lab(mColorBuffer[i]);
+			//sum += lab.l*mColorBuffer[i].a;
+			float value = (mColorBuffer[i].r + mColorBuffer[i].g + mColorBuffer[i].b) / 3;
+			sum += value*mColorBuffer[i].a;
+		}
+	}
+	float count = 0;
+#pragma omp parallel for default(shared) reduction(+:count)
+	for (int i = 0; i < mColorBuffer.size(); i++){
+		if (mColorBuffer[i].a > 0){
+			count += mColorBuffer[i].a;
+		}
 	}
 	return sum / count;
 }
 
 void MyVisRankingApp::ScaleImageLightness(float scale){
+#pragma omp parallel for
 	for (int i = 0; i < mColorBuffer.size(); i++){
 		if (mColorBuffer[i].a > 0){
+			//float a = mColorBuffer[i].a;
+			//MyColorConverter::Lab lab = MyColorConverter::rgb2lab(mColorBuffer[i]);
+			//lab.l *= scale;
+			//mColorBuffer[i] = MyColorConverter::lab2rgb(lab);
+			//mColorBuffer[i].a = a;
 			mColorBuffer[i].r *= scale;
 			mColorBuffer[i].g *= scale;
 			mColorBuffer[i].b *= scale;
@@ -269,6 +328,7 @@ void MyVisRankingApp::StartProfileRendering(){
 		mbDrawUI = false;
 		mbDrawIndicators = false;
 		mbDrawHighlighted = false;
+		mbDrawLegend = false;
 		mbComputeBrightness = false;
 		mbLightnessBalance = false;
 		mbComputeTotalAlpha = false;

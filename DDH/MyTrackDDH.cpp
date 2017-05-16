@@ -24,7 +24,7 @@ MyTrackDDH::MyTrackDDH() :
 	mStripDepth = 0.01;
 	mStrokeWidth = 0.5;
 	mTaperLength = 1;
-	mDepthCueing = 1;
+	mDepthCueing = 0.5;
 	mRenderingParameters.BaseColor = MyColor4f(0, 0, 0, 1);
 }
 

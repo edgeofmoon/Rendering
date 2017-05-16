@@ -64,8 +64,8 @@ void main(void)
 	//gPositionDepth.xyz = fposition;
 	//gPositionDepth.w = LinearizeDepth(gl_FragCoord.z);
 	//gNormal = vec4(normalize(fnormal),0);
-	vec4 texColor = vec4(texture2D(colorTex, vec2(fvalue,0.5)).xyz, 1)*valueToTextureInfluence;
-	float texRatio = step(mod(ftexCoord.x*4, 1), fvalue);
+	vec4 texColor = vec4(texture2D(colorTex, vec2((fvalue-0.2)/0.8,0.5)).xyz, 1)*valueToTextureInfluence;
+	float texRatio = 1 - step(mod(ftexCoord.x*2, 1), fvalue);
 	vec4 texRatioColor = vec4(texRatio, texRatio, texRatio, 1)*valueToTextureRatioInfluence;
 	vec4 color = fcolor*colorInfluence;
 	fragColour = texColor+texRatioColor+color;
@@ -73,7 +73,7 @@ void main(void)
 		fragColour = baseColor;
 	}
 	fragColour.xyz = GetLightedColor(fragColour.xyz);
-	fragColour.a = baseColor.a;
+	//fragColour.a = baseColor.a;
 	//fragColour.xyz = fnormal;
 	//fragColour = vec4(texture2D(colorTex, gl_FragCoord.xy/1000).xyz, 1);
 }

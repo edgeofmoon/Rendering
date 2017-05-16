@@ -28,7 +28,14 @@ public:
 
 		return MyColor4<T>(rr,gg,bb,aa);
 	}
-	
+
+	friend bool operator==(const MyColor4<T> &ca, const MyColor4<T> &cb){
+		if (ca.r != cb.r) return false;
+		if (ca.g != cb.g) return false;
+		if (ca.b != cb.b) return false;
+		if (ca.a != cb.a) return false;
+		return true;
+	}
 
 	template<typename T2>
 	friend MyColor4<T> pow(MyColor4<T> c, T2 ga){

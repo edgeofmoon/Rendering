@@ -322,7 +322,7 @@ void MyVisData::ComputeAnswer_TUMOR(){
 		CollisionStatus cs = ComputeSphereCollusionStatus(mSpheres[0]);
 		int ans = int(cs) - 1;
 		mCorrectAnswers = MyArrayi(1, ans);
-		if (ans != mVisInfo.GetQuest()%3)
+		if (ans != mVisInfo.GetQuest()%3 && !mVisInfo.IsTraining())
 			cerr << "TUMOR task answer doesn't match quest index!" << endl;
 	}
 	else{

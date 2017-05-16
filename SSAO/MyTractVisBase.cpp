@@ -15,6 +15,7 @@
 #include <iostream>
 #include <thread>
 #include <cassert>
+#include <omp.h>
 using namespace std;
 
 #include "GL\glew.h"
@@ -27,7 +28,7 @@ MyTractVisBase::RenderingParameters MyTractVisBase::DefaultRenderingParameters =
 	0,
 	MyColor4f(1, 1, 1, 0),
 	0,
-	MyColor4f(0.5, 0.5, 0.5, 0),
+	MyColor4f(0.5, 0.5, 0.5, 1),
 	1,
 	0,
 	1,
@@ -62,7 +63,17 @@ void MyTractVisBase::SetTracts(const MyTracks* tracts){
 }
 
 void MyTractVisBase::ResetRenderingParameters(){
-	mTrackRadius = 0.2;
+	//assuming superquadric has radius 0.5
+	//average (1-cl)^3=0.46
+	//average (1-cp)^3=0.59
+	//which will have average max area (gamma=3):
+	//integration 0 to pi/2: 4*(0.5*0.5)*(cosx)^0.460*(sinx)^0.593 = 0.8247
+	//4 is for each quarter on x/y plan, 0.5 is base glyph radius
+	//average 1/2 will be projected
+	//for tube, projected will always be 2*R*1
+	//1 is length is sample distance
+	//let 2*R=0.8247/2, we get R=0.206
+	mTrackRadius = 0.206;
 	mRenderingParameters = DefaultRenderingParameters;
 	mSphereGeometry = NULL;
 }
@@ -354,8 +365,11 @@ void MyTractVisBase::ComputeSuperquadricGeometry(){
 
 	mIdxOffset.clear();
 	int totalPoints = 0;
+	MyArrayi prevVertexCount;
+	prevVertexCount << 0;
 	for (int it = 0; it < mTracts->GetNumTracks(); it++){
 		totalPoints += mTracts->At(it).Size() / (1 + mRenderingParameters.SuperquadricSkip);
+		prevVertexCount << totalPoints;
 	}
 
 	cout << "Allocating Storage for Geometry...\r";
@@ -370,35 +384,37 @@ void MyTractVisBase::ComputeSuperquadricGeometry(){
 	mIndices.resize(totalPoints*tCount);
 
 	mIdxOffset.clear();
-	mIdxOffset.reserve(mTracts->GetNumTracks());
-	MySuperquadric sqDrawer;
-	sqDrawer.SetScale(mTrackRadius*sqrt(6.f));
+	mIdxOffset.resize(mTracts->GetNumTracks());
 
-	int vOffset = 0;
-	int tOffset = 0;
+#pragma omp parallel for default(shared)
 	for (int it = 0; it < mTracts->GetNumTracks(); it++){
 		PrintProgress(it, mTracts->GetNumTracks(), 1);
-		mIdxOffset << tOffset * 3;
-		for (int i = 0; i<mTracts->At(it).Size(); 
+		int vOffset = prevVertexCount[it] * vCount;
+		int tOffset = prevVertexCount[it] * tCount;
+		mIdxOffset[it] = tOffset * 3;
+		MySuperquadric sqDrawer;
+		sqDrawer.SetScale(0.5);
+		for (int i = 0; i < mTracts->At(it).Size();
 			i += (mRenderingParameters.SuperquadricSkip + 1)){
+			int idx = i / (mRenderingParameters.SuperquadricSkip + 1);
+			int thisVOffset = vOffset + idx*vCount;
+			int thistOffset = tOffset + idx*tCount;
 			MyTensor3f t = mTracts->GetTensor(it, i);
 			t.NormalizeEigenVectors();
 			sqDrawer.SetTensor(&t);
 			sqDrawer.SetCenter(mTracts->At(it)[i]);
-			sqDrawer.BuildOn(mVertices, mNormals, mTexCoords, mIndices, vOffset, tOffset);
+			sqDrawer.BuildOn(mVertices, mNormals, mTexCoords, mIndices, thisVOffset, thistOffset);
 			// add color
 			MyColor4f color = mTracts->GetTrackColor(it);
-			for (int ic = 0; ic < vCount; ic++) mColors[vOffset + ic] = color;
+			for (int ic = 0; ic < vCount; ic++) mColors[thisVOffset + ic] = color;
 			// add value
 			float fa = t.GetFA();
 			if (fa>1) fa = 1;
 			else if (fa < 0) fa = 0;
-			for (int ic = 0; ic < vCount; ic++) mValues[vOffset + ic] = fa;
-			vOffset += vCount;
-			tOffset += tCount;
+			for (int ic = 0; ic < vCount; ic++) mValues[thisVOffset + ic] = fa;
 		}
 	}
-	mIdxOffset << tOffset * 3;
+	mIdxOffset << prevVertexCount.back()* tCount * 3;
 	cout << "Computing completed.\n";
 }
 

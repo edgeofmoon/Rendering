@@ -10,6 +10,7 @@
 #include "MyToggleButton.h"
 #include "MyLogTable.h"
 #include "MyRenderingLog.h"
+#include "MyEventLog.h"
 
 class MyVisRankingApp
 {
@@ -51,6 +52,7 @@ protected:
 	bool mbDrawTracts;
 	bool mbDrawIndicators;
 	bool mbDrawHighlighted;
+	bool mbDrawLegend;
 	bool mbDrawUI;
 	bool mbComputeBrightness;
 	bool mbLightnessBalance;
@@ -61,6 +63,7 @@ protected:
 	// log
 	MyLogTable mLogs;
 	MyRenderingLog mRenderingLog;
+	MyEventLog mEventLog;
 
 	// UI
 	MyArray<MyUIObject*> mTaskUIs;
@@ -116,6 +119,7 @@ protected:
 	void DrawHighlighted();
 	void DrawBoxes();
 	void DrawTractIndicators();
+	void DrawLegend();
 
 	// data gen
 	void ProcessKey_DataGen(unsigned char key);
@@ -134,7 +138,7 @@ protected:
 	MyVisTract mVisTract;
 	MyTracks mTracts;
 	unsigned int mColorTexture;
-	unsigned int mSaturationTexture;
+	unsigned int mValueTexture;
 
 	// framebuffer
 	MyFrameBuffer mFrameBuffer;
@@ -150,7 +154,7 @@ protected:
 	float mTotalPixelDrawn;
 	void BrightnessBalance();
 	float ComputeTotalAlpha();
-	float ComputeTotalPixelDraw();
+	int ComputeTotalPixelDraw();
 	float ComputeAverageValue();
 	float ComputeGeometryAverageValue();
 	void ScaleImageLightness(float scale);

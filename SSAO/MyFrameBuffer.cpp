@@ -4,7 +4,13 @@
 #include "GL/freeglut.h"
 
 #define EXTRATEXTUREATTRIBUTES 5
-MyFrameBuffer::MyFrameBuffer(int width, int height){
+
+MyFrameBuffer::MyFrameBuffer(){
+	mFrameBuffer = 0;
+};
+
+MyFrameBuffer::MyFrameBuffer(int width, int height)
+	:MyFrameBuffer(){
 	SetSize(width, height);
 }
 

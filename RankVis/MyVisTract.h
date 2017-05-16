@@ -17,7 +17,7 @@ public:
 
 	void SetVisData(const MyVisData* visData){ mVisData = visData; };
 	//void SetColorTexture(unsigned int colorTex){ mColorTexture = colorTex; };
-	//void SetSaturationTexture(unsigned int satTex){ mSaturationTexture = satTex; };
+	//void SetSaturationTexture(unsigned int satTex){ mValueTexture = satTex; };
 
 	void SetColorTextures(const MyArrayui& c){ mColorTextures = c; };
 	void SetValueTextures(const MyArrayui& c){ mValueTextures = c; };
@@ -31,7 +31,7 @@ protected:
 	// preset data
 	const MyVisData* mVisData;
 	//unsigned int mColorTexture;
-	//unsigned int mSaturationTexture;
+	//unsigned int mValueTexture;
 	MyArrayui mColorTextures;
 	MyArrayui mValueTextures;
 	int mCanvasWidth, mCanvasHeight;
