@@ -35,6 +35,8 @@ public:
 		MyArray2f& texCoords, MyArray3i& triangles, 
 		int vIdxOffset = 0, int tIdxOffset = 0) const;
 
+	static int ZREV;
+
 protected:
 	// static members
 	static float Gamma;

@@ -15,6 +15,8 @@
 #include <cassert>
 using namespace std;
 
+int MyLineAO::SamplesPerFragment = 32;
+
 MyLineAO::MyLineAO()
 	:MyTractVisBase()
 {
@@ -113,6 +115,8 @@ void MyLineAO::ComputeTubeGeometry(){
 	mNormals.resize(totalPoints);
 	mTangents.resize(totalPoints);
 
+	float R = mTrackRadius;
+
 	for (int it = 0; it < mTracts->GetNumTracks(); it++){
 		if ((int)((it + 1) * 100 / (float)mTracts->GetNumTracks())
 			- (int)(it * 100 / (float)mTracts->GetNumTracks()) >= 1){
@@ -157,7 +161,7 @@ void MyLineAO::ComputeTubeGeometry(){
 			for (int is = 0; is<nFaces; is++){
 				float angle = dangle*is;
 				MyVec3f pt = sin(angle)*perpend1 + cos(angle)*perpend2;
-				mVertices[currentIdx + i*(nFaces + 1) + is] = pt * 0 + p;
+				mVertices[currentIdx + i*(nFaces + 1) + is] = pt * R + p;
 				mNormals[currentIdx + i*(nFaces + 1) + is] = pt;
 				mTangents[currentIdx + i*(nFaces + 1) + is] = -d.normalized();
 			}
@@ -182,9 +186,10 @@ void MyLineAO::ComputeTubeGeometry(){
 			for (int is = 0; is < nFaces; is++){
 				float angle = dangle*is;
 				MyVec3f pt = sin(angle)*perpend1 + cos(angle)*perpend2;
-				MyVec3f pe = pt*0 + p;
+				MyVec3f pe = pt*R + p;
 				mVertices[currentIdx + is + 1] = pe;
-				mNormals[currentIdx + is + 1] = pt;
+				//mNormals[currentIdx + is + 1] = pt;
+				mNormals[currentIdx + is + 1] = -d;
 				mTangents[currentIdx + is + 1] = -d;
 			}
 		}
@@ -203,9 +208,10 @@ void MyLineAO::ComputeTubeGeometry(){
 			for (int is = 0; is < nFaces; is++){
 				float angle = dangle*is;
 				MyVec3f pt = sin(angle)*perpend1 + cos(angle)*perpend2;
-				MyVec3f pe = pt*0 + p;
+				MyVec3f pe = pt*R + p;
 				mVertices[currentIdx + is + 1] = pe;
-				mNormals[currentIdx + is + 1] = pt;
+				//mNormals[currentIdx + is + 1] = pt;
+				mNormals[currentIdx + is + 1] = -d;
 				mTangents[currentIdx + is + 1] = -d;
 			}
 		}
@@ -553,7 +559,8 @@ void MyLineAO::lineShadingPass() const {
 	glUniformMatrix4fv(normatLocation, 1, GL_FALSE, normalMat);
 
 	int radiusLocation = glGetUniformLocation(mLineShader, "radius");
-	glUniform1f(radiusLocation, mTrackRadius);
+	//glUniform1f(radiusLocation, mTrackRadius);
+	glUniform1f(radiusLocation, 0);
 
 	glUniform4fv(glGetUniformLocation(mLineShader, "baseColor"), 1, &mRenderingParameters.BaseColor.r);
 	glUniform1f(glGetUniformLocation(mLineShader, "lightIntensity"), mRenderingParameters.LightIntensity);
@@ -611,6 +618,8 @@ void MyLineAO::lineAOPass() const {
 	glBindFramebuffer(GL_FRAMEBUFFER, aoBuffer);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glUseProgram(mAOShader);
+
+	glUniform1i(glGetUniformLocation(mAOShader, "SAMPLES"), SamplesPerFragment);
 
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, gColor);

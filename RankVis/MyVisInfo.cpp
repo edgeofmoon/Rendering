@@ -1,6 +1,19 @@
 #include "MyVisInfo.h"
 
+#include <sstream>
+#include <iomanip>
+
 using namespace MyVisEnum;
+
+MyArray2f MyVisInfo::FAAnswerOptionRanges = {
+	MyVec2f(-0.2, -0.15),
+	MyVec2f(-0.15, -0.1),
+	MyVec2f(-0.1, -0.05),
+	MyVec2f(-0.05, 0.05),
+	MyVec2f(0.05, 0.1),
+	MyVec2f(0.1, 0.15),
+	MyVec2f(0.15, 0.2),
+};
 
 MyVisInfo::MyVisInfo(VisTask task, bool isTraining) :
 	mIsEmpty(true), mIsTraining(isTraining), mTask(task), mMappingMethod(0), mQuest(-1){
@@ -22,18 +35,19 @@ MyString MyVisInfo::GetTaskTransitionString() const{
 	if (IsEmpty()){
 		switch (mTask){
 		case START:
-			if (IsTraining()) return "Welcome to the training session! Press Next button to start.";
-			else return "Welcome to the formal study! Press Next button to start.";
+			if (IsTraining()) return "Welcome to the training session! Please press the Next button to start.";
+			else return "Welcome to the formal study! Please press the Next button to start.";
 			break;
 		case END:
-			if (IsTraining()) return "You have finished all the training.";
-			else return "You have finished all the test. Thank you for your participation!";
+			if (IsTraining()) return "Your training is finished. Thank you!";
+			else return "The formal study is completed. Thank you for your participation!";
 			break;
 		case FA:
+			return "Task type 1 " + GetTaskHintString(mTask);
 		case TRACE:
+			return "Task type 2 " + GetTaskHintString(mTask);
 		case TUMOR:
-			if (IsTraining()) return "You are now heading to the task training: " + GetTaskHintString(mTask);
-			else return "You are now heading to the next task: " + GetTaskHintString(mTask);
+			return "Task type 3 " + GetTaskHintString(mTask);
 			break;
 		default:
 			return "Unknow transition!";
@@ -49,21 +63,29 @@ MyString MyVisInfo::GetTaskHintString() const{
 	return GetTaskHintString(mTask);
 }
 
-MyString MyVisInfo::GetTaskHintString(MyVisEnum::VisTask task){
-	switch (task){
+int MyVisInfo::GetNumberAnswerOption() const{
+	switch (mTask){
 	case FA:
-		return "What is the difference of average FA values between box 1 and box 2?";
+		return 7;
 		break;
 	case TRACE:
-		return "Do the fibers originated from yellow spheres end in box 1, 2, or 3?";
+		return 3;
 		break;
 	case TUMOR:
-		return "Is the sphere intersecting, touching or away from the tracts?";
+		return 3;
 		break;
 	default:
-		return "Invalid task!";
+		return 0;
 		break;
 	}
+}
+
+MyString MyVisInfo::GetAnswerOptionString(int idx) const{
+	return MyVisInfo::GetTaskAnswerOptionString(mTask, idx);
+}
+
+MyString MyVisInfo::GetAnswerHintString() const{
+	return MyVisInfo::GetTaskAnswerHintString(mTask);
 }
 
 int MyVisInfo::GetTaskRawIndex() const{
@@ -221,4 +243,70 @@ MyString MyVisInfo::GetStringHeader(const MyString& decimer){
 		+ "ENCODING" + decimer
 		+ "METHOD" + decimer
 		+ "CUE";
+}
+
+MyString MyVisInfo::GetTaskHintString(MyVisEnum::VisTask task){
+	switch (task){
+	case FA:
+		return "(FA difference): What is the difference between average FA value of box 1 and that of box 2?";
+		break;
+	case TRACE:
+		return "(Tract tracing): Do the tracts originated from the yellow spheres end in box 1, 2, or 3";
+		break;
+	case TUMOR:
+		return "(Tumor contact): Is the sphere intersecting, tangential or away from the tracts?";
+		break;
+	default:
+		return "Invalid task!";
+		break;
+	}
+}
+
+MyString MyVisInfo::GetFAAnswerOptionRangeString(int idx){
+	const MyVec2f& range = FAAnswerOptionRanges[idx];
+	stringstream lss, hss;
+	lss << std::setprecision(2);
+	hss << std::setprecision(2);
+	MyString low, high;
+	lss << range[0];
+	lss >> low;
+	hss << range[1];
+	hss >> high;
+	if (idx == 6) return "[" + low + ", " + high + "]";
+	else return "["+low + ", " + high+")";
+}
+
+MyString MyVisInfo::GetTaskAnswerOptionString(VisTask task, int idx){
+	if (task == FA){
+		return GetFAAnswerOptionRangeString(idx);
+	}
+	else if (task == TRACE){
+		return MyString(idx + 1);
+	}
+	else if (task == TUMOR){
+		switch (idx){
+		case 0: return "Intersect";
+		case 1: return "Tangential";
+		case 2: return "Away";
+		default: return "Invalid";
+		}
+	}
+	return "Invalid";
+}
+
+MyString MyVisInfo::GetTaskAnswerHintString(VisTask task){
+	if (task == FA){
+		return MyString("Select a range representing averge FA of box 1 minus that of box 2\n\n")+
+			MyString("<---------Box 1 Lower------------------Similar------------------Box 1 Higher--------->\n");
+	}
+	else if (task == TRACE){
+		return "Select a box that the mark tracts end in";
+	}
+	else if (task == TUMOR){
+		return "Select the collision state between the tumor sphere and the tracts";
+	}
+	return "Invalid";
+}
+const MyArray2f& MyVisInfo::GetFAAnswerOptionRanges(){
+	return FAAnswerOptionRanges;
 }

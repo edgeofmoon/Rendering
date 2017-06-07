@@ -31,6 +31,8 @@ public:
 	void GetProgressInfo(int& cur, int& total) const;
 	MyString GetProgresInfoString() const;
 
+	void PrintAllCase(const MyString& fileName, const MyString& decimer = "\t") const;
+
 protected:
 	int mUserIndex;
 	int mVisDataIndex;

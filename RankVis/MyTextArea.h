@@ -1,6 +1,7 @@
 #pragma once
 #include "MyUIObject.h"
 #include "MyString.h"
+#include "MyColor4.h"
 
 class MyTextArea :
 	public MyUIObject
@@ -19,6 +20,7 @@ public:
 	inline void SetPosition(const MyVec2f& bl){ mBottomLeft = bl; };
 	inline void SetSize(const MyVec2f& sz){ mSize = sz; };
 	inline void SetConstant(bool c){ mbConstant = c; };
+	inline void SetTextColor(const MyColor4f& color){ mTextColor = color; };
 	void SetText(const MyString& str);
 	void SetBlankText(const MyString &str);
 	void ClearText();
@@ -37,6 +39,7 @@ protected:
 	int mCursor;
 	MyVec2f mBottomLeft;
 	MyVec2f mSize;
+	MyColor4f mTextColor;
 
 	virtual bool IsKeyValid(unsigned char key) { return true; };
 	virtual bool IsSpecialKeyValid(unsigned char key){ return true; };

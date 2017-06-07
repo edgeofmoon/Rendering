@@ -42,7 +42,13 @@ void myGlutKeyboard(unsigned char key, int x, int y){
 	case 27:
 		exit(0);
 		break;
+	case 'h':
+	case 'H':
+		trackBall.ResetRotate();
+		trackBall.ResetScale();
+		break;
 	}
+	glutPostRedisplay();
 }
 
 void myGlutSpecialInput(int key, int x, int y){
@@ -64,16 +70,16 @@ void myGlutMouseWheel(int button, int dir, int x, int y){
 
 void myGlutMouse(int button, int state, int x, int y){
 	if (state == GLUT_DOWN){
-		trackBall.StartMotion(x, y);
+		trackBall.StartRotation(x, y);
 	}
 	else if (state == GLUT_UP){
-		trackBall.EndMotion(x, y);
+		trackBall.EndRotation(x, y);
 	}
 	glutPostRedisplay();
 }
 
 void myGlutMotion(int x, int y){
-	trackBall.RotateMotion(x, y);
+	trackBall.Motion(x, y);
 	glutPostRedisplay();
 }
 
@@ -88,6 +94,7 @@ void myGlutReshape(int x, int y){
 	MyGraphicsTool::LoadModelViewMatrix(&MyMatrixf::IdentityMatrix());
 	gluLookAt(0, 0, 150, 0, 0, 0, 0, 1, 0);
 	trackBall.Reshape(x, y);
+	trackBall.SetScaleRange(pow(1.05f, -5), pow(1.05f, 20));
 	trackBall.ResetRotate();
 	trackBall.ResetScale();
 	glutPostRedisplay();
@@ -98,7 +105,7 @@ int main(int argc, char* argv[]){
 	glutInitDisplayMode(GLUT_RGBA | GLUT_ALPHA | GLUT_DOUBLE | GLUT_DEPTH);
 	glutInitWindowPosition(80, 80);
 	glutInitWindowSize(windowWidth, windowHeight);
-	int main_window = glutCreateWindow("RankVis");
+	int main_window = glutCreateWindow("BundleViewer");
 	glewInit();
 	glutDisplayFunc(myGlutDisplay);
 	glutMotionFunc(myGlutMotion);

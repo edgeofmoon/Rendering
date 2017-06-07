@@ -151,7 +151,7 @@ string MyVisEnum::toString(CollisionStatus cs){
 		return "AWAY";
 		break;
 	case TOUCH:
-		return "TOUCH";
+		return "TANGENTIAL";
 		break;
 	case INTERSECT:
 		return "INTERSECT";

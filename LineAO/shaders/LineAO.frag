@@ -1,8 +1,8 @@
 #version 330
 
 #define SCALES 4
-#define SAMPLES 32
 
+uniform int SAMPLES = 32;
 uniform sampler2D gColor;
 uniform sampler2D gNDMap;
 uniform sampler2D gZoomMap;

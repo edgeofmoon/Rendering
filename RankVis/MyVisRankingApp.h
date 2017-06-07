@@ -11,6 +11,7 @@
 #include "MyLogTable.h"
 #include "MyRenderingLog.h"
 #include "MyEventLog.h"
+#include "MyTractVisBaseLegend.h"
 
 class MyVisRankingApp
 {
@@ -19,14 +20,19 @@ public:
 	~MyVisRankingApp();
 
 	enum APP_MODE{
-		APP_MODE_TRAINING = (1 << 0),
-		APP_MODE_STUDY = (1 << 1),
-		APP_MODE_LIGHTING = (1 << 2),
-		APP_MODE_OCCLUSION = (1 << 3),
+		APP_MODE_TRAINING = 1,
+		APP_MODE_STUDY = 2,
+		APP_MODE_LIGHTING = 3,
+		APP_MODE_OCCLUSION = 4,
 
 		APP_MODE_DEBUG = (1 << 8),
+		APP_MODE_PRINTDATA = (1 << 9),
+
+		APP_MODE_MODE_MASK = 0x00ff,
+		APP_MODE_FLAG_MASK = 0xff00,
 	};
 	void Init(int uidx, int tidx = -1, int mode = APP_MODE_STUDY);
+	bool IsOnMode(APP_MODE mode) const;
 	void Next();
 	void Previous();
 	void PrintTrialInfo();
@@ -43,8 +49,8 @@ public:
 	void HandleGlutReshape(int x, int y);
 	void RequestRedisplay();
 
-	void ResetCamera();
-	bool IsOnMode(APP_MODE mode) const { return (mAppMode & mode) != 0; };
+	void ResetCamera(bool resetTractBall = true);
+	const MyVisTrialManager& GetTrialManager() const { return mTrialManager; };
 
 protected:
 	// control
@@ -59,6 +65,7 @@ protected:
 	bool mbComputeTotalAlpha;
 	bool mbComputeTotalPixelDrawn;
 	int HandleDebugKey(unsigned char key);
+	void UpdateSampePerFragmentAtScale(float scale);
 
 	// log
 	MyLogTable mLogs;
@@ -75,29 +82,30 @@ protected:
 	int mConfidenceSelected;
 	bool mbPaused;
 	void UI_Pause();
-	void UI_Input();
 	void UI_Resume();
-	void UI_Back();
-	void UI_AnswerSelect(int idx);
-	void UI_ConfidenceSelected(int idx);
+	void UI_Input();
+	void UI_Check();
 	void UI_Next();
+	void UI_AnswerSelect(int idx, MyButton* button);
+	void UI_ConfidenceSelected(int idx);
 	void UI_Process(int uid);
-	bool UI_CanNext();
+	bool UI_Answered() const;
+	bool UI_CanCheck() const;
 
 	// UI components;
 	float mButtonWidth, mButtonHeight;
-	float mButtonInterval;
-	MyButton mButton_Next;
+	float mButtonIntervalX, mButtonIntervalY;
+	MyTextArea mTextArea_AnswerHint0;
+	MyTextArea mTextArea_AnswerHint1;
 	MyTextArea mTextArea_ConfidenceHint;
 	MyToggleButtonGroup mButtonGroup_Confidence;
 	MyToggleButtonGroup mButtonGroup_Answer;
-	MyButton mButton_Input;
-	MyButton mButton_Back;
 	MyButton mButton_Pause;
 	MyButton mButton_Resume;
+	MyButton mButton_Input;
+	MyButton mButton_Check;
+	MyButton mButton_Next;
 	MyTextArea mTextArea_Answer;
-	MyTextArea mTextArea_InputHint;
-	MyNumberArea mTextArea_Input;
 	MyTextArea mTextArea_Transition;
 	MyTextArea mTextArea_Hint;
 	MyTextArea mTextArea_Progress;
@@ -120,6 +128,11 @@ protected:
 	void DrawBoxes();
 	void DrawTractIndicators();
 	void DrawLegend();
+	MyTractVisBaseLegend mTractLegend;
+	void DrawTractLegend();
+	void DrawTractLegendText();
+	void DrawColorLegend();
+	void DrawTextureRatioLegend();
 
 	// data gen
 	void ProcessKey_DataGen(unsigned char key);
@@ -181,6 +194,9 @@ private:
 		const MyArrayc& operators) const;
 	MyArrayi ComputedFilteredByBox(const MyBoundingBox& box,
 		const MyArrayi& selected) const;
+	MyArrayi ComputedEndFilteredByBox(const MyBoundingBox& box,
+		const MyArrayi& selected) const;
+	MyBoundingBox ComputedEndingBox(const MyArrayi& selected) const;
 	MyColor4f GetSphereStatusColor(const MyTractVisBase* tractVis) const;
 	MyColor4f GetCollisionStatusColor(MyVisEnum::CollisionStatus st) const;
 };

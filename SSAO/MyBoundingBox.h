@@ -20,6 +20,7 @@ public:
 	virtual bool IsIntersected(const MyVec3f& st, const MyVec3f& ed) const;
 	virtual void Translate(const MyVec3f& t);
 	virtual void Expand(float e);
+	virtual void SetNull();
 	virtual MyBoundingObject* MakeCopy() const;
 	virtual MyVec3f GetCenter() const;
 

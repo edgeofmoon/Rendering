@@ -3,6 +3,8 @@
 #include "MyTexture.h"
 #include "MyPrimitiveDrawer.h"
 #include "MyColorConverter.h"
+#include "MyLineAO.h"
+#include "MyTrackDDH.h"
 
 #include <GL/glew.h>
 #include <GL/freeglut.h>
@@ -10,7 +12,6 @@
 #include <omp.h>
 #include <iostream>
 using namespace std;
-
 
 void MyVisRankingApp::HandleGlutDisplay(){
 	StartProfileRendering();
@@ -23,7 +24,8 @@ void MyVisRankingApp::HandleGlutDisplay(){
 }
 
 void MyVisRankingApp::HandleGlutKeyboard(unsigned char key, int x, int y){
-	if (UIProcessKey(key, x, y)) {}
+	if (key == 'h' || key == 'H') ResetCamera();
+	else if (UIProcessKey(key, x, y)) {}
 	else if (HandleDebugKey(key)) {}
 	else ProcessKey_DataGen(key);
 	RequestRedisplay();
@@ -53,6 +55,8 @@ void MyVisRankingApp::HandleGlutMouseWheel(int button, int dir, int x, int y){
 		if (!mbPaused)
 			mTrackBall.ScaleMultiply(1 / 1.05);
 	}
+	UpdateSampePerFragmentAtScale(mTrackBall.GetScale());
+
 	RequestRedisplay();
 	mEventLog.LogItem(
 		"MouseWheel" + MyEventLog::Decimer
@@ -63,23 +67,28 @@ void MyVisRankingApp::HandleGlutMouseWheel(int button, int dir, int x, int y){
 }
 
 void MyVisRankingApp::HandleGlutMouse(int button, int state, int x, int y){
-	if (button == GLUT_RIGHT_BUTTON){
+	if(button == GLUT_LEFT_BUTTON){
 		if (state == GLUT_DOWN){
-			ResetCamera();
-		}
-		RequestRedisplay();
-	}
-	else if(button == GLUT_LEFT_BUTTON){
-		if (state == GLUT_DOWN){
-			mTrackBall.StartMotion(x, y);
+			mTrackBall.StartRotation(x, y);
 			UIProcessMouseDown(x, y);
 		}
 		else if (state == GLUT_UP){
-			mTrackBall.EndMotion(x, y);
+			mTrackBall.EndRotation(x, y);
 			UIProcessMouseUp(x, y);
 		}
-		RequestRedisplay();
 	}
+	else if (IsOnMode(APP_MODE_DEBUG) && button == GLUT_RIGHT_BUTTON){
+		mTrackBall.SetTranslateScale(0.1, 0.1);
+		if (state == GLUT_DOWN){
+			mTrackBall.StartTranslation(x, y);
+			UIProcessMouseDown(x, y);
+		}
+		else if (state == GLUT_UP){
+			mTrackBall.EndTranslation(x, y);
+			UIProcessMouseUp(x, y);
+		}
+	}
+	RequestRedisplay();
 	mEventLog.LogItem(
 		"MouseButton" + MyEventLog::Decimer
 		+ MyString(button) + MyEventLog::Decimer
@@ -91,7 +100,7 @@ void MyVisRankingApp::HandleGlutMouse(int button, int state, int x, int y){
 void MyVisRankingApp::HandleGlutMotion(int x, int y){
 	if (!UIProcessMouseMove(x, y)){
 		if (!mbPaused){
-			mTrackBall.RotateMotion(x, y);
+			mTrackBall.Motion(x, y);
 		}
 	}
 	RequestRedisplay();
@@ -105,10 +114,12 @@ void MyVisRankingApp::HandleGlutPassiveMotion(int x, int y){
 	if (UIProcessMouseMove(x, y)){
 		RequestRedisplay();
 	}
+	/*
 	mEventLog.LogItem(
 		"MousePassive" + MyEventLog::Decimer
 		+ MyString(x) + MyEventLog::Decimer
 		+ MyString(y));
+		*/
 }
 
 void MyVisRankingApp::HandleGlutReshape(int x, int y){
@@ -117,7 +128,7 @@ void MyVisRankingApp::HandleGlutReshape(int x, int y){
 	mCanvasWidth = x*mCanvasScaleX;
 	mCanvasHeight = y*mCanvasScaleY;
 	mTrackBall.Reshape(x, y);
-	ResetCamera();
+	ResetCamera(false);
 	ResizeRenderBuffer(mCanvasWidth, mCanvasHeight);
 	UIResize(x, y);
 	mVisTract.Resize(mCanvasWidth, mCanvasHeight);
@@ -132,18 +143,27 @@ void MyVisRankingApp::RequestRedisplay(){
 	glutPostRedisplay();
 }
 
-void MyVisRankingApp::ResetCamera(){
+void MyVisRankingApp::ResetCamera(bool resetTractBall){
 	MyMatrixf projectionMatrix = MyMatrixf::PerspectiveMatrix(60, mWindowWidth / (float)mWindowHeight, 1, 300);
 	//MyMatrixf projectionMatrix = MyMatrixf::OrthographicMatrix(-100,100,-100,100, 1, 200);
 	MyGraphicsTool::LoadProjectionMatrix(&projectionMatrix);
 	MyGraphicsTool::LoadModelViewMatrix(&MyMatrixf::IdentityMatrix());
 	gluLookAt(0, 0, 150, 0, 0, 0, 0, 1, 0);
-	mTrackBall.ResetRotate();
-	mTrackBall.ResetScale();
+	if (resetTractBall){
+		mTrackBall.ResetRotate();
+		mTrackBall.ResetScale();
+		mTrackBall.ResetTranslate();
+	}
+	if (mTrialManager.GetCurrentVisData()->GetVisInfo().IsTraining()){
+		mTrackBall.SetRotationMatrix(MyMatrixf::RotateMatrix(180, 0, 1, 0));
+	}
 }
 
 int MyVisRankingApp::HandleDebugKey(unsigned char key){
 	if (!IsOnMode(APP_MODE_DEBUG)) return 0;
+
+	MyTrackDDH* p = static_cast<MyTrackDDH*>(mVisTract.GetTractVis());
+
 	switch (key){
 		case 27:
 			exit(0);
@@ -160,6 +180,10 @@ int MyVisRankingApp::HandleDebugKey(unsigned char key){
 		case 'P':
 			Previous();
 			break;
+		case 'k':
+		case 'K':
+			mbDrawHighlighted = !mbDrawHighlighted;
+			break;
 		case 'b':
 		case 'B':
 			mbLightnessBalance = !mbLightnessBalance;
@@ -168,10 +192,18 @@ int MyVisRankingApp::HandleDebugKey(unsigned char key){
 		case ']':
 			mTargetBrightness += 1.0;
 			cout << "Brightness: " << mBrightness << endl;
+			if (p) {
+				p->mStripDepth += 0.02;
+				cout << "StripDepth: " << p->mStripDepth << endl;
+			}
 			break;
 		case '[':
 			mTargetBrightness -= 1.0;
 			cout << "Brightness: " << mBrightness << endl;
+			if (p) {
+				p->mStripDepth -= 0.02;
+				cout << "StripDepth: " << p->mStripDepth << endl;
+			}
 			break;
 		case '0':
 			mLineThickness += 0.5;
@@ -199,6 +231,13 @@ int MyVisRankingApp::HandleDebugKey(unsigned char key){
 	};
 	return 1;
 }
+
+void MyVisRankingApp::UpdateSampePerFragmentAtScale(float scale){
+	MyLineAO::SamplesPerFragment = 32 / pow(scale, 1.7);
+	MyLineAO::SamplesPerFragment = min(MyLineAO::SamplesPerFragment, 32);
+	MyLineAO::SamplesPerFragment = max(MyLineAO::SamplesPerFragment, 6);
+}
+
 void MyVisRankingApp::ResizeRenderBuffer(int w, int h){
 	if (mFrameBuffer.GetWidth() != w || mFrameBuffer.GetHeight() != h){
 		mFrameBuffer.SetSize(w, h);
@@ -340,6 +379,8 @@ void MyVisRankingApp::StartProfileRendering(){
 		glLoadIdentity();
 		MyVec3f eyepos = mRenderingLog.GetCameraPosition();
 		gluLookAt(eyepos[0], eyepos[1], eyepos[2], 0, 0, 0, 0, 0, 1);
+		float scale = 150.f / eyepos.norm();
+		UpdateSampePerFragmentAtScale(scale);
 		if (IsOnMode(APP_MODE_OCCLUSION)){
 			glEnable(GL_BLEND);
 			glBlendFunc(GL_ONE, GL_ONE);

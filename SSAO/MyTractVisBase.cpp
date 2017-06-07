@@ -23,6 +23,7 @@ using namespace std;
 
 MyTractVisBase::RenderingParameters MyTractVisBase::DefaultRenderingParameters = {
 	MyTractVisBase::TRACK_SHAPE_TUBE,
+	MyTractVisBase::CAP_TYPE_ROUND,
 	20,
 	0,
 	0,
@@ -90,7 +91,7 @@ void MyTractVisBase::ComputeTubeGeometry(){
 	// for caps
 	totalPoints += mTracts->GetNumTracks()*(1 + mRenderingParameters.Faces) * 2;
 
-	cout << "Allocating Storage for Geometry...\r";
+	//cout << "Allocating Storage for Geometry...\r";
 
 	mVertices.resize(totalPoints);
 	mNormals.resize(totalPoints);
@@ -104,7 +105,7 @@ void MyTractVisBase::ComputeTubeGeometry(){
 	for (int it = 0; it < mTracts->GetNumTracks(); it++){
 		PrintProgress(it, mTracts->GetNumTracks(), 1);
 		int npoints = mTracts->At(it).Size();
-
+		if (npoints < 2) continue;
 		const float myPI = 3.1415926f;
 		float dangle = 2 * myPI / mRenderingParameters.Faces;
 		MyVec3f pole(0.6, 0.8, 0);
@@ -141,7 +142,7 @@ void MyTractVisBase::ComputeTubeGeometry(){
 			//if ((perpend1^perpend2)*d < 0) dangle = -dangle;
 			float fa = mTracts->GetTensor(it, i).GetFA();
 			if (fa > 1) fa = 1;
-			else if (fa < 0) fa = 0;
+			else if (fa < 0.2) fa = 0.2;
 			for (int is = 0; is<mRenderingParameters.Faces; is++){
 				float angle = dangle*is;
 				MyVec3f pt = sin(angle)*perpend1 + cos(angle)*perpend2;
@@ -175,6 +176,11 @@ void MyTractVisBase::ComputeTubeGeometry(){
 		mIdxOffset << currentIdx;
 		currentIdx += npoints*(mRenderingParameters.Faces + 1);
 
+		float capTexCoordx;
+		if (mRenderingParameters.CapType == CAP_TYPE_ROUND){
+			capTexCoordx = 0;
+		}
+		else capTexCoordx = -0.001;
 		// add front cap
 		{
 			float fa = mTracts->GetTensor(it, 0).GetFA();
@@ -188,17 +194,21 @@ void MyTractVisBase::ComputeTubeGeometry(){
 			mVertices[currentIdx] = p;
 			mNormals[currentIdx] = -d;
 			mColors[currentIdx] = mColors[currentIdx - npoints*(mRenderingParameters.Faces + 1)];
-			mTexCoords[currentIdx] = MyVec2f(0, 0.5);
+			mTexCoords[currentIdx] = MyVec2f(capTexCoordx, 0.5);
 			mValues[currentIdx] = fa;
 			for (int is = 0; is < mRenderingParameters.Faces; is++){
 				float angle = dangle*is;
 				MyVec3f pt = sin(angle)*perpend1 + cos(angle)*perpend2;
-				MyVec3f pe = pt*R + p;
-				mVertices[currentIdx + is + 1] = pe;
-				mNormals[currentIdx + is + 1] = pt;
-				//mNormals[currentIdx + is + 1] = -d;
+				if (mRenderingParameters.CapType == CAP_TYPE_ROUND){
+					mVertices[currentIdx + is + 1] = pt*R + p;
+					mNormals[currentIdx + is + 1] = pt;
+				}
+				else {
+					mVertices[currentIdx + is + 1] = pt*mTrackRadius + p;
+					mNormals[currentIdx + is + 1] = -d;
+				}
 				mColors[currentIdx + is + 1] = mColors[currentIdx - npoints*(mRenderingParameters.Faces + 1)];
-				mTexCoords[currentIdx + is + 1] = MyVec2f(0, is / (float)mRenderingParameters.Faces);
+				mTexCoords[currentIdx + is + 1] = MyVec2f(capTexCoordx, is / (float)mRenderingParameters.Faces);
 				mValues[currentIdx + is + 1] = fa;
 			}
 		}
@@ -217,17 +227,21 @@ void MyTractVisBase::ComputeTubeGeometry(){
 			mVertices[currentIdx] = p;
 			mNormals[currentIdx] = -d;
 			mColors[currentIdx] = mColors[currentIdx - (mRenderingParameters.Faces + 2)];
-			mTexCoords[currentIdx] = MyVec2f(0, 0.5);
+			mTexCoords[currentIdx] = MyVec2f(capTexCoordx, 0.5);
 			mValues[currentIdx] = fa;
 			for (int is = 0; is < mRenderingParameters.Faces; is++){
 				float angle = dangle*is;
 				MyVec3f pt = sin(angle)*perpend1 + cos(angle)*perpend2;
-				MyVec3f pe = pt*R + p;
-				mVertices[currentIdx + is + 1] = pe;
-				mNormals[currentIdx + is + 1] = pt;
-				//mNormals[currentIdx + is + 1] = -d;
+				if (mRenderingParameters.CapType == CAP_TYPE_ROUND){
+					mVertices[currentIdx + is + 1] = pt*R + p;
+					mNormals[currentIdx + is + 1] = pt;
+				}
+				else {
+					mVertices[currentIdx + is + 1] = pt*mTrackRadius + p;
+					mNormals[currentIdx + is + 1] = -d;
+				}
 				mColors[currentIdx + is + 1] = mColors[currentIdx - (mRenderingParameters.Faces + 2)];
-				mTexCoords[currentIdx + is + 1] = MyVec2f(0, is / (float)mRenderingParameters.Faces);
+				mTexCoords[currentIdx + is + 1] = MyVec2f(capTexCoordx, is / (float)mRenderingParameters.Faces);
 				mValues[currentIdx + is + 1] = fa;
 			}
 		}
@@ -267,7 +281,7 @@ void MyTractVisBase::ComputeTubeGeometry(){
 			mIndices << MyVec3i(offset, offset + (j + 1) % (mRenderingParameters.Faces)+1, offset + j + 1);
 		}
 	}
-	cout << "Computing completed.\n";
+	cout << "Computing completed.\r";
 }
 
 void MyTractVisBase::ComputeLineGeometry(){
@@ -279,7 +293,7 @@ void MyTractVisBase::ComputeLineGeometry(){
 		totalPoints += mTracts->At(it).Size();
 	}
 
-	cout << "Allocating Storage for Geometry...\r";
+	//cout << "Allocating Storage for Geometry...\r";
 
 	mVertices.clear();
 	mNormals.clear();
@@ -342,6 +356,7 @@ void MyTractVisBase::ComputeLineGeometry(){
 			mTexCoords << MyVec2f(i, 0);
 			float fa = mTracts->GetTensor(it, i).GetFA();
 			if (fa > 1) fa = 1;
+			else if (fa < 0.2) fa = 0.2;
 			mValues << fa;
 		}
 
@@ -358,7 +373,7 @@ void MyTractVisBase::ComputeLineGeometry(){
 			mLineIndices << i + offset;
 		}
 	}
-	cout << "Computing completed.\n";
+	cout << "Computing completed.\r";
 }
 
 void MyTractVisBase::ComputeSuperquadricGeometry(){
@@ -372,7 +387,7 @@ void MyTractVisBase::ComputeSuperquadricGeometry(){
 		prevVertexCount << totalPoints;
 	}
 
-	cout << "Allocating Storage for Geometry...\r";
+	//cout << "Allocating Storage for Geometry...\r";
 	int vCount = MySuperquadric::GetVertexCount();
 	int tCount = MySuperquadric::GetTriangleCount();
 	int totalVertices = totalPoints*vCount;
@@ -410,12 +425,12 @@ void MyTractVisBase::ComputeSuperquadricGeometry(){
 			// add value
 			float fa = t.GetFA();
 			if (fa>1) fa = 1;
-			else if (fa < 0) fa = 0;
+			else if (fa < 0.2) fa = 0.2;
 			for (int ic = 0; ic < vCount; ic++) mValues[thisVOffset + ic] = fa;
 		}
 	}
 	mIdxOffset << prevVertexCount.back()* tCount * 3;
-	cout << "Computing completed.\n";
+	cout << "Computing completed.\r";
 }
 
 void MyTractVisBase::SetToInfluence(int idx){

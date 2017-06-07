@@ -32,7 +32,9 @@ public:
 	// task questions
 	MyString GetTaskTransitionString() const;
 	MyString GetTaskHintString() const;
-	static MyString GetTaskHintString(MyVisEnum::VisTask task);
+	int GetNumberAnswerOption() const;
+	MyString GetAnswerOptionString(int idx) const;
+	MyString GetAnswerHintString() const;
 
 	// folder names
 	int GetTaskRawIndex() const;
@@ -52,6 +54,12 @@ public:
 	MyString GetString(const MyString& decimer = "\t") const;
 	static MyString GetStringHeader(const MyString& decimer = "\t");
 
+	static MyString GetTaskHintString(MyVisEnum::VisTask task);
+	static MyString GetFAAnswerOptionRangeString(int idx);
+	static MyString GetTaskAnswerOptionString(MyVisEnum::VisTask task, int idx);
+	static MyString GetTaskAnswerHintString(MyVisEnum::VisTask task);
+	static const MyArray2f& GetFAAnswerOptionRanges();
+
 protected:
 	// vis related
 	MyVisEnum::RetinalChannel mEncoding;
@@ -67,5 +75,7 @@ protected:
 	int mResolution;
 	// each has two different quests related data 1 or 2
 	int mQuest;
+
+	static MyArray2f FAAnswerOptionRanges;
 };
 

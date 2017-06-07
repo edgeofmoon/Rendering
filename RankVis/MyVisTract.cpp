@@ -12,30 +12,62 @@
 using namespace std;
 using namespace MyVisEnum;
 
-/*
-#define SCALE_LINE_AO		1
-#define SCALE_LINE_BASIC	1
-#define SCALE_LINE_DEPTH	1
-#define SCALE_LINE_ENCODING	1
-#define SCALE_TUBE_AO		1
-#define SCALE_TUBE_BASIC	1
-#define SCALE_TUBE_DEPTH	1
-#define SCALE_TUBE_ENCODING	1
-*/
+#define BASIC_SCALE_LINE_AO			1
+#define BASIC_SCALE_LINE_BASIC		1
+#define BASIC_SCALE_LINE_DEPTH		1
+#define BASIC_SCALE_LINE_ENCODING	1
+#define BASIC_SCALE_TUBE_AO			1
+#define BASIC_SCALE_TUBE_BASIC		1
+#define BASIC_SCALE_TUBE_DEPTH		1
+#define BASIC_SCALE_TUBE_ENCODING	1
 
-#define SCALE_LINE_AO		1.942544853
-#define SCALE_LINE_BASIC	1
-#define SCALE_LINE_DEPTH	1
-#define SCALE_LINE_ENCODING	1.008202336
-#define SCALE_TUBE_AO		1.7908629
-#define SCALE_TUBE_BASIC	1
-#define SCALE_TUBE_DEPTH	1.005692041
-#define SCALE_TUBE_ENCODING	1.000280219
+#define NORMALIZED_SCALE_LINE_AO		1.764
+
+#define NORMALIZED_SCALE_LINE_BASIC		1
+#define NORMALIZED_SCALE_LINE_DEPTH		1.022
+#define NORMALIZED_SCALE_LINE_ENCODING	1.000
+#define NORMALIZED_SCALE_TUBE_AO		1.677
+#define NORMALIZED_SCALE_TUBE_BASIC		1
+#define NORMALIZED_SCALE_TUBE_DEPTH		1.009
+#define NORMALIZED_SCALE_TUBE_ENCODING	0.990
+
+float MyVisTract::SCALE_LINE_AO = BASIC_SCALE_LINE_AO;
+float MyVisTract::SCALE_LINE_BASIC = BASIC_SCALE_LINE_BASIC;
+float MyVisTract::SCALE_LINE_DEPTH = BASIC_SCALE_LINE_DEPTH;
+float MyVisTract::SCALE_LINE_ENCODING = BASIC_SCALE_LINE_ENCODING;
+float MyVisTract::SCALE_TUBE_AO = BASIC_SCALE_TUBE_AO;
+float MyVisTract::SCALE_TUBE_BASIC = BASIC_SCALE_TUBE_BASIC;
+float MyVisTract::SCALE_TUBE_DEPTH = BASIC_SCALE_TUBE_DEPTH;
+float MyVisTract::SCALE_TUBE_ENCODING = BASIC_SCALE_TUBE_ENCODING;
+
+void MyVisTract::UseNormalizedLighting(bool b){
+	if (b){
+		SCALE_LINE_AO = NORMALIZED_SCALE_LINE_AO;
+		SCALE_LINE_BASIC = NORMALIZED_SCALE_LINE_BASIC;
+		SCALE_LINE_DEPTH = NORMALIZED_SCALE_LINE_DEPTH;
+		SCALE_LINE_ENCODING = NORMALIZED_SCALE_LINE_ENCODING;
+		SCALE_TUBE_AO = NORMALIZED_SCALE_TUBE_AO;
+		SCALE_TUBE_BASIC = NORMALIZED_SCALE_TUBE_BASIC;
+		SCALE_TUBE_DEPTH = NORMALIZED_SCALE_TUBE_DEPTH;
+		SCALE_TUBE_ENCODING = NORMALIZED_SCALE_TUBE_ENCODING;
+	}
+	else {
+		SCALE_LINE_AO = BASIC_SCALE_LINE_AO;
+		SCALE_LINE_BASIC = BASIC_SCALE_LINE_BASIC;
+		SCALE_LINE_DEPTH = BASIC_SCALE_LINE_DEPTH;
+		SCALE_LINE_ENCODING = BASIC_SCALE_LINE_ENCODING;
+		SCALE_TUBE_AO = BASIC_SCALE_TUBE_AO;
+		SCALE_TUBE_BASIC = BASIC_SCALE_TUBE_BASIC;
+		SCALE_TUBE_DEPTH = BASIC_SCALE_TUBE_DEPTH;
+		SCALE_TUBE_ENCODING = BASIC_SCALE_TUBE_ENCODING;
+	}
+}
 
 MyVisTract::MyVisTract()
 	:mVisData(NULL), mTractVis(NULL), mTractVis_Aux(NULL){
 	mTubeVis = NULL;
 	mLineVis = NULL;
+	mTubeVisFlatCap = NULL;
 	mSuperquadricVis = NULL;
 	mLineDDHVis = NULL;
 	mTubeDDHVis = NULL;
@@ -43,7 +75,6 @@ MyVisTract::MyVisTract()
 	mTubeAOVis = NULL;
 	mCanvasWidth = 0;
 	mCanvasHeight = 0;
-	mSphereGeometry = 0;
 }
 
 
@@ -209,7 +240,7 @@ void MyVisTract::Switch_FA_TUBE_SIZE(){
 void MyVisTract::Switch_FA_TUBE_TEXTURE(){
 	Switch_FA_TUBE_COLOR();
 	mTubeVis->ClearInfluences();
-	mTubeVis->SetValueToTextureRatioInfluence(1);
+	mTubeVis->SetValueToTextureRatioInfluence(2);
 }
 
 void MyVisTract::Switch_FA_SUPERQUADRICS_COLOR(){
@@ -250,6 +281,8 @@ void MyVisTract::Switch_TRACE_LINE_DEPTH(){
 	mLineDDHVis->SetShape(MyTractVisBase::TRACK_SHAPE_LINE);
 	mLineDDHVis->SetLightIntensity(SCALE_LINE_DEPTH);
 	mLineDDHVis->ClearInfluences();
+	static_cast<MyTrackDDH*>(mLineDDHVis)->mStrokeWidth = mLineDDHVis->mTrackRadius * 2;
+	static_cast<MyTrackDDH*>(mLineDDHVis)->mStripWidth = mLineDDHVis->mTrackRadius * 8;
 	mLineDDHVis->SetTractsShown(mVisData->GetTractIndices());
 	mLineDDHVis->UpdateBoundingBox();
 
@@ -263,6 +296,7 @@ void MyVisTract::Switch_TRACE_TUBE_DEPTH(){
 		mTubeDDHVis = new MyTubeDDH;
 		mTubeDDHVis->SetTracts(mVisData->GetTracts());
 		mTubeDDHVis->SetShape(MyTractVisBase::TRACK_SHAPE_TUBE);
+		mTubeDDHVis->SetCapType(MyTractVisBase::CAP_TYPE_FLAT);
 		mTubeDDHVis->ComputeGeometry();
 		mTubeDDHVis->LoadShader();
 		mTubeDDHVis->LoadGeometry();
@@ -271,8 +305,8 @@ void MyVisTract::Switch_TRACE_TUBE_DEPTH(){
 	mTubeDDHVis->SetShape(MyTractVisBase::TRACK_SHAPE_TUBE);
 	mTubeDDHVis->SetLightIntensity(SCALE_TUBE_DEPTH);
 	mTubeDDHVis->ClearInfluences();
-	mTubeDDHVis->mTrackRadius = 
-		static_cast<MyTrackDDH*>(mLineDDHVis)->mStrokeWidth / 2;
+	//mTubeDDHVis->mTrackRadius = 
+	//	static_cast<MyTrackDDH*>(mLineDDHVis)->mStrokeWidth / 2;
 	mTubeDDHVis->SetTractsShown(mVisData->GetTractIndices());
 	mTubeDDHVis->UpdateBoundingBox();
 
@@ -309,6 +343,7 @@ void MyVisTract::Switch_TRACE_TUBE_AO(){
 		mTubeAOVis = new MyLineAO;
 		mTubeAOVis->SetTracts(mVisData->GetTracts());
 		mTubeAOVis->SetShape(MyTractVisBase::TRACK_SHAPE_TUBE);
+		mTubeAOVis->SetCapType(MyTractVisBase::CAP_TYPE_FLAT);
 		mTubeAOVis->ComputeGeometry();
 		mTubeAOVis->LoadShader();
 		mTubeAOVis->LoadGeometry();
@@ -349,23 +384,24 @@ void MyVisTract::Switch_TRACE_LINE_ENCODING(){
 }
 
 void MyVisTract::Switch_TRACE_TUBE_ENCODING(){
-	if (mTubeVis == NULL){
-		mTubeVis = new MyTractVisBase;
-		mTubeVis->SetTracts(mVisData->GetTracts());
-		mTubeVis->SetShape(MyTractVisBase::TRACK_SHAPE_TUBE);
-		mTubeVis->ComputeGeometry();
-		mTubeVis->LoadShader();
-		mTubeVis->LoadGeometry();
+	if (mTubeVisFlatCap == NULL){
+		mTubeVisFlatCap = new MyTractVisBase;
+		mTubeVisFlatCap->SetTracts(mVisData->GetTracts());
+		mTubeVisFlatCap->SetShape(MyTractVisBase::TRACK_SHAPE_TUBE);
+		mTubeVisFlatCap->SetCapType(MyTractVisBase::CAP_TYPE_FLAT);
+		mTubeVisFlatCap->ComputeGeometry();
+		mTubeVisFlatCap->LoadShader();
+		mTubeVisFlatCap->LoadGeometry();
 	}
-	mTubeVis->ResetRenderingParameters();
-	mTubeVis->SetShape(MyTractVisBase::TRACK_SHAPE_TUBE);
-	mTubeVis->SetLightIntensity(SCALE_TUBE_ENCODING);
-	mTubeVis->ClearInfluences();
-	mTubeVis->SetColorInfluence(1);
-	mTubeVis->SetTractsShown(mVisData->GetTractIndices());
-	mTubeVis->UpdateBoundingBox();
+	mTubeVisFlatCap->ResetRenderingParameters();
+	mTubeVisFlatCap->SetShape(MyTractVisBase::TRACK_SHAPE_TUBE);
+	mTubeVisFlatCap->SetLightIntensity(SCALE_TUBE_ENCODING);
+	mTubeVisFlatCap->ClearInfluences();
+	mTubeVisFlatCap->SetColorInfluence(1);
+	mTubeVisFlatCap->SetTractsShown(mVisData->GetTractIndices());
+	mTubeVisFlatCap->UpdateBoundingBox();
 
-	mTractVis = mTubeVis;
+	mTractVis = mTubeVisFlatCap;
 	mTractVis_Aux = NULL;
 }
 
@@ -390,23 +426,24 @@ void MyVisTract::Switch_TRACE_LINE_BASIC(){
 }
 
 void MyVisTract::Switch_TRACE_TUBE_BASIC(){
-	if (mTubeVis == NULL){
-		mTubeVis = new MyTractVisBase;
-		mTubeVis->SetTracts(mVisData->GetTracts());
-		mTubeVis->SetShape(MyTractVisBase::TRACK_SHAPE_TUBE);
-		mTubeVis->SetLightIntensity(SCALE_TUBE_BASIC);
-		mTubeVis->ComputeGeometry();
-		mTubeVis->LoadShader();
-		mTubeVis->LoadGeometry();
+	if (mTubeVisFlatCap == NULL){
+		mTubeVisFlatCap = new MyTractVisBase;
+		mTubeVisFlatCap->SetTracts(mVisData->GetTracts());
+		mTubeVisFlatCap->SetShape(MyTractVisBase::TRACK_SHAPE_TUBE);
+		mTubeVisFlatCap->SetCapType(MyTractVisBase::CAP_TYPE_FLAT);
+		mTubeVisFlatCap->SetLightIntensity(SCALE_TUBE_BASIC);
+		mTubeVisFlatCap->ComputeGeometry();
+		mTubeVisFlatCap->LoadShader();
+		mTubeVisFlatCap->LoadGeometry();
 	}
-	mTubeVis->ResetRenderingParameters();
-	mTubeVis->SetShape(MyTractVisBase::TRACK_SHAPE_TUBE);
-	mTubeVis->SetPixelHaloWidth(4);
-	mTubeVis->ClearInfluences();
-	mTubeVis->SetTractsShown(mVisData->GetTractIndices());
-	mTubeVis->UpdateBoundingBox();
+	mTubeVisFlatCap->ResetRenderingParameters();
+	mTubeVisFlatCap->SetShape(MyTractVisBase::TRACK_SHAPE_TUBE);
+	mTubeVisFlatCap->SetPixelHaloWidth(4);
+	mTubeVisFlatCap->ClearInfluences();
+	mTubeVisFlatCap->SetTractsShown(mVisData->GetTractIndices());
+	mTubeVisFlatCap->UpdateBoundingBox();
 
-	mTractVis = mTubeVis;
+	mTractVis = mTubeVisFlatCap;
 }
 
 
@@ -459,18 +496,18 @@ void MyVisTract::Switch_TUMOR_TUBE_BASIC(){
 }
 
 void MyVisTract::AddTumorSphere(){
-	if (mSphereGeometry) delete mSphereGeometry;
-	mSphereGeometry = NULL;
+	MySphereGeometry* sphereGeometry = mTractVis->GetSphereGeometry();
+	if (sphereGeometry) delete sphereGeometry;
 	mTractVis->SetSphereGeometry(NULL);
 	if (mVisData->GetSpheres().size() > 0){
 		if (mVisData->GetVisInfo().GetVisCue() == DEPTH)
-			mSphereGeometry = new MySphereDDHGeometry;
+			sphereGeometry = new MySphereDDHGeometry;
 		else if (mVisData->GetVisInfo().GetVisCue() == AMBIENT_OCCULUSION)
-			mSphereGeometry = new MySphereAOGeometry;
-		else mSphereGeometry = new MySphereGeometry;
-		mSphereGeometry->SetSphere(&(mVisData->GetSphere(0)));
-		mSphereGeometry->SetShaderProgram(mTractVis->GetShaderProgram());
-		mSphereGeometry->GenerateGeometry();
-		mTractVis->SetSphereGeometry(mSphereGeometry);
+			sphereGeometry = new MySphereAOGeometry;
+		else sphereGeometry = new MySphereGeometry;
+		sphereGeometry->SetSphere(&(mVisData->GetSphere(0)));
+		sphereGeometry->SetShaderProgram(mTractVis->GetShaderProgram());
+		sphereGeometry->GenerateGeometry();
+		mTractVis->SetSphereGeometry(sphereGeometry);
 	}
 }

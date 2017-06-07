@@ -15,10 +15,10 @@ public:
 	virtual int HandleMouseUp(float x, float y);
 
 	friend MyToggleButtonGroup;
-	void SetGroup(MyToggleButtonGroup* group);
 
 protected:
 	MyToggleButtonGroup* mGroup;
+	void SetGroup(MyToggleButtonGroup* group);
 };
 
 class MyToggleButtonGroup
@@ -32,6 +32,14 @@ public:
 		Layout_Horizontal = 1,
 		Layout_Vertical = 2,
 	};
+	enum ButtonGroupAlignment{
+		Alignment_Left = 1,
+		Alignment_Middle = 2,
+		Alignment_Right = 4,
+		Alignment_Top = 8,
+		Alignment_Center = 16,
+		Alignment_Down = 32,
+	};
 
 	virtual int HandleMouseDown(float x, float y);
 	virtual void ResetStatus();
@@ -41,23 +49,24 @@ public:
 	void AddOption(const MyString& text, int index);
 	void ClearOptions();
 	int GetSelectedIndex() const;
+	MyToggleButton* GetSelectedButton();
 	bool SetToSelectedIndex(int idx);
 	void ClearToggle();
 	MyVec2f GetSize() const;
 
-	inline void SetPosition(const MyVec2f& bl){ mBottomLeft = bl; };
+	inline void SetPosition(const MyVec2f& pos){ mPosition = pos; };
 	inline void SetButtonSize(const MyVec2f& sz){ mButtonSize = sz; };
 	inline void SetButtonInterval(const MyVec2f& it){ mButtonInterval = it; };
 	inline void SetLayout(ButtonGroupLayout ly){ mLayout = ly; };
+	inline void SetAlighment(ButtonGroupAlignment al){ mAlignment = al; };
 
 	void UpdateLayout();
 
 protected:
 	int mSelectedIndex;
 	MyVec2f mButtonSize;
-	MyVec2f mBottomLeft;
+	MyVec2f mPosition;
 	MyVec2f mButtonInterval;
 	ButtonGroupLayout mLayout;
-
-	MyArray<MyUIObject*> mExternalButtons;
+	ButtonGroupAlignment mAlignment;
 };

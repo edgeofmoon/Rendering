@@ -630,17 +630,17 @@ void myGlutMouseWheel(int button, int dir, int x, int y)
 void myGlutMouse(int button, int state, int x, int y)
 {
 	if (state == GLUT_DOWN){
-		trackBall.StartMotion(x, y);
+		trackBall.StartRotation(x, y);
 	}
 	else if (state == GLUT_UP){
-		trackBall.EndMotion(x, y);
+		trackBall.EndRotation(x, y);
 	}
 	glutPostRedisplay();
 }
 
 void myGlutMotion(int x, int y)
 {
-	trackBall.RotateMotion(x, y);
+	trackBall.Motion(x, y);
 	glutPostRedisplay();
 }
 
@@ -718,7 +718,7 @@ int main(int argc, char* argv[])
 	//tractData.Read("data\\cFile.tensorinfo");
 	//tractData.Read("C:\\Users\\GuohaoZhang\\Desktop\\tmpdata\\dti.trk");
 	//tractData.Read("C:\\Users\\GuohaoZhang\\Desktop\\tmpdata\\ACR.trk");
-	tractData.Read("C:\\Users\\GuohaoZhang\\Dropbox\\data\\normal_s3_tensorboy.trk");
+	tractData.Read("C:\\Users\\GuohaoZhang\\Dropbox\\data\\normal_s3_tensorboy_revZ.trk");
 	//tractData.Read("dti_20_0995.data");
 	track.SetTracts(&tractData);
 	//track.SetShape(MyTractVisBase::TRACK_SHAPE_LINE);
@@ -794,15 +794,15 @@ int main(int argc, char* argv[])
 	new GLUI_StaticText(panel[0], "Stripe Width");
 	auto tmpUIptr = new GLUI_Scrollbar(panel[0], "Stripe Width", GLUI_SCROLL_HORIZONTAL,
 		&(halo.mStripWidth), -1, reRender);
-	tmpUIptr->set_float_limits(0, 8);
+	tmpUIptr->set_float_limits(0, 2);
 	new GLUI_StaticText(panel[0], "Stripe Depth");
 	tmpUIptr = new GLUI_Scrollbar(panel[0], "Stripe Depth", GLUI_SCROLL_HORIZONTAL,
 		&(halo.mStripDepth), -1, reRender);
-	tmpUIptr->set_float_limits(0, 0.04);
+	tmpUIptr->set_float_limits(0, 0.1);
 	new GLUI_StaticText(panel[0], "Stroke Width");
 	tmpUIptr = new GLUI_Scrollbar(panel[0], "Stroke Width", GLUI_SCROLL_HORIZONTAL,
 		&(halo.mStrokeWidth), -1, reRender);
-	tmpUIptr->set_float_limits(0, 1);
+	tmpUIptr->set_float_limits(0, 0.5);
 	new GLUI_StaticText(panel[0], "Taper Length");
 	tmpUIptr = new GLUI_Scrollbar(panel[0], "Taper Length", GLUI_SCROLL_HORIZONTAL,
 		&(halo.mTaperLength), -1, reRender);

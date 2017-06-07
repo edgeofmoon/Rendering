@@ -74,26 +74,23 @@ public:
 	/* functions */
 
 	MyMatrixf Matrix() const;
+	const MyMatrixf& GetScaleMatrix() const;
+	float GetScale() const{ return mScale; };
 
 	void Reshape(int width, int height);
-
 	// mouse interaction interface
-	void StartMotion(int x, int y);
-
-	void EndMotion(int x, int y);
-
+	void StartRotation(int x, int y);
+	void EndRotation(int x, int y);
+	void StartTranslation(int x, int y);
+	void EndTranslation(int x, int y);
+	void Motion(int x, int y);
 	void RotateMotion(int x, int y);
-
 	void TranslateMotion(int x, int y);
-
 	void TranslateMotionX(int x, int y);
-
 	void ScaleMotion(int x, int y);
-
 	void SetScaleRange(float mis, float mas);
-
+	void SetTranslateScale(float sx, float sy);
 	float GetScaleFromMotion(int x, int y) const;
-
 	void SetRotationMatrix(const MyMatrixf& mat);
 
 	// others
@@ -109,7 +106,6 @@ public:
 
 protected:
 	void pointToVector(int x, int y, int width, int height, MyVec3f& v) const;
-	void translate(float dx, float dy);
 
 	float mScale;
 	float mButtonX;
@@ -117,6 +113,7 @@ protected:
 	float mAngle;
 
 	MyVec2f mScaleRange;
+	MyVec2f mTranslateScale;
 
 	MyVec3f mLastPos;
 	MyVec3f mAxis;
@@ -131,5 +128,6 @@ protected:
 	int mHeight;
 
 	bool mRotating;
+	bool mTranslating;
 };
 

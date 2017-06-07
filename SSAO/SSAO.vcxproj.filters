@@ -125,6 +125,9 @@
     <ClInclude Include="MyBoundingObject.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="MyTractVisLabelled.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -218,6 +221,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="MySphereGeometry.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="MyTrackVisLabelled.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -8,6 +8,7 @@
 #include "MyColorLegend.h"
 #include "MyConstants.h"
 #include "MyColorConverter.h"
+#include "MySuperquadric.h"
 
 #include <GL/glew.h>
 #include <GL/freeglut.h>
@@ -23,18 +24,17 @@ MyVisRankingApp::MyVisRankingApp()
 {
 
 	mCanvasScaleX = mCanvasScaleY = 2;
-	mLineThickness = mCanvasScaleX * 4.f;
-	mTargetBrightness = 40;
+	mLineThickness = mCanvasScaleX * 3.f;
+	mTargetBrightness = 4.0f;
 
 	mAppMode = APP_MODE_STUDY;
 	mCurrentBoxIndex = -1;
 	mbDrawTracts = true;
 	mbDrawIndicators = true;
-	mbDrawHighlighted = true;
+	mbDrawHighlighted = false;
 	mbDrawLegend = true;
 	mbDrawUI = true;
 	mbComputeBrightness = false;
-	//mbComputeBrightness = true;
 	mbLightnessBalance = false;
 	mbComputeTotalAlpha = false;
 	mbComputeTotalPixelDrawn = false;
@@ -51,6 +51,11 @@ MyVisRankingApp::~MyVisRankingApp()
 
 void MyVisRankingApp::Init(int uidx, int tidx, int mode){
 	mAppMode = mode;
+	mTrialManager.SetUserIndex(uidx);
+	mTrialManager.SetDataIndex(tidx);
+	mLogs.SetUserIndex(uidx);
+	mEventLog.SetUserIndex(uidx);
+	mRenderingLog.SetUserIndex(uidx);
 	//mAppMode = APP_MODE_STUDY | APP_MODE_DEBUG;
 	//mAppMode = APP_MODE_OCCLUSION;
 	//mAppMode = APP_MODE_LIGHTING | APP_MODE_DEBUG;
@@ -62,9 +67,14 @@ void MyVisRankingApp::Init(int uidx, int tidx, int mode){
 	// but data selected are for reversed...
 	// so we reverse s3 and keep s4...
 	// also remember to reverse rp[2] is MySuperquadric.cpp
-	if (IsOnMode(APP_MODE_TRAINING))
+	if (IsOnMode(APP_MODE_TRAINING)){
 		mTracts.Read("C:\\Users\\GuohaoZhang\\Dropbox\\data\\normal_s4_tensorboy.trk");
-	else mTracts.Read("C:\\Users\\GuohaoZhang\\Dropbox\\data\\normal_s3_tensorboy_RevZ.trk");
+		MySuperquadric::ZREV = 1;
+	}
+	else {
+		mTracts.Read("C:\\Users\\GuohaoZhang\\Dropbox\\data\\normal_s3_tensorboy_RevZ.trk");
+		MySuperquadric::ZREV = -1;
+	}
 	// generate trials
 	mTrialManager.SetDataRootDir("C:\\Users\\GuohaoZhang\\Dropbox\\data\\traces");
 	mTrialManager.SetTracts(&mTracts);
@@ -76,7 +86,11 @@ void MyVisRankingApp::Init(int uidx, int tidx, int mode){
 		mTrialManager.GenerateVisInfo_LightingProfile();
 	else if (IsOnMode(APP_MODE_OCCLUSION))
 		mTrialManager.GenerateVisInfo_OcclusionProfile();
-	mTrialManager.SetDataIndex(tidx);
+	if (IsOnMode(APP_MODE_PRINTDATA)){
+		mTrialManager.PrintAllCase("dataTable.txt");
+	}
+
+	MyVisTract::UseNormalizedLighting(!IsOnMode(APP_MODE_LIGHTING));
 	//mTrialManager.SetDataIndex(4);
 	// load textures
 	MyBitmap bitmap;
@@ -117,13 +131,10 @@ void MyVisRankingApp::Init(int uidx, int tidx, int mode){
 
 	UIInit();
 	mLogs.SetEnabled(IsOnMode(APP_MODE_TRAINING) || IsOnMode(APP_MODE_STUDY));
-	mLogs.SetUserIndex(uidx);
 	mLogs.StartLog(IsOnMode(APP_MODE_TRAINING) ? "training" : "formal");
-	mEventLog.SetEnabled(true);
-	mEventLog.SetUserIndex(uidx);
+	mEventLog.SetEnabled(IsOnMode(APP_MODE_TRAINING) || IsOnMode(APP_MODE_STUDY));
 	mEventLog.StartLog(IsOnMode(APP_MODE_TRAINING) ? "trainingEvent" : "formalEvent");
 	mRenderingLog.SetEnabled(IsOnMode(APP_MODE_LIGHTING) || IsOnMode(APP_MODE_OCCLUSION));
-	mRenderingLog.SetUserIndex(uidx);
 	if (IsOnMode(APP_MODE_LIGHTING)){
 		mRenderingLog.SetRenderingValueNames({ "ALLVALUE", "OBJVALUE" });
 		mRenderingLog.StartLog("Lighting");
@@ -132,10 +143,21 @@ void MyVisRankingApp::Init(int uidx, int tidx, int mode){
 		mRenderingLog.SetRenderingValueNames({ "NUMPIXL", "PIXLFRGS" });
 		mRenderingLog.StartLog("Occlusion");
 	}
-	mTrialManager.SetUserIndex(uidx);
 
 	mTrackBall.SetScaleRange(pow(1.05f, -5), pow(1.05f, 20));
 	//mTrackBall.SetScaleRange(pow(1.05f, -5), pow(1.05f, 50));
+
+	mTractLegend.LoadShader();
+	mTractLegend.ComputeGeometry();
+	mTractLegend.LoadGeometry();
+}
+
+bool MyVisRankingApp::IsOnMode(APP_MODE mode) const { 
+	int mm = mode & APP_MODE_MODE_MASK;
+	int mf = mode & APP_MODE_FLAG_MASK;
+	int xmm = mAppMode & APP_MODE_MODE_MASK;
+	int xmf = mAppMode & APP_MODE_FLAG_MASK;
+	return mm == xmm || mf & xmf;
 }
 
 void MyVisRankingApp::Next(){
@@ -153,9 +175,10 @@ void MyVisRankingApp::Next(){
 		mLogs.SetTrialIndex(mTrialManager.GetCurrentVisDataIndex());
 		mRenderingLog.SetVisData(visData);
 		mRenderingLog.SetTrialIndex(mTrialManager.GetCurrentVisDataIndex());
+		mEventLog.LogItem("TrialStart\t" + MyString(mTrialManager.GetCurrentVisDataIndex()));
 	}
 	else {
-		if (IsOnMode(APP_MODE_DEBUG)) cerr << "End of trial." << endl;
+		if (IsOnMode(APP_MODE_DEBUG) && !IsOnMode(APP_MODE_LIGHTING)) cerr << "End of trial." << endl;
 		else exit(1);
 	}
 }
@@ -175,6 +198,7 @@ void MyVisRankingApp::Previous(){
 		mLogs.SetTrialIndex(mTrialManager.GetCurrentVisDataIndex());
 		mRenderingLog.SetVisData(visData);
 		mRenderingLog.SetTrialIndex(mTrialManager.GetCurrentVisDataIndex());
+		mEventLog.LogItem("TrialStart\t" + MyString(mTrialManager.GetCurrentVisDataIndex()));
 	}
 	else {
 		if (IsOnMode(APP_MODE_DEBUG)) cerr << "First of trial." << endl;
@@ -183,7 +207,8 @@ void MyVisRankingApp::Previous(){
 }
 
 void MyVisRankingApp::PrintTrialInfo(){
-	const MyVisInfo& visInfo = mTrialManager.GetCurrentVisData()->GetVisInfo();
+	const MyVisData* visData = mTrialManager.GetCurrentVisData();
+	const MyVisInfo& visInfo = visData->GetVisInfo();
 	int index = mTrialManager.GetCurrentVisDataIndex();
 	VisTask task = visInfo.GetVisTask();
 	if (task == MyVisEnum::FA){
@@ -192,8 +217,11 @@ void MyVisRankingApp::PrintTrialInfo(){
 			<< toString(visInfo.GetBundle()) << ", "
 			<< toString(visInfo.GetShape()) << ", "
 			<< toString(visInfo.GetEncoding()) << ", "
-			<< visInfo.GetQuest() << ", "
-			<< endl;
+			<< visInfo.GetQuest() << ", ";
+		if (visData->GetCorrectAnswers().size()>0)
+				cout << visData->GetCorrectAnswers()[0] << ":"
+				<< visData->GetCorrectAnswerString();
+		cout << endl;
 	}
 	else if (task == MyVisEnum::TRACE){
 		cout << index << ": "
@@ -201,8 +229,11 @@ void MyVisRankingApp::PrintTrialInfo(){
 			<< toString(visInfo.GetBundle()) << ", "
 			<< toString(visInfo.GetShape()) << ", "
 			<< toString(visInfo.GetEncoding()) << ", "
-			<< visInfo.GetQuest() << ", "
-			<< endl;
+			<< visInfo.GetQuest() << ", ";
+		if (visData->GetCorrectAnswers().size()>0)
+			cout << visData->GetCorrectAnswers()[0] << ":"
+			<< visData->GetCorrectAnswerString();
+		cout << endl;
 	}
 	else if (task == MyVisEnum::TUMOR){
 		CollisionStatus cs = (CollisionStatus)(visInfo.GetQuest() % 3 + 1);
@@ -210,8 +241,11 @@ void MyVisRankingApp::PrintTrialInfo(){
 			<< toString(visInfo.GetBundle()) << ", "
 			<< toString(visInfo.GetShape()) << ", "
 			<< toString(visInfo.GetVisCue()) << ", "
-			<< toString(cs) << ", "
-			<< endl;
+			<< toString(cs) << ", ";
+		if (visData->GetCorrectAnswers().size()>0)
+			cout << visData->GetCorrectAnswers()[0] << ":"
+			<< visData->GetCorrectAnswerString();
+		cout << endl;
 	}
 }
 
@@ -228,12 +262,16 @@ void MyVisRankingApp::Show(){
 		MyGraphicsTool::Translate(-box.GetCenter());
 		glLineWidth(mLineThickness);
 		if (mbDrawTracts) mVisTract.Show();
-		if (mbDrawHighlighted || IsOnMode(APP_MODE_DEBUG)) DrawHighlighted();
+		if (mbDrawHighlighted) DrawHighlighted();
 		if (mbDrawIndicators) {
 			DrawBoxes();
 			DrawTractIndicators();
 		}
 		glPopMatrix();
+		if (mbDrawLegend) {
+			glClear(GL_DEPTH_BUFFER_BIT);
+			DrawTractLegend();
+		}
 	}
 
 	BrightnessBalance();
@@ -245,5 +283,9 @@ void MyVisRankingApp::Show(){
 	glViewport(0, 0, mWindowWidth, mWindowHeight);
 	MyPrimitiveDrawer::DrawTextureOnViewport(mFrameBuffer.GetColorTexture());
 	if (mbDrawUI) UIDraw();
-	if (mbDrawLegend) DrawLegend();
+	if (mbDrawLegend) {
+		DrawColorLegend();
+		DrawTextureRatioLegend();
+		DrawTractLegendText();
+	}
 }

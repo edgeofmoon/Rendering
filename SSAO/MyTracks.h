@@ -21,9 +21,9 @@
 class MySingleTrackData
 {
 public:
-	std::vector<MyVec3f> mPoints;
-	std::vector<std::vector<float> > mPointScalars;
-	std::vector<float> mTrackProperties;
+	MyArray3f mPoints;
+	MyArray<MyArrayf> mPointScalars;
+	MyArrayf mTrackProperties;
 
 	const MyVec3f& operator[](unsigned int index) const{
 		return mPoints[index];
@@ -32,7 +32,7 @@ public:
 	int Size() const { return mPoints.size(); };
 };
 
-struct MyTrackHeader_Trk
+typedef struct MyTrackHeader_Trk
 {
 	char id_string[6];
 	short dim[3];
@@ -57,7 +57,7 @@ struct MyTrackHeader_Trk
 	int n_count;
 	int version;
 	int hdr_size;
-};
+} MyTrackHeader;
 
 class MyTracks
 {
@@ -67,16 +67,21 @@ public:
 	MyTracks(const std::string& filename);
 	
 	// get functions
+	inline MyArray<MySingleTrackData>& GetTracts() { return mTracks; };
+	inline const MyArray<MySingleTrackData>& GetTracts() const { return mTracks; };
 	inline const MySingleTrackData& operator[](unsigned int index) const{ return mTracks[index];}
 	inline const MySingleTrackData& At(unsigned int index) const{ return mTracks[index]; }
 	inline const MyVec3f& At(unsigned int ix, unsigned int iy) const{ return mTracks[ix][iy]; }
-	inline const MyTrackHeader_Trk& GetHeader() const { return mHeader; };
+	inline const MyTrackHeader& GetHeader() const { return mHeader; };
+	inline MyTrackHeader& GetHeader() { return mHeader; };
 
 	int Read(const std::string& filename);
 	int AppendTrackColor(const std::string& filename);
 	int Save(const std::string& filename) const;
 	int SavePartial(const std::string& filename, const std::vector<int>& saveTrackIdx) const;
 
+	void SetTracts(const MyArray<MySingleTrackData>& t){ mTracks = t; };
+	void SetHeader(const MyTrackHeader& header){ mHeader = header; };
 	MyTracks Subset(const std::vector<int>& trackIndices) const;
 	void AddTracks(const MyTracks& tracks);
 
@@ -97,6 +102,8 @@ public:
 	MyArray2i GetVertexInBox(const MyBoundingObject& bobj, const MyArrayi& indices) const;
 	void GetSampleValueInfo(const MyBoundingObject& bobj, int& nSample, float& valueSum) const;
 	void GetSampleValueInfo(const MyBoundingObject& bobj, const MyArrayi& indices, int& nSample, float& valueSum) const;
+	void GetSampleClampedValueInfo(const MyBoundingObject& bobj, float minv, float maxv, int& nSample, float& valueSum) const;
+	void GetSampleClampedValueInfo(const MyBoundingObject& bobj, float minv, float maxv, const MyArrayi& indices, int& nSample, float& valueSum) const;
 
 	void FilterByTrackLength(const std::vector<int>& inset, float threshold[2], std::vector<int>& outset) const;
 	void FilterByIndexSkip(const std::vector<int>& inset, float skipRatio, std::vector<int>& outset) const;
@@ -114,9 +121,9 @@ public:
 
 protected:
 
-	std::vector<MySingleTrackData> mTracks;
+	MyArray<MySingleTrackData> mTracks;
 	MyBoundingBox mBoundingBox;
-	MyTrackHeader_Trk mHeader;
+	MyTrackHeader mHeader;
 };
 	
 

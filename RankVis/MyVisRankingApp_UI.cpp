@@ -11,15 +11,19 @@ using namespace MyUI;
 using namespace MyVisEnum;
 
 #define UI_INDEX_PAUSE 1
-#define UI_INDEX_INPUT 2
-#define UI_INDEX_RESUME 3
-#define UI_INDEX_BACK 4
+#define UI_INDEX_RESUME 2
+#define UI_INDEX_INPUT 3
+#define UI_INDEX_CHECK 4
 #define UI_INDEX_NEXT 5
 
 #define UI_INDEX_ANSWER_GROUP 100
 #define UI_INDEX_ANSWER_0 101
 #define UI_INDEX_ANSWER_1 102
 #define UI_INDEX_ANSWER_2 103
+#define UI_INDEX_ANSWER_3 104
+#define UI_INDEX_ANSWER_4 105
+#define UI_INDEX_ANSWER_5 106
+#define UI_INDEX_ANSWER_6 107
 
 #define UI_INDEX_CONFIDENCE_GROUP 200
 #define UI_INDEX_CONFIDENCE_0 201
@@ -35,9 +39,9 @@ using namespace MyVisEnum;
 #define UI_ANSWER_HIGH 1
 #define UI_ANSWER_LOW -1
 
-#define LEGEND_LEFT 0.1
+#define LEGEND_LEFT 0.8
 #define LEGEND_BOTTOM 0.2
-#define LEGEND_WIDTH 0.05
+#define LEGEND_WIDTH 0.02
 #define LEGEND_HEIGHT 0.6
 #define LEGEND_TICKSIZE 0.005
 
@@ -61,27 +65,9 @@ void MyVisRankingApp::UI_Pause(){
 		DeactivateUI(&mButton_Pause);
 		DeactivateUI(&mButton_Input);
 		DeactivateUI(&mButtonGroup_Answer);
+		DeactivateUI(&mTextArea_AnswerHint0);
+		DeactivateUI(&mTextArea_AnswerHint1);
 		//DeactivateUI(&mButton_Next);
-	}
-}
-
-void MyVisRankingApp::UI_Input(){
-	if (!mbPaused){
-		mbPaused = true;
-		mLogs.PauseTrial();
-		ActivateUI(&mButton_Next);
-		ActivateUI(&mButton_Back);
-		ActivateUI(&mTextArea_Input);
-		ActivateUI(&mTextArea_InputHint);
-		DeactivateUI(&mButton_Pause);
-		DeactivateUI(&mButton_Input);
-		ActivateUI(&mTextArea_ConfidenceHint);
-		ActivateUI(&mButtonGroup_Confidence);
-	}
-	if (UI_CanNext()) mButton_Next.Enable();
-	else mButton_Next.Disable();
-	if (mConfidenceSelected >= 0){
-		mButtonGroup_Confidence.SetToSelectedIndex(UI_INDEX_CONFIDENCE_0 + mConfidenceSelected);
 	}
 }
 
@@ -93,41 +79,100 @@ void MyVisRankingApp::UI_Resume(){
 		ActivateUI(&mButton_Pause);
 		ActivateUI(&mButton_Input);
 		ActivateUI(&mButtonGroup_Answer);
+		ActivateUI(&mTextArea_AnswerHint0);
+		ActivateUI(&mTextArea_AnswerHint1);
 		//ActivateUI(&mButton_Next);
 	}
-	// resume answer
+	if (mConfidenceSelected >= 0){
+		mButtonGroup_Confidence.SetToSelectedIndex(UI_INDEX_CONFIDENCE_0 + mConfidenceSelected);
+	}
 	if (mAnswerSelected >= 0){
 		mButtonGroup_Answer.SetToSelectedIndex(UI_INDEX_ANSWER_0 + mAnswerSelected);
 	}
 }
 
-void MyVisRankingApp::UI_Back(){
-	if (mbPaused){
-		mbPaused = false;
-		mLogs.ResumeTrial();
-		DeactivateUI(&mButton_Next);
-		DeactivateUI(&mButton_Back);
-		DeactivateUI(&mTextArea_Input);
-		DeactivateUI(&mTextArea_InputHint);
-		ActivateUI(&mButton_Pause);
-		ActivateUI(&mButton_Input);
-		DeactivateUI(&mTextArea_ConfidenceHint);
-		DeactivateUI(&mButtonGroup_Confidence);
+void MyVisRankingApp::UI_Input(){
+	if (!mbPaused){
+		mbPaused = true;
+		mLogs.PauseTrial();
+		if (UI_CanCheck()) ActivateUI(&mButton_Check);
+		else ActivateUI(&mButton_Next);
+		DeactivateUI(&mButton_Pause);
+		DeactivateUI(&mButton_Input);
+		//ActivateUI(&mButtonGroup_Answer);
+		ActivateUI(&mTextArea_ConfidenceHint);
+		ActivateUI(&mButtonGroup_Confidence);
+
+		if (UI_Answered()) {
+			if (UI_CanCheck()) mButton_Check.Enable();
+			else mButton_Next.Enable();
+		}
+		else {
+			if (UI_CanCheck()) mButton_Check.Disable();
+			else mButton_Next.Disable();
+		}
+	}
+	if (mConfidenceSelected >= 0){
+		mButtonGroup_Confidence.SetToSelectedIndex(UI_INDEX_CONFIDENCE_0 + mConfidenceSelected);
+	}
+	if (mAnswerSelected >= 0){
+		mButtonGroup_Answer.SetToSelectedIndex(UI_INDEX_ANSWER_0 + mAnswerSelected);
 	}
 }
 
-void MyVisRankingApp::UI_AnswerSelect(int idx){
-	MyButton* button = mButtonGroup_Answer.GetButton(UI_INDEX_ANSWER_0 + idx);
+void MyVisRankingApp::UI_Check(){
+	if (mbPaused){
+		mbPaused = false;
+		mLogs.ResumeTrial();
+		DeactivateUI(&mButton_Check);
+		ActivateUI(&mButton_Next);
+		DeactivateUI(&mTextArea_AnswerHint0);
+		DeactivateUI(&mTextArea_AnswerHint1);
+		DeactivateUI(&mButtonGroup_Answer);
+		DeactivateUI(&mButton_Pause);
+		DeactivateUI(&mButton_Input);
+		DeactivateUI(&mTextArea_ConfidenceHint);
+		DeactivateUI(&mButtonGroup_Confidence);
+	}
+	if (mTrialManager.GetCurrentVisData()->GetVisInfo().IsTraining()
+		&& !mbDrawHighlighted) {
+		mbDrawHighlighted = true;
+		if (mTrialManager.GetCurrentVisData()->IsAnswerCorrect(mAnswerSelected)){
+			mTextArea_Answer.SetTextColor(MyColor4f::green());
+			mTextArea_Answer.SetText("Correct!");
+		}
+		else{
+			mTextArea_Answer.SetTextColor(MyColor4f::red());
+			MyString correctAnswer =
+				mTrialManager.GetCurrentVisData()->GetCorrectAnswerString();
+			MyString answerStr = "Answer: " + correctAnswer;
+			mTextArea_Answer.SetText(answerStr);
+		}
+		ActivateUI(&mButton_Next);
+	}
+}
+
+void MyVisRankingApp::UI_Next(){
+	if (UI_Answered()){
+		Next();
+	}
+}
+
+void MyVisRankingApp::UI_AnswerSelect(int idx, MyButton* button){
 	if (button && button->GetEventBit() & PUSHED_BIT){
 		button->ClearEventBit();
 		mAnswerSelected = idx;
 		if (mConfidenceSelected >= 0){
-			mButton_Next.Enable();
+			if (UI_CanCheck()) mButton_Check.Enable();
+			else mButton_Next.Enable();
 		}
+		if (!mTaskUIs.HasOne(&mButton_Check) || mButton_Check.IsHidden()) mButton_Input.Enable();
 	}
 	else{
 		mAnswerSelected = UI_INVALID_ANSWER;
-		mButton_Next.Disable();
+		if (UI_CanCheck()) mButton_Check.Disable();
+		else mButton_Next.Disable();
+		mButton_Input.Disable();
 	}
 	//mButton_Answer[idx].ClearEventBit();
 	mLogs.SetUserAnswer(mAnswerSelected);
@@ -139,62 +184,18 @@ void MyVisRankingApp::UI_ConfidenceSelected(int idx){
 	if (button && button->GetEventBit() & PUSHED_BIT){
 		button->ClearEventBit();
 		mConfidenceSelected = idx + 1;
-		if (mAnswerSelected >= 0 || !mTextArea_Input.IsHidden()){
-			mButton_Next.Enable();
+		if (mAnswerSelected >= 0){
+			if (UI_CanCheck()) mButton_Check.Enable();
+			else mButton_Next.Enable();
 		}
 	}
 	else{
 		mConfidenceSelected = UI_INVALID_ANSWER;
-		mButton_Next.Disable();
+		if (UI_CanCheck()) mButton_Check.Disable();
+		else mButton_Next.Disable();
 	}
 	mLogs.SetUserConfidence(mConfidenceSelected);
 	if (IsOnMode(APP_MODE_DEBUG)) cout << "Confidence: " << mConfidenceSelected << endl;
-}
-
-void MyVisRankingApp::UI_Next(){
-	if (mTrialManager.GetCurrentVisData()->GetVisInfo().IsEmpty()){
-		Next();
-	}
-	else if (mAnswerSelected != UI_INVALID_ANSWER){
-		if (mTrialManager.GetCurrentVisData()->GetVisInfo().IsTraining()
-			&& !mbDrawHighlighted) {
-			mbDrawHighlighted = true;
-			MyString correctAnswer =
-				mTrialManager.GetCurrentVisData()->GetCorrectAnswerString();
-			MyString answerStr = "Correct: " + correctAnswer;
-			mTextArea_Answer.SetText(answerStr);
-		}
-		else Next();
-	}
-	else if (!mTextArea_Input.IsHidden()){
-		float ans;
-		bool success = mTextArea_Input.GetFloat(ans);
-		if (success){
-			if (ans > UI_ANSWER_HIGH || ans < UI_ANSWER_LOW){
-				MyString warningStr;
-				warningStr = MyString(ans) + " isn't in range!";
-				mTextArea_InputHint.SetText(warningStr);
-
-			}
-			else{
-				mLogs.SetUserAnswer(ans);
-				if (IsOnMode(APP_MODE_DEBUG)) cout << "Answer: " << ans << endl;
-				if (mTrialManager.GetCurrentVisData()->GetVisInfo().IsTraining()
-					&& !mbDrawHighlighted) {
-					mbDrawHighlighted = true;
-					MyString correctAnswer = 
-						mTrialManager.GetCurrentVisData()->GetCorrectAnswerString();
-					MyString answerStr = "Correct: " + correctAnswer;
-					mTextArea_Answer.SetText(answerStr);
-				}
-				else Next();
-			}
-		}
-		else{
-			MyString warningStr("Not a number!");
-			mTextArea_InputHint.SetText(warningStr);
-		}
-	}
 }
 
 void MyVisRankingApp::UI_Process(int uid){
@@ -208,15 +209,16 @@ void MyVisRankingApp::UI_Process(int uid){
 		case UI_INDEX_RESUME:
 			UI_Resume();
 			break;
-		case UI_INDEX_BACK:
-			UI_Back();
+		case UI_INDEX_CHECK:
+			UI_Check();
 			break;
 		case UI_INDEX_NEXT:
 			UI_Next();
 			break;
 		case UI_INDEX_ANSWER_GROUP:
 			UI_AnswerSelect(
-				mButtonGroup_Answer.GetSelectedIndex() - UI_INDEX_ANSWER_0);
+				mButtonGroup_Answer.GetSelectedIndex() - UI_INDEX_ANSWER_0,
+				mButtonGroup_Answer.GetSelectedButton());
 			break;
 		case UI_INDEX_CONFIDENCE_GROUP:
 			UI_ConfidenceSelected(
@@ -225,12 +227,16 @@ void MyVisRankingApp::UI_Process(int uid){
 	}
 }
 
-bool MyVisRankingApp::UI_CanNext(){
-	if (mConfidenceSelected >= 0 && (!mTextArea_Input.IsHidden()
-		|| mAnswerSelected >= 0)){
+bool MyVisRankingApp::UI_Answered() const{
+	if (mTrialManager.GetCurrentVisData()->GetVisInfo().IsEmpty()
+		|| (mConfidenceSelected >= 0 && mAnswerSelected >= 0)){
 		return true;
 	}
 	return false;
+}
+
+bool MyVisRankingApp::UI_CanCheck() const{
+	return mTrialManager.GetCurrentVisData()->GetVisInfo().IsTraining();
 }
 
 int MyVisRankingApp::UIProcessMouseUp(int x, int y){
@@ -283,54 +289,48 @@ int MyVisRankingApp::UIProcessSpecialKey(unsigned char key, int x, int y){
 
 void MyVisRankingApp::UIInit(){
 	mbPaused = false;
-	mButtonWidth = 100;
-	mButtonHeight = 60;
-	mButtonInterval = 20;
+	mButtonWidth = 110;
+	mButtonHeight = 50;
+	mButtonIntervalX = 20;
+	mButtonIntervalY = 15;
 	mButton_Next.SetIndex(UI_INDEX_NEXT);
-	mButtonGroup_Answer.ClearOptions();
-	mButtonGroup_Answer.AddOption("3", UI_INDEX_ANSWER_2);
-	mButtonGroup_Answer.AddOption("2", UI_INDEX_ANSWER_1);
-	mButtonGroup_Answer.AddOption("1", UI_INDEX_ANSWER_0);
 	mButtonGroup_Confidence.ClearOptions();
-	mButtonGroup_Confidence.AddOption("1", UI_INDEX_CONFIDENCE_0);
-	mButtonGroup_Confidence.AddOption("2", UI_INDEX_CONFIDENCE_1);
-	mButtonGroup_Confidence.AddOption("3", UI_INDEX_CONFIDENCE_2);
-	mButtonGroup_Confidence.AddOption("4", UI_INDEX_CONFIDENCE_3);
-	mButtonGroup_Confidence.AddOption("5", UI_INDEX_CONFIDENCE_4);
-	mButtonGroup_Confidence.AddOption("6", UI_INDEX_CONFIDENCE_5);
-	mButtonGroup_Confidence.AddOption("7", UI_INDEX_CONFIDENCE_6);
 	mButton_Input.SetIndex(UI_INDEX_INPUT);
-	mButton_Back.SetIndex(UI_INDEX_BACK);
+	mButton_Check.SetIndex(UI_INDEX_CHECK);
 	mButton_Pause.SetIndex(UI_INDEX_PAUSE);
 	mButton_Resume.SetIndex(UI_INDEX_RESUME);
 	mButtonGroup_Answer.SetIndex(UI_INDEX_ANSWER_GROUP);
 	mButtonGroup_Confidence.SetIndex(UI_INDEX_CONFIDENCE_GROUP);
+	for (int i = 0; i < 7; i++){
+		mButtonGroup_Confidence.AddOption(MyString(i + 1), UI_INDEX_CONFIDENCE_0 + i);
+	}
 	mButton_Next.SetSize(MyVec2f(mButtonWidth, mButtonHeight));
 	mButton_Input.SetSize(MyVec2f(mButtonWidth, mButtonHeight));
-	mButton_Back.SetSize(MyVec2f(mButtonWidth, mButtonHeight));
+	mButton_Check.SetSize(MyVec2f(mButtonWidth, mButtonHeight));
 	mButton_Pause.SetSize(MyVec2f(mButtonWidth, mButtonHeight));
 	mButton_Resume.SetSize(MyVec2f(mButtonWidth, mButtonHeight));
-	mButtonGroup_Confidence.SetButtonSize(MyVec2f(mButtonWidth, mButtonHeight));
-	mButtonGroup_Confidence.SetButtonInterval(MyVec2f(mButtonInterval, mButtonInterval));
 	mButtonGroup_Answer.SetButtonSize(MyVec2f(mButtonWidth, mButtonHeight));
-	mButtonGroup_Answer.SetButtonInterval(MyVec2f(mButtonInterval, mButtonInterval));
-	mButtonGroup_Confidence.SetLayout(MyToggleButtonGroup::Layout_Horizontal);
-	mButtonGroup_Confidence.UpdateLayout();
+	mButtonGroup_Answer.SetButtonInterval(MyVec2f(mButtonIntervalX, mButtonIntervalY));
 	mButtonGroup_Answer.SetLayout(MyToggleButtonGroup::Layout_Vertical);
+	mButtonGroup_Answer.SetAlighment(MyToggleButtonGroup::Alignment_Down);
 	mButtonGroup_Answer.UpdateLayout();
+	mButtonGroup_Confidence.SetButtonSize(MyVec2f(mButtonWidth, mButtonHeight));
+	mButtonGroup_Confidence.SetButtonInterval(MyVec2f(mButtonIntervalX, mButtonIntervalY));
+	mButtonGroup_Confidence.SetLayout(MyToggleButtonGroup::Layout_Horizontal);
+	mButtonGroup_Confidence.SetAlighment(MyToggleButtonGroup::Alignment_Middle);
+	mButtonGroup_Confidence.UpdateLayout();
 	mButton_Next.SetText("Next");
-	mButton_Input.SetText("Input");
-	mButton_Back.SetText("Back");
+	mButton_Input.SetText("Answer");
+	mButton_Check.SetText("Check");
 	mButton_Pause.SetText("Pause");
 	mButton_Resume.SetText("Resume");
-	mTextArea_Input.SetConstant(false);
-	mTextArea_Input.SetBlankText("Please key in a number between "
-		+ MyString(UI_ANSWER_LOW) + " and " + MyString(UI_ANSWER_HIGH));
-	mTextArea_ConfidenceHint.SetText("Please select your confidence level in your answer: 1 = least confident, 7 = most confident.");
-	mTextArea_Input.SetMaxSize(20);
-	mTextArea_Input.SetHidden(true);
-	mTextArea_Input.Disable();
-	mTextArea_InputHint.SetConstant(true);
+	mTextArea_AnswerHint0.SetText("Box 1 Higher");
+	mTextArea_AnswerHint1.SetText("Box 1 Lower");
+	mTextArea_ConfidenceHint.SetText(
+		"Please select your confidence level in your answer: \
+		1 = least confident, 7 = most confident.");
+	mTextArea_AnswerHint0.SetConstant(true);
+	mTextArea_AnswerHint1.SetConstant(true);
 	mTextArea_Transition.SetConstant(true);
 	mTextArea_Hint.SetConstant(true);
 	mTextArea_Progress.SetConstant(true);
@@ -350,86 +350,50 @@ void MyVisRankingApp::UIUpdate(){
 		ActivateUI(&mTextArea_Transition);
 		ActivateUI(&mTextArea_Progress);
 		mTextArea_Transition.SetText(visInfo.GetTaskTransitionString());
+		if (mTrialManager.IsLast()) mButton_Next.SetText("Finish");
 	}
 	else{
+		mButtonGroup_Answer.ClearOptions();
+		for (int i = 0; i < visInfo.GetNumberAnswerOption(); i++){
+			if (visInfo.GetVisTask() == FA){
+				mButtonGroup_Answer.AddOption(
+					visInfo.GetAnswerOptionString(i), UI_INDEX_ANSWER_0 + i);
+			}
+			else{
+				mButtonGroup_Answer.AddOption(
+					visInfo.GetAnswerOptionString(visInfo.GetNumberAnswerOption() - i - 1),
+					UI_INDEX_ANSWER_0 + visInfo.GetNumberAnswerOption() - i - 1);
+			}
+		}
+		mButtonGroup_Answer.UpdateLayout();
+		mTaskUIs << &mButton_Next
+			<< &mButton_Input
+			<< &mButton_Pause
+			<< &mButton_Resume
+			<< &mButtonGroup_Answer
+			<< &mTextArea_ConfidenceHint
+			<< &mButtonGroup_Confidence
+			<< &mTextArea_Hint
+			<< &mTextArea_Progress;
+		DeactivateUI(&mButton_Next);
+		ActivateUI(&mButton_Input);
+		ActivateUI(&mButton_Pause);
+		DeactivateUI(&mButton_Resume);
+		//DeactivateUI(&mButtonGroup_Answer);
+		ActivateUI(&mButtonGroup_Answer);
+		DeactivateUI(&mTextArea_ConfidenceHint);
+		DeactivateUI(&mButtonGroup_Confidence);
+		ActivateUI(&mTextArea_Hint);
+		ActivateUI(&mTextArea_Progress);
+		if (UI_CanCheck()) {
+			mTaskUIs << &mButton_Check;
+			DeactivateUI(&mButton_Check);
+		}
 		if (visInfo.GetVisTask() == FA){
-			mTaskUIs << &mButton_Next
-				<< &mButton_Input
-				<< &mButton_Back
-				<< &mButton_Pause
-				<< &mButton_Resume
-				<< &mTextArea_Hint
-				<< &mTextArea_Progress
-				<< &mTextArea_Input
-				<< &mTextArea_InputHint
-				<< &mTextArea_ConfidenceHint
-				<< &mButtonGroup_Confidence;
-			DeactivateUI(&mButton_Next);
-			ActivateUI(&mButton_Input);
-			DeactivateUI(&mButton_Back);
-			ActivateUI(&mButton_Pause);
-			DeactivateUI(&mButton_Resume);
-			ActivateUI(&mTextArea_Hint);
-			ActivateUI(&mTextArea_Progress);
-			DeactivateUI(&mTextArea_Input);
-			DeactivateUI(&mTextArea_InputHint);
-			DeactivateUI(&mTextArea_ConfidenceHint);
-			DeactivateUI(&mButtonGroup_Confidence);
-			mButton_Next.Disable();
-			mTextArea_Input.ClearText();
-			mTextArea_InputHint.SetText("Input a number representing averge FA of box 1 minus that of box 2");
-		}
-		else if (visInfo.GetVisTask() == TRACE){
-			mButtonGroup_Answer.GetButton(UI_INDEX_ANSWER_0)->SetText("1");
-			mButtonGroup_Answer.GetButton(UI_INDEX_ANSWER_1)->SetText("2");
-			mButtonGroup_Answer.GetButton(UI_INDEX_ANSWER_2)->SetText("3");
-			mTaskUIs << &mButton_Next
-				<< &mButton_Input
-				<< &mButton_Back
-				<< &mButton_Pause
-				<< &mButton_Resume
-				<< &mButtonGroup_Answer
-				<< &mTextArea_Hint
-				<< &mTextArea_Progress
-				<< &mTextArea_ConfidenceHint
-				<< &mButtonGroup_Confidence;
-			DeactivateUI(&mButton_Next);
-			ActivateUI(&mButton_Input);
-			DeactivateUI(&mButton_Back);
-			ActivateUI(&mButton_Pause);
-			DeactivateUI(&mButton_Resume);
-			ActivateUI(&mButtonGroup_Answer);
-			ActivateUI(&mTextArea_Hint);
-			ActivateUI(&mTextArea_Progress);
-			DeactivateUI(&mTextArea_ConfidenceHint);
-			DeactivateUI(&mButtonGroup_Confidence);
-			mButton_Next.Disable();
-		}
-		else if (visInfo.GetVisTask() == TUMOR){
-			mButtonGroup_Answer.GetButton(UI_INDEX_ANSWER_0)->SetText("Intersect");
-			mButtonGroup_Answer.GetButton(UI_INDEX_ANSWER_1)->SetText("Touch");
-			mButtonGroup_Answer.GetButton(UI_INDEX_ANSWER_2)->SetText("Away");
-			mTaskUIs << &mButton_Next
-				<< &mButton_Input
-				<< &mButton_Back
-				<< &mButton_Pause
-				<< &mButton_Resume
-				<< &mButtonGroup_Answer
-				<< &mTextArea_Hint
-				<< &mTextArea_Progress
-				<< &mTextArea_ConfidenceHint
-				<< &mButtonGroup_Confidence;
-			DeactivateUI(&mButton_Next);
-			ActivateUI(&mButton_Input);
-			DeactivateUI(&mButton_Back);
-			ActivateUI(&mButton_Pause);
-			DeactivateUI(&mButton_Resume);
-			ActivateUI(&mButtonGroup_Answer);
-			ActivateUI(&mTextArea_Hint);
-			ActivateUI(&mTextArea_Progress);
-			DeactivateUI(&mTextArea_ConfidenceHint);
-			DeactivateUI(&mButtonGroup_Confidence);
-			mButton_Next.Disable();
+			mTaskUIs << &mTextArea_AnswerHint0
+				<< &mTextArea_AnswerHint1;
+			ActivateUI(&mTextArea_AnswerHint0);
+			ActivateUI(&mTextArea_AnswerHint1);
 		}
 		mTextArea_Hint.SetText(visInfo.GetTaskHintString());
 		mTaskUIs << &mTextArea_Answer;
@@ -441,31 +405,33 @@ void MyVisRankingApp::UIUpdate(){
 	mAnswerSelected = UI_INVALID_ANSWER;
 	mConfidenceSelected = UI_INVALID_ANSWER;
 	mbDrawHighlighted = false;
+	mButton_Input.Disable();
 }
 
 void MyVisRankingApp::UIResize(int w, int h){
 	MyUI::SetViewport(MyVec4i(0, 0, w, h));
 	float boarder = 15;
 	float xPos = w - mButtonWidth - boarder;
-	float yOffset = mButtonInterval + mButtonHeight;
+	float yOffset = mButtonIntervalY + mButtonHeight;
+	float xOffset = mButtonWidth;
 	float yPos = boarder;
-	mButton_Input.SetPosition(MyVec2f(xPos, yPos + 1 * yOffset));
-	mButton_Back.SetPosition(MyVec2f(xPos, yPos + 1 * yOffset));
+	MyVec2f gSize;
+	mButton_Input.SetPosition(MyVec2f(xPos, yPos));
+	mButton_Check.SetPosition(MyVec2f(xPos, yPos));
 	mButton_Next.SetPosition(MyVec2f(xPos, yPos));
-	mTextArea_Answer.SetPosition(MyVec2f(xPos, yPos + 5 * yOffset));
+	mTextArea_Answer.SetPosition(MyVec2f(xPos, yPos + 8 * yOffset));
 	mButton_Pause.SetPosition(MyVec2f(xPos, h - yPos - yOffset));
 	mButton_Resume.SetPosition(MyVec2f(xPos, h - yPos - yOffset));
 	mTextArea_Hint.SetPosition(MyVec2f(w / 2, boarder));
 	mTextArea_Transition.SetPosition(MyVec2f(w / 2, h / 2));
 	mTextArea_Progress.SetPosition(MyVec2f(boarder + mButtonWidth / 2, h - boarder - mButtonHeight));
-	mTextArea_InputHint.SetPosition(MyVec2f(w / 2, h / 2 + mButtonHeight * 2));
-	mTextArea_Input.SetPosition(MyVec2f(w / 2, h / 2 + mButtonHeight * 1));
+	mTextArea_AnswerHint0.SetPosition(MyVec2f(xPos - xOffset / 2, yPos + yOffset * 7.5 - 6));
+	mTextArea_AnswerHint1.SetPosition(MyVec2f(xPos - xOffset / 2, yPos + yOffset * 1.5 - 6));
+	mButtonGroup_Answer.SetPosition(MyVec2f(xPos, yPos + yOffset * 1));
 	mTextArea_ConfidenceHint.SetPosition(MyVec2f(w / 2, h / 2 - mButtonHeight * 1));
-	MyVec2f gSize = mButtonGroup_Confidence.GetSize();
-	mButtonGroup_Confidence.SetPosition(MyVec2f(w / 2 - gSize[0] / 2, h / 2 - mButtonHeight * 3));
-	mButtonGroup_Confidence.UpdateLayout();
-	mButtonGroup_Answer.SetPosition(MyVec2f(xPos, yPos + 2 * yOffset));
+	mButtonGroup_Confidence.SetPosition(MyVec2f(w / 2, h / 2 - mButtonHeight * 2 - mButtonIntervalY));
 	mButtonGroup_Answer.UpdateLayout();
+	mButtonGroup_Confidence.UpdateLayout();
 }
 
 void MyVisRankingApp::UIDestory(){
@@ -494,23 +460,25 @@ void MyVisRankingApp::DrawHighlightedTracts(MyTractVisBase* tractVis,
 	MyArrayi tractShow;
 	MyArrayf influences;
 	float ambient;
-	MyColor4f baseSphereColor;
+	//MyColor4f baseSphereColor;
 	baseColor = tractVis->GetBaseColor();
 	tractShow = tractVis->GetTractsShown();
 	ambient = tractVis->GetAmbient();
 	influences = tractVis->GetInfluences();
-	if(sg) baseSphereColor = sg->GetColor();
+	//if(sg) baseSphereColor = sg->GetColor();
 	tractVis->SetTractsShown(tractIndices);
 	tractVis->SetBaseColor(color);
 	tractVis->SetAmbient(10);
 	tractVis->ClearInfluences();
-	if (sg) sg->SetColor(color);
+	tractVis->SetSphereGeometry(NULL);
+	//if (sg) sg->SetColor(color);
 	tractVis->Show();
 	tractVis->SetBaseColor(baseColor);
 	tractVis->SetTractsShown(tractShow);
 	tractVis->SetAmbient(ambient);
 	tractVis->SetInfluences(influences);
-	if (sg) sg->SetColor(baseSphereColor);
+	tractVis->SetSphereGeometry(sg);
+	//if (sg) sg->SetColor(baseSphereColor);
 	glPopAttrib();
 }
 
@@ -521,7 +489,8 @@ void MyVisRankingApp::DrawHighlightedTracts(MyTractVisBase* tractVis){
 		if (visData->GetSpheres().size() > 0){
 			const MySphere& sphere = visData->GetSphere(0);
 			CollisionStatus cs = visData->ComputeSphereCollusionStatus(sphere);
-			MyColor4f color = GetCollisionStatusColor(cs);
+			//MyColor4f color = GetCollisionStatusColor(cs);
+			MyColor4f color = MyColor4f::yellow();
 			MyArrayi indices;
 			if (cs == TOUCH) indices = visData->ComputeTouchedIndices(sphere);
 			else if (cs == INTERSECT) indices = visData->ComputeIntersectedIndices(sphere);
@@ -587,19 +556,35 @@ void MyVisRankingApp::DrawTractIndicators(){
 void MyVisRankingApp::DrawLegend(){
 	const MyVisInfo& visInfo = mTrialManager.GetCurrentVisData()->GetVisInfo();
 	if (visInfo.GetVisTask() != FA || visInfo.IsEmpty() || mbPaused) return;
+	if (visInfo.GetEncoding() == COLOR || visInfo.GetEncoding() == VALUE){
+		DrawColorLegend();
+	}
+	else if (visInfo.GetEncoding() == TEXTURE){
+		DrawTextureRatioLegend();
+	}
+	else if (visInfo.GetEncoding() == ESIZE){
+		DrawTractLegend();
+	}
+}
+
+void MyVisRankingApp::DrawColorLegend(){
+	const MyVisInfo& visInfo = mTrialManager.GetCurrentVisData()->GetVisInfo();
+	if (visInfo.GetVisTask() != FA || visInfo.IsEmpty() || mbPaused) return;
 	unsigned int texture;
 	if (visInfo.GetEncoding() == COLOR) texture = mColorTexture;
 	else if (visInfo.GetEncoding() == VALUE) texture = mValueTexture;
 	else return;
+	MyVec4i viewport = MyGraphicsTool::GetViewport();
+
 	MyGraphicsTool::PushAllAttributes();
 	MyGraphicsTool::PushProjectionMatrix();
 	MyGraphicsTool::PushMatrix();
-	MyGraphicsTool::SetViewport(MyUI::mUIViewport);
 	MyGraphicsTool::LoadProjectionMatrix(
 		//&MyMatrixf::OrthographicMatrix(0, 1, 0, 1, 0, 1));
 		&MyMatrixf::OrthographicMatrix(0, 1, 0, 1, 0, 1));
 	MyGraphicsTool::LoadModelViewMatrix(&MyMatrixf::IdentityMatrix());
 	glDisable(GL_LIGHTING);
+	glDisable(GL_DEPTH_TEST);
 	glEnable(GL_TEXTURE_2D);
 	glBindTexture(GL_TEXTURE_2D, texture);
 	glColor3f(1, 1, 1);
@@ -614,6 +599,7 @@ void MyVisRankingApp::DrawLegend(){
 	glVertex2f(LEGEND_LEFT, LEGEND_BOTTOM + LEGEND_HEIGHT);
 	glEnd();
 
+	/*
 	glLineWidth(2 * mCanvasScaleX);
 	glColor3f(0, 0, 0);
 	glDisable(GL_TEXTURE_2D);
@@ -623,21 +609,154 @@ void MyVisRankingApp::DrawLegend(){
 	glVertex2f(LEGEND_LEFT + LEGEND_WIDTH, LEGEND_BOTTOM + LEGEND_HEIGHT);
 	glVertex2f(LEGEND_LEFT, LEGEND_BOTTOM + LEGEND_HEIGHT);
 	glEnd();
+	*/
 
 	glColor3f(0, 0, 0);
 	for (int i = 0; i <= 8; i++){
 		glLineWidth(1 * mCanvasScaleX);
 		glBegin(GL_LINES);
+		glVertex2f(LEGEND_LEFT + LEGEND_WIDTH - LEGEND_TICKSIZE, LEGEND_BOTTOM + i / 8.f*LEGEND_HEIGHT);
 		glVertex2f(LEGEND_LEFT + LEGEND_WIDTH, LEGEND_BOTTOM + i / 8.f*LEGEND_HEIGHT);
-		glVertex2f(LEGEND_LEFT + LEGEND_WIDTH + LEGEND_TICKSIZE, LEGEND_BOTTOM + i / 8.f*LEGEND_HEIGHT);
 		glEnd();
 		MyString numStr((i + 2) / 10.f);
 		glLineWidth(2 * mCanvasScaleX);
 		MyPrimitiveDrawer::DrawBitMapTextLarge(MyVec3f(LEGEND_LEFT + LEGEND_WIDTH + LEGEND_TICKSIZE,
-			LEGEND_BOTTOM + i / 8.f*LEGEND_HEIGHT - MyPrimitiveDrawer::GetBitmapHeight('0') / (2.f*mWindowHeight), 0),
+			LEGEND_BOTTOM + i / 8.f*LEGEND_HEIGHT - MyPrimitiveDrawer::GetBitmapHeight('0') / (2.f*viewport[3]), 0),
 			numStr, 0);
 	}
 	MyGraphicsTool::PopMatrix();
 	MyGraphicsTool::PopProjectionMatrix();
 	MyGraphicsTool::PopAttributes();
+}
+
+void MyVisRankingApp::DrawTextureRatioLegend(){
+	const MyVisInfo& visInfo = mTrialManager.GetCurrentVisData()->GetVisInfo();
+	if (visInfo.GetVisTask() != FA || visInfo.IsEmpty() || mbPaused) return;
+	if (visInfo.GetEncoding() != TEXTURE) return;
+	MyVec4i viewport = MyGraphicsTool::GetViewport();
+	MyGraphicsTool::PushAllAttributes();
+	MyGraphicsTool::PushProjectionMatrix();
+	MyGraphicsTool::PushMatrix();
+	MyGraphicsTool::LoadProjectionMatrix(
+		//&MyMatrixf::OrthographicMatrix(0, 1, 0, 1, 0, 1));
+		&MyMatrixf::OrthographicMatrix(0, 1, 0, 1, 0, 1));
+	MyGraphicsTool::LoadModelViewMatrix(&MyMatrixf::IdentityMatrix());
+	glDisable(GL_LIGHTING);
+	glDisable(GL_DEPTH_TEST);
+	glColor3f(0.8, 0.8, 0.8);
+	glBegin(GL_TRIANGLE_FAN);
+	glVertex2f(LEGEND_LEFT, LEGEND_BOTTOM);
+	glVertex2f(LEGEND_LEFT + LEGEND_WIDTH, LEGEND_BOTTOM);
+	glVertex2f(LEGEND_LEFT + LEGEND_WIDTH, LEGEND_BOTTOM + LEGEND_HEIGHT);
+	glVertex2f(LEGEND_LEFT, LEGEND_BOTTOM + LEGEND_HEIGHT);
+	glEnd();
+
+	float unitHeight = LEGEND_HEIGHT / 9;
+	glColor3f(0, 0, 0);
+	glLineWidth(1 * mCanvasScaleX);
+	for (int i = 0; i <= 8; i++){
+		float value = i / 10.f + 0.2;
+		float thisBase = LEGEND_BOTTOM + i * unitHeight;
+		glBegin(GL_TRIANGLE_FAN);
+		glVertex2f(LEGEND_LEFT, thisBase);
+		glVertex2f(LEGEND_LEFT + LEGEND_WIDTH, thisBase);
+		glVertex2f(LEGEND_LEFT + LEGEND_WIDTH, thisBase + value*unitHeight);
+		glVertex2f(LEGEND_LEFT, thisBase + value*unitHeight);
+		glEnd();
+		MyString numStr((i + 2) / 10.f);
+		glLineWidth(2 * mCanvasScaleX);
+		MyPrimitiveDrawer::DrawBitMapTextLarge(MyVec3f(LEGEND_LEFT + LEGEND_WIDTH + LEGEND_TICKSIZE,
+			thisBase + unitHeight / 2 - MyPrimitiveDrawer::GetBitmapHeight('0') / (2.f*viewport[3]), 0),
+			numStr, 0);
+	}
+	MyGraphicsTool::PopMatrix();
+	MyGraphicsTool::PopProjectionMatrix();
+	MyGraphicsTool::PopAttributes();
+}
+
+void MyVisRankingApp::DrawTractLegend(){
+	const MyVisInfo& visInfo = mTrialManager.GetCurrentVisData()->GetVisInfo();
+	if (visInfo.GetVisTask() != FA || visInfo.IsEmpty() || mbPaused) return;
+	mTractLegend.ClearInfluences();
+	if (visInfo.GetEncoding() == ESIZE){
+		mTractLegend.SetValueToSizeInfluence(2 * mTractLegend.mTrackRadius);
+	}
+	//else if (visInfo.GetEncoding() == TEXTURE){
+	//	mTractLegend.SetValueToTextureRatioInfluence(14);
+	//}
+	else return;
+
+	MyGraphicsTool::PushAllAttributes();
+	MyGraphicsTool::PushProjectionMatrix();
+	MyGraphicsTool::PushMatrix();
+	double mvMat[16], projMat[16];
+	int viewport[4];
+	double wx, wy, wz;
+	double ox, oy, oz;
+	glGetDoublev(GL_MODELVIEW_MATRIX, mvMat);
+	glGetDoublev(GL_PROJECTION_MATRIX, projMat);
+	glGetIntegerv(GL_VIEWPORT, viewport);
+	gluProject(0, 0, 0, mvMat, projMat, viewport, &ox, &oy, &oz);
+	gluUnProject((LEGEND_LEFT + LEGEND_WIDTH / 2)*viewport[2], viewport[3]/2, oz,
+		mvMat, projMat, viewport, &wx, &wy, &wz);
+	glTranslatef(wx, 0, 0);
+
+	gluUnProject(viewport[2] / 2, viewport[3] / 2 + 2, oz, mvMat, projMat, viewport, &wx, &wy, &wz);
+
+	MyGraphicsTool::MultiplyMatrix(&mTrackBall.GetScaleMatrix());
+	//MyGraphicsTool::LoadTrackBall(&mTrackBall);
+
+	mTractLegend.Show();
+
+	MyGraphicsTool::PopMatrix();
+	MyGraphicsTool::PopProjectionMatrix();
+	MyGraphicsTool::PopAttributes();
+}
+
+void MyVisRankingApp::DrawTractLegendText(){
+	const MyVisInfo& visInfo = mTrialManager.GetCurrentVisData()->GetVisInfo();
+	if (visInfo.GetVisTask() != FA || visInfo.IsEmpty() || mbPaused) return;
+	mTractLegend.ClearInfluences();
+	if (visInfo.GetEncoding() == ESIZE){
+		MyGraphicsTool::PushAllAttributes();
+		MyGraphicsTool::PushProjectionMatrix();
+		MyGraphicsTool::PushMatrix();
+		double mvMat[16], projMat[16];
+		int viewport[4];
+		double wx, wy, wz;
+		double ox, oy, oz;
+		double x, y, z;
+		glGetDoublev(GL_MODELVIEW_MATRIX, mvMat);
+		glGetDoublev(GL_PROJECTION_MATRIX, projMat);
+		glGetIntegerv(GL_VIEWPORT, viewport);
+		float h = MyPrimitiveDrawer::GetBitmapHeight('0');
+		gluProject(0, 0, 0, mvMat, projMat, viewport, &ox, &oy, &oz);
+		gluUnProject((LEGEND_LEFT + LEGEND_WIDTH / 2)*viewport[2], viewport[3] / 2, oz,
+			mvMat, projMat, viewport, &wx, &wy, &wz);
+		glTranslatef(wx, 0, 0);
+		MyGraphicsTool::MultiplyMatrix(&mTrackBall.GetScaleMatrix());
+		glGetDoublev(GL_MODELVIEW_MATRIX, mvMat);
+		glDisable(GL_DEPTH_TEST);
+		MyVec3f offset(1, 0, 0);
+		glLineWidth(2);
+		glColor3f(0, 0, 0);
+		for (int i = 0; i < mTractLegend.GetNumSamples(); i++){
+			glBegin(GL_LINES);
+			MyVec3f p = mTractLegend.GetBase() + i*mTractLegend.GetDir();
+			MyGraphicsTool::Vertex(p);
+			MyGraphicsTool::Vertex(p + offset);
+			glEnd();
+			MyVec3f tp = p + 1.5* offset;
+			MyVec3d tpd;
+			gluProject(tp[0], tp[1], tp[2], mvMat, projMat, viewport, &x, &y, &z);
+			y -= h / 2;
+			gluUnProject(x, y, z, mvMat, projMat, viewport, &tpd[0], &tpd[1], &tpd[2]);
+
+			MyPrimitiveDrawer::DrawBitMapTextLarge(tpd.toType<float>(),
+				MyString(i / float(mTractLegend.GetNumSamples() - 1)*0.8 + 0.2));
+		}
+		MyGraphicsTool::PopMatrix();
+		MyGraphicsTool::PopProjectionMatrix();
+		MyGraphicsTool::PopAttributes();
+	};
 }

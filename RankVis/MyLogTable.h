@@ -28,7 +28,7 @@ public:
 	void SetUserIndex(int uid){ mUserIndex = uid; };
 	void SetVisData(const MyVisData* visData){ mCurrentVisData = visData; };
 	void SetTrialIndex(int idx){ mCurrentTrialIndex = idx; };
-	void SetUserAnswer(float ua){ mUserAnswer = ua; };
+	void SetUserAnswer(int ua){ mUserAnswer = ua; };
 	void SetUserConfidence(int cf){ mUserConfidence = cf; };
 	void StartLog(MyString prefix = "log");
 	void EndLog();
@@ -44,16 +44,17 @@ protected:
 	std::ofstream mOutStream;
 	int mUserIndex;
 	int mCurrentTrialIndex;
-	float mUserAnswer;
+	int mUserAnswer;
 	int mUserConfidence;
 	const MyVisData* mCurrentVisData;
 	bool mbPaused, mbStarted;
 	clock_t mCureentTrialStartTime;
 	clock_t mCureentTrialPauseStartTime;
+	clock_t mStartTime;
 	int mCurrentTrialTotalPausedClock;
 	float GetTimeUsed() const;
 	float GetTimePaused() const;
-	float GetError(float userAnswer) const;
+	int GetError(int userAnswer) const;
 	float GetCorrectAnswer() const;
 
 	static MyString LogDirectory;

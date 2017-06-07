@@ -77,39 +77,45 @@ void MyVisData::LoadFromDirectory(const MyString& dir){
 	}
 }
 
-float MyVisData::GetError(float userAnswer) const{
+void MyVisData::UpdateAnswers(){
 	if (mVisInfo.GetVisTask() == FA){
-		return fabs(userAnswer - mAnswerInfo);
+		ComputeAnswer_FA();
+	}
+	else if (mVisInfo.GetVisTask() == TRACE){
+		ComputeAnswer_TRACE();
+	}
+	else if (mVisInfo.GetVisTask() == TUMOR){
+		ComputeAnswer_TUMOR();
+	}
+}
+
+int MyVisData::GetError(int userAnswer) const{
+	if (mVisInfo.GetVisTask() == FA){
+		if (mCorrectAnswers.size()>0){
+			return abs(userAnswer - mCorrectAnswers[0]);
+		}
+		else return -1;
 	}
 	else if (mVisInfo.GetVisTask() == TRACE
 		|| mVisInfo.GetVisTask() == TUMOR){
 		if (mCorrectAnswers.size()>0)
-			return (int(userAnswer + 0.5) == mCorrectAnswers[0] ? 0 : 1);
+			return (userAnswer == mCorrectAnswers[0] ? 0 : 1);
 		else return 1;
 	}
 	else return -100;
 }
 
 MyString MyVisData::GetCorrectAnswerString() const{
-	if (mVisInfo.GetVisTask() == FA){
+	if (mVisInfo.GetVisTask() == FA
+		|| mVisInfo.GetVisTask() == TRACE
+		|| mVisInfo.GetVisTask() == TUMOR){
 		if (mCorrectAnswers.size() > 0){
-			return to_string(mAnswerInfo);
+			int idx = this->GetCorrectAnswers()[0];
+			return mVisInfo.GetAnswerOptionString(idx);
 		}
-		else return "Unsolved";
+		return "Unknown answer";
 	}
-	else if (mVisInfo.GetVisTask() == TRACE){
-		if (mCorrectAnswers.size() > 0){
-			return to_string(mCorrectAnswers[0] + 1);
-		}
-		else return "Unsolved";
-	}
-	else if (mVisInfo.GetVisTask() == TUMOR){
-		if (mCorrectAnswers.size() > 0){
-			return toString(CollisionStatus(mCorrectAnswers[0] + 1));
-		}
-		else return "Unsolved";
-	}
-	else return "Unknown task";
+	return "Unknown task";
 }
 
 int MyVisData::LoadTractIndices(const MyString& fileName){
@@ -240,21 +246,22 @@ void MyVisData::ComputeAnswer_FA(){
 	float faSum0, faSum1;
 	int nSample0, nSample1;
 	if (mBoxes.size() >= 2){
-		mTracts->GetSampleValueInfo(mBoxes[0], mTractIndices, nSample0, faSum0);
-		mTracts->GetSampleValueInfo(mBoxes[1], mTractIndices, nSample1, faSum1);
+		mTracts->GetSampleClampedValueInfo(mBoxes[0], 0.2, 1.0, mTractIndices, nSample0, faSum0);
+		mTracts->GetSampleClampedValueInfo(mBoxes[1], 0.2, 1.0, mTractIndices, nSample1, faSum1);
 		float fa0 = faSum0 / nSample0;
 		float fa1 = faSum1 / nSample1;
 
-		float similiarFA = 0.09f;
-		if (fa0 > fa1 + similiarFA) mCorrectAnswers = { 0 };
-		else if (fa0 >= fa1) mCorrectAnswers = { 0, 2 };
-		else if (fa1 > fa0 + similiarFA) mCorrectAnswers = { 1 };
-		else  mCorrectAnswers = { 0, 1 };
-
 		mAnswerInfo = fa0 - fa1;
+		for (int i = 0; i < mVisInfo.GetNumberAnswerOption(); i++){
+			MyVec2f ranges = mVisInfo.GetFAAnswerOptionRanges()[i];
+			if (mAnswerInfo >= ranges[0] && mAnswerInfo < ranges[1]){
+				mCorrectAnswers = { i };
+				break;
+			}
+		}
 	}
 
-	if (!(mAnswerInfo >= -1 && mAnswerInfo<=1)){
+	if (mCorrectAnswers.empty()){
 		cerr << "Cannot resolve FA task answer!" << endl;
 	}
 }
@@ -459,7 +466,7 @@ bool MyVisData::MoveSphereToStatus(MySphere& sphere,
 	float minDist, distRange;
 	float range = TouchRange / 2;
 	if (st == INTERSECT) minDist = 0, distRange = r - TouchRange - range;
-	else if (st == TOUCH) minDist = r - TouchRange, distRange = 2 * TouchRange - range;
+	else if (st == TOUCH) minDist = r - TouchRange/10, distRange = 2 * TouchRange/10;
 	else minDist = r + TouchRange + range, distRange = 2 * range;
 	bool rst = ComputeNearbyPointAtDist(newCenter, oldCenter, minDist, distRange, maxItr);
 	if (rst) sphere.SetCenter(newCenter);

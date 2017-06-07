@@ -9,11 +9,19 @@ uniform float stripDepth;
 uniform float strokeWidth;
 uniform float taperLength;
 uniform float depthCueing;
+
 uniform vec4 baseColor = vec4(0,0,0,1);
+// lighting
+uniform float lightIntensity = 1.0;
+uniform float ambient = 0.4;
+uniform float diffuse = 0.6;
+uniform float specular = 0.0;
+uniform float shininess = 32;
+
 
 in vec3 ftexcoord;
 in vec3 fnormal;
-out vec3 fpos;
+out vec3 fposition;
 
 out vec4 fragColour;
 
@@ -25,23 +33,24 @@ bool isTapered(){
 		float thres = 0.5*u/taperLength*stripWidth;
 		return v>thres;
 	}
+	return false;
 }
 
-vec3 getLighted(vec3 color){
-	float gAmbient = 0.2;
-	float gDiffuse = 0.6;
-	float gSpecular = 0.2;
-	float gShininess = 32;
-
+vec3 GetLightedColor(vec3 color){
 	vec3 lightDir = vec3(0,0,1);
-	float ambient = gAmbient;
-	float diffusion = gDiffuse*clamp(dot(fnormal,lightDir),0,1);
-	diffusion = clamp(diffusion, 0.0, 1.0);     
-	vec3 eyeDir = normalize(-fpos);
+	float diffusion = diffuse*clamp(dot(fnormal,lightDir),0,1);
+	//float diffusion = diffuse*abs(dot(normal,lightDir));
+	diffusion = max(diffusion, 0.0)*lightIntensity;     
+	vec3 eyeDir = normalize(-fposition);
 	vec3 hv = normalize(-reflect(lightDir,fnormal));
-	float specular = gSpecular*pow(max(dot(hv,eyeDir),0.0),gShininess);
-	specular = clamp(specular, 0.0, 1.0); 
-	return color*(ambient+diffusion) + vec3(specular);  
+	float specule = specular*pow(max(dot(hv,eyeDir),0.0),shininess);
+	//vec3 hv = normalize(eyeDir+lightDir);
+	//float specular = specular*pow(max(dot(hv,normal),0.0),shininess);
+	specule = max(specule, 0.0)*lightIntensity;
+	vec3 rst;
+	rst = color*(ambient+diffusion);
+	rst += vec3(specule);
+	return rst;
 }
 
 
@@ -76,8 +85,8 @@ void main (void)
 		fragColour = vec4(1,1,1,0);
 	}
 	else {
-		//fragColour = vec4(getLighted(vec3(0.5,0.5,0.5)),1);
-		fragColour = baseColor;
+		fragColour = vec4(GetLightedColor(baseColor.xyz),1);
+		//fragColour.xyz = fnormal;
 	}
 	
 	//gl_FragDepth = linearizeDepth(gl_FragCoord.z)+depthOffset*10;

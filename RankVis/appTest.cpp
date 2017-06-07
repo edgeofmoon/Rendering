@@ -50,9 +50,8 @@ void myGlutReshape(int x, int y){
 
 int main(int argc, char* argv[]){
 	if (argc < 4){
-		cout << "Useage: " << argv[0] << " " << "[UserIndex] [TrialIndex] [Mode]" << endl
-			<< "Mode: Training: 1, Formal: 2, Lighting profile: 4, Occlusion profile: 8," << endl
-			<< "Debug mode mask: 256" << endl;
+		cout << "Useage: " << argv[0] << " " << "[UserIndex] [TrialIndex] [Mode] [DebugFlag] [PrintDataFlag]" << endl
+			<< "Mode: Training: 1, Formal: 2, Lighting profile: 3, Occlusion profile: 4," << endl;
 		char tmp[256];
 		std::cin.getline(tmp, 256);
 		return 0;
@@ -78,6 +77,8 @@ int main(int argc, char* argv[]){
 	if (argc > 1) uidx = atoi(argv[1]);
 	if (argc > 2) tidx = atoi(argv[2]);
 	if (argc > 3) mode = atoi(argv[3]);
+	if (argc > 4) mode |= (atoi(argv[4])==1?MyVisRankingApp::APP_MODE_DEBUG : 0);
+	if (argc > 5) mode |= (atoi(argv[5]) == 1 ? MyVisRankingApp::APP_MODE_PRINTDATA : 0);
 	app = new MyVisRankingApp;
 	app->Init(uidx, tidx, mode);
 	app->Next();

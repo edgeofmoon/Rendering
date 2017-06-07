@@ -422,7 +422,7 @@ void MyGraphicsTool::BitmapChar(char c){
 }
 
 void MyGraphicsTool::BitmapCharLarge(char c){
-	glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18 , c);
+	glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, c);
 }
 
 int MyGraphicsTool::GetBitmapWidth(int character){

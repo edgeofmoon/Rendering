@@ -27,6 +27,8 @@ public:
 	const MyTractVisBase* GetTractVisAux() const { return mTractVis_Aux; };
 	MyTractVisBase* GetTractVisAux() { return mTractVis_Aux; };
 
+	static void UseNormalizedLighting(bool b);
+
 protected:
 	// preset data
 	const MyVisData* mVisData;
@@ -44,14 +46,22 @@ protected:
 	// stored geometry
 	MyTractVisBase* mTubeVis;
 	MyTractVisBase* mLineVis;
+	MyTractVisBase* mTubeVisFlatCap;
 	MyTractVisBase* mSuperquadricVis;
 	MyTractVisBase* mLineDDHVis;
 	MyTractVisBase* mTubeDDHVis;
 	MyTractVisBase* mLineAOVis;
 	MyTractVisBase* mTubeAOVis;
 
-	// spheres
-	MySphereGeometry* mSphereGeometry;
+	// light intensity
+	static float SCALE_LINE_AO;
+	static float SCALE_LINE_BASIC;
+	static float SCALE_LINE_DEPTH;
+	static float SCALE_LINE_ENCODING;
+	static float SCALE_TUBE_AO;
+	static float SCALE_TUBE_BASIC;
+	static float SCALE_TUBE_DEPTH;
+	static float SCALE_TUBE_ENCODING;
 
 	// switch based on cue / encoding, initialize if not yet
 	// FA task

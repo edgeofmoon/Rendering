@@ -21,11 +21,12 @@ MyTrackDDH::MyTrackDDH() :
 	MyTractVisBase()
 {
 	mStripWidth = 2;
-	mStripDepth = 0.01;
+	mStripDepth = 0.05;
 	mStrokeWidth = 0.5;
 	mTaperLength = 1;
 	mDepthCueing = 0.5;
-	mRenderingParameters.BaseColor = MyColor4f(0, 0, 0, 1);
+	//mRenderingParameters.BaseColor = MyColor4f(0, 0, 0, 1);
+	//mRenderingParameters.BaseColor = MyColor4f(0.5, 0.5, 0.5, 1);
 }
 
 
@@ -135,10 +136,10 @@ void MyTrackDDH::ComputeGeometry(){
 
 			MyVec3f tangent;
 
-			if (j == mTracts->At(i).Size() - 1)
-				tangent = mTracts->GetCoord(i, j) - mTracts->GetCoord(i, j - 1);
-			else 
-				tangent = mTracts->GetCoord(i, j + 1) - mTracts->GetCoord(i, j);
+			if (j == mTracts->At(i).Size() - 1) tangent = mTracts->GetCoord(i, j) - mTracts->GetCoord(i, j - 1);
+			else if (j == 0) tangent = mTracts->GetCoord(i, j + 1) - mTracts->GetCoord(i, j);
+			else tangent = mTracts->GetCoord(i, j + 1) - mTracts->GetCoord(i, j - 1);
+
 			tangent.normalize();
 			mTangents << tangent << tangent;
 
@@ -155,6 +156,7 @@ void MyTrackDDH::ComputeGeometry(){
 		mIdxOffset << currentIndexIdx;
 		currentIndexIdx = mIndices.size()*3;
 	}
+	mIdxOffset << currentIndexIdx;
 }
 
 
@@ -201,11 +203,17 @@ void MyTrackDDH::Show(){
 	glUniform1f(loc, mDepthCueing);
 
 	glUniform4fv(glGetUniformLocation(mShaderProgram, "baseColor"), 1, &mRenderingParameters.BaseColor.r);
+	glUniform1f(glGetUniformLocation(mShaderProgram, "lightIntensity"), mRenderingParameters.LightIntensity);
+	glUniform1f(glGetUniformLocation(mShaderProgram, "ambient"), mRenderingParameters.Ambient);
+	glUniform1f(glGetUniformLocation(mShaderProgram, "diffuse"), mRenderingParameters.Diffuse);
+	glUniform1f(glGetUniformLocation(mShaderProgram, "specular"), mRenderingParameters.Specular);
+	glUniform1f(glGetUniformLocation(mShaderProgram, "shininess"), mRenderingParameters.Shininess);
 
 	for (int i = 0; i < mFiberToDraw.size(); i++){
 		int fiberIdx = mFiberToDraw[i];
 		int offset = mIdxOffset[fiberIdx];
-		int numVertex = (mTracts->GetNumVertex(fiberIdx)-1)*6;
+		int numVertex = mIdxOffset[fiberIdx + 1] - mIdxOffset[fiberIdx];
+		//int numVertex = (mTracts->GetNumVertex(fiberIdx)-1)*6;
 		glDrawElements(GL_TRIANGLES, numVertex, GL_UNSIGNED_INT, (const void *)(offset*sizeof(int)));
 	}
 
@@ -228,6 +236,6 @@ void MyTrackDDH::Show(){
 
 void MyTrackDDH::ResetRenderingParameters(){
 	MyTractVisBase::ResetRenderingParameters();
-	mRenderingParameters.BaseColor = MyColor4f(0, 0, 0, 1);
+	//mRenderingParameters.BaseColor = MyColor4f(0, 0, 0, 1);
 	mRenderingParameters.Shape = MyTractVisBase::TRACK_SHAPE_LINE;
 }

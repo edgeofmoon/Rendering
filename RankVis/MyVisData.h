@@ -13,7 +13,8 @@ public:
 	~MyVisData();
 
 	void LoadFromDirectory(const MyString& dir);
-	float GetError(float userAnswer) const;
+	void UpdateAnswers();
+	int GetError(int userAnswer) const;
 	MyString GetCorrectAnswerString() const;
 	const MyTracks* GetTracts() const { return mTracts; };
 	void SetTracts(const MyTracks* tracts) { mTracts = tracts; };
@@ -29,6 +30,7 @@ public:
 	const MyArrayb& GetSphereAtHead() const { return mSphereAtHead; };
 	const MyBoundingBox& GetBoundingBox() const { return mBoundingBox; };
 	const float GetAnswerInfo() const { return mAnswerInfo; };
+	const bool IsAnswerCorrect(int ans) const { return mCorrectAnswers.HasOne(ans); };
 
 	void Clear();
 
@@ -85,6 +87,7 @@ public:
 	void SetSelectedIndices(const MyArrayi& selected);
 	void CheckSelectedValidness();
 	void SaveSelectedIndicesFile(const MyArrayi& selected) const;
+	void PermuteBoxes(int seed) { mBoxes.Permute(seed); };
 
 	// TUMOR
 	void SetSphere(const MySphere& sphere);

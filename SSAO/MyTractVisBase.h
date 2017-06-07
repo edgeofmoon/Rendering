@@ -15,8 +15,14 @@ public:
 		TRACK_SHAPE_SUPERQUADRIC = 3
 	};
 
+	enum CapType{
+		CAP_TYPE_ROUND = 1,
+		CAP_TYPE_FLAT = 2,
+	};
+
 	typedef struct RenderingParameters_t{
 		TrackShape Shape;
+		CapType CapType;
 		int Faces;
 		int SuperquadricSkip;
 		unsigned int Texture;
@@ -57,6 +63,9 @@ public:
 
 	TrackShape GetShape() const { return mRenderingParameters.Shape; };
 	void SetShape(TrackShape shape){ mRenderingParameters.Shape = shape; };
+
+	CapType GetCapType() const { return mRenderingParameters.CapType; };
+	void SetCapType(CapType ct){ mRenderingParameters.CapType = ct; };
 
 	const MyArrayi& GetTractsShown() { return mFiberToDraw; };
 	void SetTractsShown(const MyArrayi& arr){ mFiberToDraw = arr; };

@@ -8,6 +8,7 @@ using namespace MyVisEnum;
 
 #define SMALLMOV 0.1f
 #define LARGEMOV 0.5f
+#define MAX_SELECTOR_RADIUS 15.f
 
 MyVec3f MyVisRankingApp::GetWorldOffset(const MyVec3f& viewoffset){
 	MyMatrixf mat = mTrackBall.Matrix();
@@ -80,8 +81,8 @@ void MyVisRankingApp::BoundObjectSize(MyBoundingObject& bobj){
 	MySphere* sphere = dynamic_cast<MySphere*>(&bobj);
 	if (sphere){
 		float r = sphere->GetRadius();
-		if (r > MyVisData::GetMaxSphereRadius())
-			r = MyVisData::GetMaxSphereRadius();
+		if (r > MAX_SELECTOR_RADIUS)
+			r = MAX_SELECTOR_RADIUS;
 		else if (r < MyVisData::GetMinSphereRadius())
 			r = MyVisData::GetMinSphereRadius();
 		sphere->SetRadius(r);
@@ -151,6 +152,36 @@ MyArrayi MyVisRankingApp::ComputedFilteredByBox(
 	return rst;
 }
 
+MyArrayi MyVisRankingApp::ComputedEndFilteredByBox(
+	const MyBoundingBox& box, const MyArrayi& selected) const{
+	MyArrayi rst;
+	for (int i = 0; i < selected.size(); i++){
+		int tractIndex = selected[i];
+		int n = mTracts.GetNumVertex(tractIndex);
+		if (box.IsIn(mTracts.GetCoord(tractIndex, 0))
+			|| box.IsIn(mTracts.GetCoord(tractIndex, n-1))){
+			rst << tractIndex;
+		}
+	}
+	return rst;
+}
+
+MyBoundingBox MyVisRankingApp::ComputedEndingBox(const MyArrayi& selected) const{
+	MyBoundingBox box;
+	box.SetNull();
+	const MyVisData* visData = mTrialManager.GetCurrentVisData();
+	for (int i = 0; i < selected.size(); i++){
+		if (!visData->GetSphereAtHead()[i]){
+			box.Engulf(visData->GetTracts()->GetCoord(selected[i], 0));
+		}
+		else{
+			int n = visData->GetTracts()->GetNumVertex(selected[i]);
+			box.Engulf(visData->GetTracts()->GetCoord(selected[i], n - 1));
+		}
+	}
+	return box;
+}
+
 MyColor4f MyVisRankingApp::GetSphereStatusColor(const MyTractVisBase* tractVis) const{
 	if (!tractVis) return MyColor4f(0.5, 0.5, 0.5, 1);
 	const MySphereGeometry* sg = tractVis->GetSphereGeometry();
@@ -193,7 +224,7 @@ void MyVisRankingApp::ProcessKey_FA(unsigned char key){
 		if (visData->GetBoxes().size() > mCurrentBoxIndex){
 			MyVec3f c = visData->GetBoundingBox().GetCenter();
 			MyBoundingBox box = visData->GetBoxes()[mCurrentBoxIndex];
-			box.Translate(c - box.GetCenter());
+			box = MyBoundingBox(box.GetCenter(), powf(box.GetVolume(), 1.f/3));
 			visData->SetBox(box, mCurrentBoxIndex);
 		}
 		else{
@@ -240,6 +271,11 @@ void MyVisRankingApp::ProcessKey_FA(unsigned char key){
 				visData->SetBox(newBox, mCurrentBoxIndex);
 			}
 		}
+		else if (key == 'j' || key == 'G'){
+			if (mCurrentBoxIndex >= 0){
+				visData->PermuteBoxes(mCurrentBoxIndex);
+			}
+		}
 		// save files
 		else if (key == 'm' || key == 'M'){
 			MyArray<MyBoundingBox> boxes = visData->GetBoxes();
@@ -262,7 +298,10 @@ void MyVisRankingApp::ProcessKey_FA(unsigned char key){
 				visData->GetTractIndices(), nSample1, faSum1);
 			float fa0 = faSum0 / nSample0;
 			float fa1 = faSum1 / nSample1;
-			cout << fa0 << ", " << fa1 << ", " << fa0 - fa1 << endl;
+			cout << fa0 << "-" << fa1 << "=" << fa0 - fa1 << endl;
+
+			visData->UpdateAnswers();
+			PrintTrialInfo();
 		};
 	}
 }
@@ -286,11 +325,24 @@ void MyVisRankingApp::ProcessKey_TRACE(unsigned char key){
 		visData->SaveSelectedIndicesFile(visData->GetSelectIndices());
 	}
 	else if (key == 'f' || key == 'F'){
-		if (visData->GetCorrectAnswers().size() > 0){
-			const MyBoundingBox& box = 
-				visData->GetBoxes().at(visData->GetCorrectAnswers()[0]);
-			mSelected = ComputedFilteredByBox(box, visData->GetSelectIndices());
+		if (mCurrentBoxIndex >= 0){
+			const MyBoundingBox& box =
+				visData->GetBoxes().at(mCurrentBoxIndex);
+			mSelected = ComputedEndFilteredByBox(box, visData->GetSelectIndices());
 			visData->SetSelectedIndices(mSelected);
+			visData->CheckSelectedValidness();
+		}
+	}
+	else if (key == 'j' || key == 'G'){
+		if (mCurrentBoxIndex >= 0){
+			visData->PermuteBoxes(mCurrentBoxIndex);
+			visData->CheckSelectedValidness();
+		}
+	}
+	else if (key == 'g' || key == 'G'){
+		if (visData->GetCorrectAnswers().size() > 0){
+			MyBoundingBox box = ComputedEndingBox(visData->GetSelectIndices());
+			visData->SetBox(box, visData->GetCorrectAnswers()[0]);
 			visData->CheckSelectedValidness();
 		}
 	}
@@ -315,7 +367,7 @@ void MyVisRankingApp::ProcessKey_TRACE(unsigned char key){
 			MySphere& sphere = mSphereSelectors[mCurrentSelectorIndex];
 			if (ProcessBoundingObjectKey(sphere, key)){
 			}
-			else if (key == 'b' || key == 'B'){
+			else if (key == '\b'){
 				mSphereSelectors.EraseAt(mCurrentSelectorIndex);
 				mOperators.EraseAt(mCurrentSelectorIndex);
 				mCurrentSelectorIndex = max(mCurrentSelectorIndex - 1, 0);

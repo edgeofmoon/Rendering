@@ -77,7 +77,6 @@ MyToggleButton* MyToggleButtonGroup::GetButton(int idx){
 void MyToggleButtonGroup::AddButton(MyToggleButton* button){
 	if (!this->HasOne(button)){
 		this->PushBack(button);
-		mExternalButtons.PushBack(button);
 	}
 }
 
@@ -90,7 +89,7 @@ void MyToggleButtonGroup::AddOption(const MyString& text, int index){
 		offset[1] = 0;
 	}
 	else offset[0] = 0;
-	button->SetPosition(mBottomLeft + offset);
+	button->SetPosition(mPosition + offset);
 	button->SetText(text);
 	button->SetIndex(index);
 	this->PushBack(button);
@@ -99,9 +98,7 @@ void MyToggleButtonGroup::AddOption(const MyString& text, int index){
 
 void MyToggleButtonGroup::ClearOptions(){
 	for (int i = 0; i < size(); i++){
-		if (!mExternalButtons.HasOne(at(i))){
-			delete at(i);
-		}
+		delete at(i);
 	}
 	this->clear();
 }
@@ -109,6 +106,11 @@ void MyToggleButtonGroup::ClearOptions(){
 int MyToggleButtonGroup::GetSelectedIndex() const{
 	return mSelectedIndex;
 }
+
+MyToggleButton* MyToggleButtonGroup::GetSelectedButton(){
+	return GetButton(mSelectedIndex);
+}
+
 
 bool MyToggleButtonGroup::SetToSelectedIndex(int idx){
 	ClearToggle();
@@ -141,6 +143,12 @@ MyVec2f MyToggleButtonGroup::GetSize() const{
 }
 
 void MyToggleButtonGroup::UpdateLayout(){
+	MyVec2f box = GetSize();
+	MyVec2f bl = mPosition;
+	if (mAlignment & Alignment_Middle) bl[0] -= box[0] / 2;
+	else if (mAlignment & Alignment_Right) bl[0] -= box[0];
+	if (mAlignment & Alignment_Top) bl[1] -= box[1];
+	else if (mAlignment & Alignment_Center) bl[1] -= box[1] / 2;
 	for (int i = 0; i < size(); i++){
 		int posIdx = i;
 		MyToggleButton* button = dynamic_cast<MyToggleButton*>(at(i));
@@ -151,7 +159,7 @@ void MyToggleButtonGroup::UpdateLayout(){
 				offset[1] = 0;
 			}
 			else offset[0] = 0;
-			button->SetPosition(mBottomLeft + offset);
+			button->SetPosition(bl + offset);
 		}
 	}
 }

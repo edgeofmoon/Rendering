@@ -8,6 +8,7 @@ using namespace std;
 float MySuperquadric::Gamma = 3.f;
 int MySuperquadric::MeshDetailX = 10;
 int MySuperquadric::MeshDetailY = 10;
+int MySuperquadric::ZREV = 1;
 
 #define isignf(x) (x<0?-1:1)
 #define PI 3.141592653589793238462643
@@ -125,7 +126,7 @@ MyVec3f MySuperquadric::TransformCanonicalPoints(const MyVec3f& p) const{
 
 	// reverse Z because coordinates z is 
 	// somehow reversed in the data file
-	rp[2] *= -1;
+	rp[2] *= ZREV;
 
 	rp *= mScale;
 	rp += mCenter;

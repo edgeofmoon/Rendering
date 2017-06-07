@@ -77,6 +77,11 @@ void MyBoundingBox::Expand(float e){
 	expand(e, 2);
 }
 
+void MyBoundingBox::SetNull(){
+	mHighPos = MyVec3f(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+	mLowPos = MyVec3f(FLT_MAX, FLT_MAX, FLT_MAX);
+}
+
 MyBoundingObject* MyBoundingBox::MakeCopy() const{
 	return new MyBoundingBox(mLowPos, mHighPos);
 }

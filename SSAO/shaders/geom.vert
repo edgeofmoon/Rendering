@@ -37,8 +37,8 @@ void main (void)
 		vec3 view = vec3( 0.0f, 0.0f, 0.0f );
 		vec3 c = ( mvMat * vec4( position, 1.0f ) ).xyz - view;
 		vec3 t = normalize( mvMat * vec4( normal, 0.0f ) ).xyz;
-		vec3 offset = normalize( cross( view, t ) );
-		vec3 newNormal = normalize( cross( offset, t ) );
+		vec3 toffset = normalize( cross( view, t ) );
+		vec3 newNormal = normalize( cross( toffset, t ) );
 		newNormal *= sign( dot( newNormal, vec3( 0.0f, 0.0f, 1.0f ) ) );
 		fnormal = ( vec4( newNormal, 0.0f ) ).xyz;
 	}
@@ -47,7 +47,7 @@ void main (void)
 		offset = value*valueToSizeInfluence;
 		if(valueToSizeInfluence==0) offset = radius;
 	}
-	vec4 ndcPosition = mvMat*vec4(position+normal*offset,1);
+	vec4 ndcPosition = mvMat*vec4(position+normal*offset*step(0, texCoord.x),1);
 	fposition = ndcPosition.xyz/ndcPosition.w;
 	gl_Position = projMat*ndcPosition;
 }

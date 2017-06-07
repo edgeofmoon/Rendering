@@ -100,10 +100,6 @@ void MyTractVisLabelled::ComputeGeometry(){
 
 			MyVec3f perpend1 = (pole^d).normalized();
 			MyVec3f perpend2 = (perpend1^d).normalized();
-			//if ((perpend1^perpend2)*d < 0) dangle = -dangle;
-			float fa = mTracts->GetTensor(it, i).GetFA();
-			if (fa > 1) fa = 1;
-			else if (fa < 0) fa = 0;
 			for (int is = 0; is<mRenderingParameters.Faces; is++){
 				float angle = dangle*is;
 				MyVec3f pt = sin(angle)*perpend1 + cos(angle)*perpend2;
@@ -111,7 +107,7 @@ void MyTractVisLabelled::ComputeGeometry(){
 				mNormals[currentIdx + i*(mRenderingParameters.Faces + 1) + is] = pt;
 				mColors[currentIdx + i*(mRenderingParameters.Faces + 1) + is] = color;
 				mTexCoords[currentIdx + i*(mRenderingParameters.Faces + 1) + is] = MyVec2f(i, is / (float)mRenderingParameters.Faces);
-				mValues[currentIdx + i*(mRenderingParameters.Faces + 1) + is] = fa;
+				mValues[currentIdx + i*(mRenderingParameters.Faces + 1) + is] = 1;
 				/*
 				if (mTracts->GetHeader().n_scalars == 3){
 				mColors[currentIdx + i*(mRenderingParameters.Faces + 1) + is] = MyColor4f(
@@ -131,7 +127,7 @@ void MyTractVisLabelled::ComputeGeometry(){
 			//mRadius[currentIdx + i*(mRenderingParameters.Faces + 1) + mRenderingParameters.Faces] = mRadius[currentIdx + i*(mRenderingParameters.Faces + 1)];
 			mColors[currentIdx + i*(mRenderingParameters.Faces + 1) + mRenderingParameters.Faces] = mColors[currentIdx + i*(mRenderingParameters.Faces + 1)];
 			mTexCoords[currentIdx + i*(mRenderingParameters.Faces + 1) + mRenderingParameters.Faces] = MyVec2f(i, 1);
-			mValues[currentIdx + i*(mRenderingParameters.Faces + 1) + mRenderingParameters.Faces] = fa;
+			mValues[currentIdx + i*(mRenderingParameters.Faces + 1) + mRenderingParameters.Faces] = 1;
 		}
 
 		mIdxOffset << currentIdx;
@@ -139,9 +135,6 @@ void MyTractVisLabelled::ComputeGeometry(){
 
 		// add front cap
 		{
-			float fa = mTracts->GetTensor(it, 0).GetFA();
-			if (fa > 1) fa = 1;
-			else if (fa < 0) fa = 0;
 			MyVec3f p = mTracts->GetCoord(it, 0);
 			MyVec3f d = mTracts->GetCoord(it, 1) - p;
 			d.normalize();
@@ -151,7 +144,7 @@ void MyTractVisLabelled::ComputeGeometry(){
 			mNormals[currentIdx] = -d;
 			mColors[currentIdx] = mColors[currentIdx - npoints*(mRenderingParameters.Faces + 1)];
 			mTexCoords[currentIdx] = MyVec2f(0, 0.5);
-			mValues[currentIdx] = fa;
+			mValues[currentIdx] = 1;
 			for (int is = 0; is < mRenderingParameters.Faces; is++){
 				float angle = dangle*is;
 				MyVec3f pt = sin(angle)*perpend1 + cos(angle)*perpend2;
@@ -161,16 +154,13 @@ void MyTractVisLabelled::ComputeGeometry(){
 				//mNormals[currentIdx + is + 1] = -d;
 				mColors[currentIdx + is + 1] = mColors[currentIdx - npoints*(mRenderingParameters.Faces + 1)];
 				mTexCoords[currentIdx + is + 1] = MyVec2f(0, is / (float)mRenderingParameters.Faces);
-				mValues[currentIdx + is + 1] = fa;
+				mValues[currentIdx + is + 1] = 1;
 			}
 		}
 
 		// add back cap
 		currentIdx += mRenderingParameters.Faces + 1;
 		{
-			float fa = mTracts->GetTensor(it, npoints - 1).GetFA();
-			if (fa > 1) fa = 1;
-			else if (fa < 0) fa = 0;
 			MyVec3f p = mTracts->GetCoord(it, npoints - 1);
 			MyVec3f d = mTracts->GetCoord(it, npoints - 2) - p;
 			d.normalize();
@@ -180,7 +170,7 @@ void MyTractVisLabelled::ComputeGeometry(){
 			mNormals[currentIdx] = -d;
 			mColors[currentIdx] = mColors[currentIdx - (mRenderingParameters.Faces + 2)];
 			mTexCoords[currentIdx] = MyVec2f(0, 0.5);
-			mValues[currentIdx] = fa;
+			mValues[currentIdx] = 1;
 			for (int is = 0; is < mRenderingParameters.Faces; is++){
 				float angle = dangle*is;
 				MyVec3f pt = sin(angle)*perpend1 + cos(angle)*perpend2;
@@ -190,7 +180,7 @@ void MyTractVisLabelled::ComputeGeometry(){
 				//mNormals[currentIdx + is + 1] = -d;
 				mColors[currentIdx + is + 1] = mColors[currentIdx - (mRenderingParameters.Faces + 2)];
 				mTexCoords[currentIdx + is + 1] = MyVec2f(0, is / (float)mRenderingParameters.Faces);
-				mValues[currentIdx + is + 1] = fa;
+				mValues[currentIdx + is + 1] = 1;
 			}
 		}
 		currentIdx += mRenderingParameters.Faces + 1;

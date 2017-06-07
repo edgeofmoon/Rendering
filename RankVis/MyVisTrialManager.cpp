@@ -1,6 +1,7 @@
 #include "MyVisTrialManager.h"
 
 #include <iostream>
+#include <fstream>
 using namespace std;
 using namespace MyVisEnum;
 
@@ -95,7 +96,7 @@ void MyVisTrialManager::GenerateVisInfo_Experiment_Random(){
 	// Data
 	MyArray<Bundle> dataBundles = {CC, CST, IFO, ILF};
 	MyArray<FiberCover> dataCovers = {BUNDLE, WHOLE};
-	MyArrayi dataQuests = { 0, 1, 2, 3, 4, 5 };
+	MyArrayi dataQuests = { 0, 1, 2, 3, 4, 5, 6 };
 	// database element
 	class DataCombination{
 	public:
@@ -117,37 +118,87 @@ void MyVisTrialManager::GenerateVisInfo_Experiment_Random(){
 		make_pair(TUBE, AMBIENT_OCCULUSION), make_pair(LINE, AMBIENT_OCCULUSION),
 		make_pair(TUBE, ENCODING), make_pair(LINE, ENCODING),
 	};
-	MyArray<DataCombination> dataCombinations;
-	for (int j = 0; j < 48; j++){
-		dataCombinations << DataCombination(dataBundles[(j % 24) / 6], dataCovers[j / 24], dataQuests[j % 6]);
+	MyArray<pair<FiberCover, Bundle>> CoverBundles = {
+		make_pair(BUNDLE, CC), make_pair(WHOLE, CC),
+		make_pair(BUNDLE, CST), make_pair(WHOLE, CST),
+		make_pair(BUNDLE, IFO), make_pair(WHOLE, IFO),
+		make_pair(BUNDLE, ILF)
+	};
+	/**********dcap*****************/
+	/*
+	for (int i = 0; i < 8; i++){
+		MyVisInfo visInfo(false, false, TRACE, COLOR, 0, shapeCues[i].first,
+			shapeCues[i].second, CC, BUNDLE, 0, EXPERIMENT_RES);
+		//MyVisInfo visInfo(false, false, FA, shapeEncodings[i].second, 0, shapeEncodings[i].first,
+		//	BASIC, IFO, BUNDLE, 0, EXPERIMENT_RES);
+		mVisInfos << visInfo;
 	}
+	return;
+	for (int i = 0; i < 56; i++){
+		//MyVisInfo visInfo(false, false, TRACE, COLOR, 0, shapeCues[i].first,
+		//	shapeCues[i].second, CC, BUNDLE, 0, EXPERIMENT_RES);
+		MyVisInfo visInfo(false, false, FA, shapeEncodings[i % 6].second, 0, shapeEncodings[i % 6].first,
+			BASIC, dataBundles[(i / 7) % 4], dataCovers[i / 28], dataQuests[i % 7], EXPERIMENT_RES);
+		mVisInfos << visInfo;
+	}
+	*/
+	/**********dcap*****************/
+
+	shapeEncodings.Permute(mUserIndex);
+	shapeCues.Permute(mUserIndex);
 	mVisInfos << MyVisInfo(START);
 	for (int iTask = 0; iTask < 3; iTask++){
 		// random seed as user index
-		dataCombinations.Permute(mUserIndex);
 		VisTask thisTask = visTasks[iTask];
 		mVisInfos << MyVisInfo(thisTask);
 		if (thisTask == FA){
+			MyArray<DataCombination> dataTable;
+			for (int iq = 0; iq < 7; iq++){
+				for (int idb = 0; idb < 7; idb++){
+					if (iq == idb) continue;
+					dataTable << DataCombination(CoverBundles[idb].second, CoverBundles[idb].first, iq);
+				}
+			}
+			for (int iPermute = 0; iPermute < 7; iPermute++){
+				dataTable.Permute(mUserIndex * 100 * iPermute, iPermute * 6, iPermute * 6 + 5);
+			}
 
-			shapeEncodings.Permute(mUserIndex);
-			for (int iTrial = 0; iTrial < 48; iTrial++){
-				pair<Shape, RetinalChannel>shapeEncoding = shapeEncodings[iTrial % 6];
-				DataCombination dataCombination = dataCombinations[iTrial];
-				MyVisInfo visInfo(false, false, thisTask, shapeEncoding.second, 0, shapeEncoding.first,
-					BASIC, dataCombination.bundle, dataCombination.cover,
-					dataCombination.quest, EXPERIMENT_RES);
+			int visInfoIdxOffset = mVisInfos.size();
+			for (int iTrial = 0; iTrial < 42; iTrial++){
+				int visIndex = iTrial / 7;
+				int dataIndex = (iTrial % 7) * 6 + visIndex;
+				MyVisInfo visInfo(false, false, thisTask, shapeEncodings[visIndex].second, 0, 
+					shapeEncodings[visIndex].first, BASIC, dataTable[dataIndex].bundle,
+					dataTable[dataIndex].cover, dataTable[dataIndex].quest, EXPERIMENT_RES);
 				mVisInfos << visInfo;
+			}
+			for (int iPermute = 0; iPermute < 6; iPermute++){
+				mVisInfos.Permute(mUserIndex * 101 * iPermute, 
+					visInfoIdxOffset + iPermute * 7, visInfoIdxOffset + iPermute * 7 + 6);
 			}
 		}
 		else{
-			shapeCues.Permute(mUserIndex);
+			MyArray<DataCombination> dataTable;
+			for (int iq = 0; iq < 6; iq++){
+				for (int idb = 0; idb < 8; idb++){
+					dataTable << DataCombination(dataBundles[idb % 4], dataCovers[idb / 4], iq);
+				}
+			}
+			for (int iPermute = 0; iPermute < 7; iPermute++){
+				dataTable.Permute(mUserIndex * 100 * iPermute, iPermute * 8, iPermute * 8 + 7);
+			}
+			int visInfoIdxOffset = mVisInfos.size();
 			for (int iTrial = 0; iTrial < 48; iTrial++){
-				pair<Shape, VisCue> shapeCue = shapeCues[iTrial % 8];
-				DataCombination dataCombination = dataCombinations[iTrial];
-				MyVisInfo visInfo(false, false, thisTask, COLOR, 0, shapeCue.first,
-					shapeCue.second, dataCombination.bundle, dataCombination.cover,
-					dataCombination.quest, EXPERIMENT_RES);
+				int visIndex = iTrial / 6;
+				int dataIndex = (iTrial % 6) * 8 + visIndex;
+				MyVisInfo visInfo(false, false, thisTask, COLOR, 0, shapeCues[visIndex].first,
+					shapeCues[visIndex].second, dataTable[dataIndex].bundle,
+					dataTable[dataIndex].cover, dataTable[dataIndex].quest, EXPERIMENT_RES);
 				mVisInfos << visInfo;
+			}
+			for (int iPermute = 0; iPermute < 8; iPermute++){
+				mVisInfos.Permute(mUserIndex * 101 * iPermute,
+					visInfoIdxOffset + iPermute * 6, visInfoIdxOffset + iPermute * 6 + 5);
 			}
 		}
 	}
@@ -155,8 +206,10 @@ void MyVisTrialManager::GenerateVisInfo_Experiment_Random(){
 }
 
 void MyVisTrialManager::GenerateVisInfo_LightingProfile(){
-	MyArray<Shape> visShapes = { LINE, TUBE };
-	MyArray<VisCue> visCues = { BASIC, AMBIENT_OCCULUSION, DEPTH, ENCODING };
+	MyArray<Shape> visShapes = { TUBE, LINE };
+	MyArray<VisCue> visCues = { AMBIENT_OCCULUSION, DEPTH, BASIC, ENCODING };
+	//MyArray<Shape> visShapes = { LINE };
+	//MyArray<VisCue> visCues = { DEPTH };
 	MyArray<Bundle> dataBundles = { CC, CST, IFO, ILF };
 	MyArray<FiberCover> dataCovers = { WHOLE, BUNDLE };
 	for (int i = 0; i < 8; i++){
@@ -212,10 +265,10 @@ void MyVisTrialManager::GetProgressInfo(int& cur, int& total) const{
 	for (int i = 0; i < mVisInfos.size(); i++){
 		if (!mVisInfos[i].IsEmpty()){
 			b++;
-			if (i < mVisDataIndex) a++;
+			if (i <= mVisDataIndex) a++;
 		}
 	}
-	cur = a+1;
+	cur = a;
 	total = b;
 }
 
@@ -223,4 +276,27 @@ MyString MyVisTrialManager::GetProgresInfoString() const{
 	int cur, total;
 	GetProgressInfo(cur, total);
 	return MyString(cur) + "/" + MyString(total);
+}
+
+void MyVisTrialManager::PrintAllCase(const MyString& fileName, const MyString& decimer) const{
+	ofstream outFile(fileName);
+	if (!outFile.is_open()){
+		cerr << "Cannot open file to write: " << fileName << endl;
+		return;
+	}
+	outFile << "USERIDX" << decimer
+		<< "TRIALIDX" << decimer
+		<< MyVisInfo::GetStringHeader(decimer) << decimer
+		<< "CRT_ANS" << endl;
+	for (int i = 0; i < mVisInfos.size(); i++){
+		if (mVisInfos[i].IsEmpty()) continue;
+		MyVisData* visData = new MyVisData(mVisInfos[i]);
+		visData->SetTracts(mTracts);
+		visData->LoadFromDirectory(mDataRootDir);
+		outFile << mUserIndex << decimer
+			<< i << decimer
+			<< mVisInfos[i].GetString(decimer) << decimer
+			<< visData->GetCorrectAnswers()[0] << endl;
+		delete visData;
+	}
 }

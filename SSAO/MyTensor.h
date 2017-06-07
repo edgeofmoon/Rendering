@@ -13,6 +13,12 @@ public:
 		mEigenValues[idx] = val;
 	}
 
+	inline void SetEigenValues(const T& val0, const T& val1, const T& val2){
+		SetEigenValue(0, val0);
+		SetEigenValue(1, val1);
+		SetEigenValue(2, val2);
+	}
+
 	inline void SetEigenValues(const T* vals){
 		SetEigenValue(0, vals[0]);
 		SetEigenValue(1, vals[1]);
@@ -63,19 +69,22 @@ public:
 	}
 
 	inline T GetFA() const{
-		T d1 = mEigenValues[0] - mEigenValues[1];
-		T d2 = mEigenValues[1] - mEigenValues[2];
-		T d3 = mEigenValues[2] - mEigenValues[0];
-		T sqardRt = (d1*d1 + d2*d2 + d3*d3) / T(2) 
-			/ (mEigenValues[0] * mEigenValues[0] 
-			+ mEigenValues[1] * mEigenValues[1] + mEigenValues[2] * mEigenValues[2]);
-		return sqrt(sqardRt);
+		return ComputeFA(mEigenValues[0], mEigenValues[1], mEigenValues[2]);
 	}
 
 	inline bool CheckEigenValueOrder() const {
 		return mEigenValues[0] >= mEigenValues[1]
 			&& mEigenValues[1] >= mEigenValues[2]
 			&& mEigenValues[2] >= 0;
+	}
+
+	static inline T ComputeFA(T v0, T v1, T v2){
+		T d1 = v0 - v1;
+		T d2 = v1 - v2;
+		T d3 = v2 - v0;
+		T sqardRt = (d1*d1 + d2*d2 + d3*d3) / T(2)
+			/ (v0 * v0 + v1* v1 + v2 * v2);
+		return sqrt(sqardRt);
 	}
 
 protected:

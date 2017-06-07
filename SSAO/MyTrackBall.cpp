@@ -23,11 +23,14 @@ MyTrackBall::MyTrackBall(void)
 	mScale = 1.f;
 	mAngle = 0.0;
 	mRotating = false;
+	mTranslating = false;
 	/* put the identity in the trackball transform */
 	mTranslateMatrix = MyMatrixf::IdentityMatrix();
 	mRotateMatrix = MyMatrixf::IdentityMatrix();
 	mScaleMatrix = MyMatrixf::IdentityMatrix();
 	mScaleRange = MyVec2f(-FLT_MAX, FLT_MAX);
+	mTranslateScale = MyVec2f(1, 1);
+	mOrigin = MyVec3f(0, 0, 0);
 }
 
 
@@ -40,6 +43,9 @@ MyMatrixf MyTrackBall::Matrix() const
 	return mTranslateMatrix*mRotateMatrix*mScaleMatrix;
 }
 
+const MyMatrixf& MyTrackBall::GetScaleMatrix() const{
+	return mScaleMatrix;
+}
 
 void MyTrackBall::Reshape(int width, int height)
 {
@@ -47,16 +53,32 @@ void MyTrackBall::Reshape(int width, int height)
 	mHeight = height;
 }
 
-void MyTrackBall::StartMotion(int x, int y){
+void MyTrackBall::StartRotation(int x, int y){
 	mButtonX = (float)x;
 	mButtonY = (float)y;
 	pointToVector(x, y, mWidth, mHeight, mLastPos);
 	mRotating = true;
 }
 
-void MyTrackBall::EndMotion(int x, int y){
+void MyTrackBall::EndRotation(int x, int y){
 	mAngle = 0.0;
 	mRotating = false;
+}
+
+void MyTrackBall::StartTranslation(int x, int y){
+	mButtonX = (float)x;
+	mButtonY = (float)y;
+	pointToVector(x, y, mWidth, mHeight, mLastPos);
+	mTranslating = true;
+}
+
+void MyTrackBall::EndTranslation(int x, int y){
+	mTranslating = false;
+}
+
+void MyTrackBall::Motion(int x, int y){
+	if (mRotating) RotateMotion(x, y);
+	if (mTranslating) TranslateMotion(x, y);
 }
 
 void MyTrackBall::RotateMotion(int x, int y)
@@ -80,7 +102,12 @@ void MyTrackBall::RotateMotion(int x, int y)
 	mRotateMatrix = MyMatrixf::RotateMatrix(mAngle, mAxis[0], mAxis[1], mAxis[2])*mRotateMatrix;
 }
 void MyTrackBall::TranslateMotion(int x, int y){
-	translate(x - mButtonX, y - mButtonY);
+	float dx = x - mButtonX;
+	float dy = y - mButtonY;
+	mButtonX = x;
+	mButtonY = y;
+	mOrigin += MyVec3f(dx * mTranslateScale[0], -dy * mTranslateScale[1], 0);
+	mTranslateMatrix = MyMatrixf::TranslateMatrix(mOrigin[0], mOrigin[1], mOrigin[2]);
 }
 
 void MyTrackBall::TranslateMotionX(int x, int y){
@@ -100,6 +127,11 @@ void MyTrackBall::ScaleMotion(int x, int y){
 void MyTrackBall::SetScaleRange(float mis, float mas){
 	mScaleRange[0] = mis;
 	mScaleRange[1] = mas;
+}
+
+void MyTrackBall::SetTranslateScale(float sx, float sy){
+	mTranslateScale[0] = sx;
+	mTranslateScale[1] = sy;
 }
 
 float MyTrackBall::GetScaleFromMotion(int x, int y) const{
@@ -130,12 +162,6 @@ void MyTrackBall::ResetRotate(){
 
 void MyTrackBall::Translate(const MyVec3f& offset){
 	mTranslateMatrix = MyMatrixf::TranslateMatrix(offset[0], offset[1], offset[2])*mTranslateMatrix;
-}
-
-void MyTrackBall::translate(float dx, float dy) {
-	mButtonX += dx;
-	mButtonY += dy;
-	mTranslateMatrix = MyMatrixf::TranslateMatrix(dx, -dy, 0)*mTranslateMatrix;
 }
 
 void MyTrackBall::ScaleAdd(float dy)

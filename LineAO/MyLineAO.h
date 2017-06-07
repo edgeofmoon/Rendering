@@ -21,6 +21,8 @@ public:
 	virtual void Show();
 	virtual void LoadGeometry();
 
+	static int SamplesPerFragment;
+
 	float mLineAOTotalStrength;
 	int mBlurRadius;
 

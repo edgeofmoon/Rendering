@@ -30,6 +30,7 @@ void MyLogTable::StartLog(MyString prefix){
 	else{
 		mOutStream << GetTableHeader() << endl;
 	}
+	mStartTime = clock();
 }
 
 void MyLogTable::EndLog(){
@@ -51,6 +52,7 @@ void MyLogTable::EndTrial(){
 	mbStarted = false;
 	if (!mOutStream.is_open()) return;
 	mOutStream << GetTimeString(time(0)) << Decimer
+		<< float(clock() - mStartTime) / CLOCKS_PER_SEC << Decimer
 		<< mUserIndex << Decimer
 		<< mCurrentTrialIndex << Decimer
 		<< mCurrentVisData->GetVisInfo().GetString() << Decimer
@@ -97,7 +99,7 @@ float MyLogTable::GetTimePaused() const{
 	return float(timePaused) / CLOCKS_PER_SEC;
 }
 
-float MyLogTable::GetError(float userAnswer) const{
+int MyLogTable::GetError(int userAnswer) const{
 	if (mCurrentVisData->GetCorrectAnswers().size() > 0){
 		return mCurrentVisData->GetError(userAnswer);
 	}
@@ -106,12 +108,7 @@ float MyLogTable::GetError(float userAnswer) const{
 
 float MyLogTable::GetCorrectAnswer() const{
 	if (mCurrentVisData->GetCorrectAnswers().size() > 0){
-		if (mCurrentVisData->GetVisInfo().GetVisTask() == MyVisEnum::FA){
-			return mCurrentVisData->GetAnswerInfo();
-		}
-		else{
-			return mCurrentVisData->GetCorrectAnswers()[0];
-		}
+		return mCurrentVisData->GetCorrectAnswers()[0];
 	}
 	else return -100;
 }
@@ -129,7 +126,8 @@ MyString MyLogTable::GetTimeString(std::time_t t){
 MyString MyLogTable::GetTableHeader(){
 	MyString header;
 	header = "DATE" + Decimer
-		+ "TIME" + Decimer
+		+ "LOCALTIME" + Decimer
+		+ "EXPTIME" + Decimer
 		+ "USER" + Decimer
 		+ "TRIAL" + Decimer
 		+ MyVisInfo::GetStringHeader(Decimer) + Decimer

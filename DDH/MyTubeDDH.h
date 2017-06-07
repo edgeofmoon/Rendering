@@ -11,6 +11,7 @@ public:
 	virtual void LoadShader();
 	//virtual void ComputeGeometry();
 	virtual void Show();
+	virtual void ComputeGeometry();
 	virtual void LoadGeometry();
 };
 

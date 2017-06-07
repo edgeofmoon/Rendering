@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cmath>
+#include <initializer_list>
 
 template<typename T, int n>
 class MyVec{
@@ -34,6 +35,15 @@ public:
 		//	_d[i] = 0;
 		//}
 	};
+
+	MyVec(std::initializer_list<T> v){
+		int i = 0;
+		auto itr = v.begin();
+		for (; i < n && itr != v.end(); i++, itr++){
+			_d[i] = *itr;
+		}
+	};
+
 	MyVec(const T *indata){
 		for(int i = 0;i<n;i++){
 			_d[i] = indata[i];
@@ -113,6 +123,15 @@ public:
 			for (i; i<m; i++){
 				tmp[i] = t;
 			}
+		}
+		return tmp;
+	}
+
+	template<typename TT>
+	MyVec<TT, n> toType() const{
+		MyVec<TT, n> tmp;
+		for (int i = 0; i<n; i++){
+			tmp[i] = _d[i];
 		}
 		return tmp;
 	}

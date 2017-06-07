@@ -540,6 +540,42 @@ void MyTracks::GetSampleValueInfo(const MyBoundingObject& bobj, const MyArrayi& 
 	}
 }
 
+void MyTracks::GetSampleClampedValueInfo(const MyBoundingObject& bobj,
+	float minv, float maxv, int& nSample, float& valueSum) const{
+	nSample = 0;
+	valueSum = 0;
+	for (int it = 0; it < this->GetNumTracks(); it++){
+		for (int is = 0; is < this->GetNumVertex(it); is++){
+			MyVec3f p = this->GetCoord(it, is);
+			if (bobj.IsIn(p)){
+				float value = this->GetValue(it, is);
+				if (value < minv) value = minv;
+				if (value > maxv) value = maxv;
+				++nSample;
+				valueSum += value;
+			}
+		}
+	}
+}
+
+void MyTracks::GetSampleClampedValueInfo(const MyBoundingObject& bobj, 
+	float minv, float maxv, const MyArrayi& indices, int& nSample, float& valueSum) const{
+	nSample = 0;
+	valueSum = 0;
+	for (int it = 0; it < indices.size(); it++){
+		for (int is = 0; is < this->GetNumVertex(indices[it]); is++){
+			MyVec3f p = this->GetCoord(indices[it], is);
+			if (bobj.IsIn(p)){
+				float value = this->GetValue(indices[it], is);
+				if (value < minv) value = minv;
+				if (value > maxv) value = maxv;
+				++nSample;
+				valueSum += value;
+			}
+		}
+	}
+}
+
 void MyTracks::FilterByTrackLength(const std::vector<int>& inset, float threshold[2], std::vector<int>& outset) const{
 	for (int i = 0; i < inset.size(); i++){
 		int idx = inset[i];
@@ -581,10 +617,13 @@ MyVec3f MyTracks::GetCoord(const MyVec2i& idx) const{
 
 MyColor4f MyTracks::GetTrackColor(int trackIdx) const{
 	int n = mHeader.n_properties;
-	return MyColor4f(
-		mTracks[trackIdx].mTrackProperties[n - 3],
-		mTracks[trackIdx].mTrackProperties[n - 2],
-		mTracks[trackIdx].mTrackProperties[n - 1], 1);
+	if (mTracks[trackIdx].mTrackProperties.size() >= 3){
+		return MyColor4f(
+			mTracks[trackIdx].mTrackProperties[n - 3],
+			mTracks[trackIdx].mTrackProperties[n - 2],
+			mTracks[trackIdx].mTrackProperties[n - 1], 1);
+	}
+	else return MyColor4f(0.5, 0.5, 0.5, 1);
 }
 
 MyColor4f MyTracks::GetPointColor(int trackIdx, int vIdx) const{
@@ -606,8 +645,10 @@ float MyTracks::GetValue(int trackIdx, int pointIdx) const{
 
 MyTensor3f MyTracks::GetTensor(int trackIdx, int pointIdx) const{
 	MyTensor3f t;
-	t.SetEigenValues(&(mTracks[trackIdx].mPointScalars[pointIdx][1]));
-	t.SetEigenVectors(&(mTracks[trackIdx].mPointScalars[pointIdx][4]));
+	if (mTracks[trackIdx].mPointScalars[pointIdx].size() >= 13){
+		t.SetEigenValues(&(mTracks[trackIdx].mPointScalars[pointIdx][1]));
+		t.SetEigenVectors(&(mTracks[trackIdx].mPointScalars[pointIdx][4]));
+	}
 	//assert(t.CheckEigenValueOrder());
 	return t;
 }
