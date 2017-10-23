@@ -2,6 +2,7 @@ RankVis
 10/23/2017
 Guohao Zhang
 bd71571@umbc.edu
+https://github.com/edgeofmoon/Rendering
 
 Description:
 This solution contains multiple project. RankVis is used for the final experiments.
