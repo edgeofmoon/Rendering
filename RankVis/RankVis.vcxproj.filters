@@ -206,6 +206,12 @@
     <ClInclude Include="MyTractVisBaseLegend.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="MyColorTextureMaker.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MySlider.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="MyVisEnum.cpp">
@@ -325,9 +331,6 @@
     <ClCompile Include="MyTaskBoxDrawer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="MyVisRankingApp_UI.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="MyVisRankingApp_DataGen.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -393,6 +396,42 @@
     </ClCompile>
     <ClCompile Include="glyphTest.cpp">
       <Filter>MainTest</Filter>
+    </ClCompile>
+    <ClCompile Include="similarityTest.cpp">
+      <Filter>MainTest</Filter>
+    </ClCompile>
+    <ClCompile Include="colorMapTest2.cpp">
+      <Filter>MainTest</Filter>
+    </ClCompile>
+    <ClCompile Include="matcreat.cpp">
+      <Filter>MainTest</Filter>
+    </ClCompile>
+    <ClCompile Include="similarityGen.cpp">
+      <Filter>MainTest</Filter>
+    </ClCompile>
+    <ClCompile Include="MyColorTextureMaker.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="MyVisRankingApp_UI_old.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="MyVisTrialManager_old.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="MyVisRankingApp_UI.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="glyphTest2.cpp">
+      <Filter>MainTest</Filter>
+    </ClCompile>
+    <ClCompile Include="MyVisTrialManager_color1.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="MySlider.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="MyVisRankingApp_UI _color1.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

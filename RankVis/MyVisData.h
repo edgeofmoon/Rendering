@@ -15,6 +15,7 @@ public:
 	void LoadFromDirectory(const MyString& dir);
 	void UpdateAnswers();
 	int GetError(int userAnswer) const;
+	float GetError(float userAnswer) const;
 	MyString GetCorrectAnswerString() const;
 	const MyTracks* GetTracts() const { return mTracts; };
 	void SetTracts(const MyTracks* tracts) { mTracts = tracts; };
@@ -23,6 +24,7 @@ public:
 
 	const MyArrayi& GetTractIndices() const { return mTractIndices; };
 	const MyArrayi& GetSelectIndices() const { return mTractSelectIndices; };
+	const MyArray<MyColor4f>& GetTractColors() const { return mTractColors; };
 	const MyArray<MyBoundingBox>& GetBoxes() const { return mBoxes; };
 	const MyArray<MySphere>& GetSpheres() const { return mSpheres; };
 	const MySphere& GetSphere(int idx) const { return mSpheres[idx]; };
@@ -48,6 +50,7 @@ protected:
 	// data read from files
 	MyArrayi mTractIndices;
 	MyArrayi mTractSelectIndices;
+	MyArray<MyColor4f> mTractColors;
 	MyArray<MyBoundingBox> mBoxes;
 	MyArray<MySphere> mSpheres;
 	MyArrayi mCorrectAnswers;
@@ -66,14 +69,17 @@ private:
 	void LoadData_TRACE();
 	void LoadData_SAME();
 	void LoadData_TUMOR();
+	void LoadData_FA_VALUE();
 
 	void LoadData_Box(int numBox);
 	void LoadData_SelectIndices();
+	void LoadData_TractColors();
 	void LoadData_Sphere();
 	void ComputeAnswer_FA();
 	void ComputeAnswer_TRACE();
 	void ComputeAnswer_SAME();
 	void ComputeAnswer_TUMOR();
+	void ComputeAnswer_FA_VALUE();
 
 public:
 	// for adding data
@@ -101,6 +107,11 @@ public:
 		float minDist, float distRange, int maxItr = 10) const;
 	MyArrayi ComputeIntersectedIndices(const MySphere& sphere) const;
 	MyArrayi ComputeTouchedIndices(const MySphere& sphere) const;
+
+	// FA_VALUE
+	float GetExpectedValueFromQuestIdx() const;
+	void ComputeBoxesWithValue(MyArray<MyBoundingBox>& boxes, MyArray2f& avgs, float v, float err, int minSegs = 20, int maxSegs = 9999);
+	static void WriteVectorToFile(const MyString& fn, const MyArray2f& vecs);
 
 protected:
 	static MyVisEnum::CollisionStatus SphereCollusionStatus(float radius,

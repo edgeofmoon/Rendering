@@ -69,7 +69,7 @@ void MyTaskBoxDrawer::Draw(){
 	glDisable(GL_CULL_FACE);
 
 	glLineWidth(2);
-	glColor3f(1, 1, 0);
+	glColor3f(1, 0, 0);
 	for (int iedge = 0; iedge<12; iedge++){
 		glBegin(GL_LINES); {
 			int vidx1 = edges[iedge][0];

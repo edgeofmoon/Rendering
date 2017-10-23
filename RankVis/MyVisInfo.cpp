@@ -17,22 +17,63 @@ MyArray2f MyVisInfo::FAAnswerOptionRanges = {
 
 MyVisInfo::MyVisInfo(VisTask task, bool isTraining) :
 	mIsEmpty(true), mIsTraining(isTraining), mTask(task), mMappingMethod(0), mQuest(-1){
+	mNeedMoreInput = false;
+	mDoShowLegend = false;
 }
 
-MyVisInfo::MyVisInfo(bool isEmpty, bool isTraining, VisTask task, RetinalChannel encoding, 
-	int method, Shape sp, VisCue visCue, Bundle bundle, FiberCover cover, int quest, int resolution):
+MyVisInfo::MyVisInfo(bool isEmpty, bool isTraining, VisTask task, 
+	RetinalChannel encoding,  int method, Shape sp, VisCue visCue, 
+	Bundle bundle, FiberCover cover, int quest, int resolution, bool needMoreInput) :
 	mIsEmpty(isEmpty), mIsTraining(isTraining), mTask(task), 
 	mEncoding(encoding), mMappingMethod(method),
 	mShape(sp), mVisCue(visCue), mBundle(bundle),
-	mCover(cover), mQuest(quest), mResolution(resolution){
+	mCover(cover), mQuest(quest), mResolution(resolution), mNeedMoreInput(needMoreInput){
+	mDoShowLegend = true;
 }
 
 MyVisInfo::~MyVisInfo()
 {
 }
 
+MyString MyVisInfo::GetLegendString() const{
+	if (mTask == FA_VALUE){
+		switch (mMappingMethod){
+		case 0:
+			return "iso-luminant color scale";
+		case 1:
+			return "gray scale";
+		case 2:
+			return "black-body color scale";
+		case 3:
+			return "extended black-body color scale";
+		case 4:
+			return "diverging color scale";
+		case 5:
+			return "cool-warm color scale";
+		}
+	}
+	else if (mTask == TRACE){
+		switch (mMappingMethod){
+		case 0:
+			return "Boy's surface color";
+		case 1:
+			return "eigen map embedding";
+		case 2:
+			return "spectral distance embedding";
+		case 3:
+			return "absolute color";
+		case 4:
+			return "gray color";
+		}
+	}
+	return "";
+}
+
 MyString MyVisInfo::GetTaskTransitionString() const{
-	if (IsEmpty()){
+	if (mDoShowLegend){
+		return "Color map now changes to " + GetLegendString() +".";
+	}
+	else if (IsEmpty()){
 		switch (mTask){
 		case START:
 			if (IsTraining()) return "Welcome to the training session! Please press the Next button to start.";
@@ -49,6 +90,8 @@ MyString MyVisInfo::GetTaskTransitionString() const{
 		case TUMOR:
 			return "Task type 3 " + GetTaskHintString(mTask);
 			break;
+		case FA_VALUE:
+			return "Task type 1 " + GetTaskHintString(mTask);
 		default:
 			return "Unknow transition!";
 			break;
@@ -73,6 +116,9 @@ int MyVisInfo::GetNumberAnswerOption() const{
 		break;
 	case TUMOR:
 		return 3;
+		break;
+	case FA_VALUE:
+		return 0;
 		break;
 	default:
 		return 0;
@@ -119,6 +165,9 @@ MyString MyVisInfo::GetTaskFolderName() const{
 		break;
 	case TUMOR:
 		return string("region_for_task6");
+		break;
+	case FA_VALUE:
+		return string("region_for_task7");
 		break;
 	default:
 		return string("[WRONG TASK NAME!!!]");
@@ -213,6 +262,10 @@ MyString MyVisInfo::GetTractSelectFileName() const{
 	}
 }
 
+MyString MyVisInfo::GetTractColorFileName(int idx) const{
+	return string("tractcolor_") + MyString(idx) + ".color";
+}
+
 MyString MyVisInfo::GetBoxFileName(int idx) const{
 	return string("tumorbox_") + MyString(idx) + string("_region_") 
 		+ GetResolutionFolderName() + ".data";
@@ -251,10 +304,13 @@ MyString MyVisInfo::GetTaskHintString(MyVisEnum::VisTask task){
 		return "(FA difference): What is the difference between average FA value of box 1 and that of box 2?";
 		break;
 	case TRACE:
-		return "(Tract tracing): Do the tracts originated from the yellow spheres end in box 1, 2, or 3";
+		return "(Tract tracing): Do the tracts originated from the red spheres end in box 1, 2, or 3?";
 		break;
 	case TUMOR:
 		return "(Tumor contact): Is the sphere intersecting, tangential or away from the tracts?";
+		break;
+	case FA_VALUE:
+		return "(Average FA value): What is the average FA value of the tracts?";
 		break;
 	default:
 		return "Invalid task!";
@@ -290,6 +346,9 @@ MyString MyVisInfo::GetTaskAnswerOptionString(VisTask task, int idx){
 		case 2: return "Away";
 		default: return "Invalid";
 		}
+	}
+	else if (task == FA_VALUE){
+		return "";
 	}
 	return "Invalid";
 }

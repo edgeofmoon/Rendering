@@ -29,6 +29,17 @@ public:
 		return mPoints[index];
 	}
 
+	void CopyFrom(const MySingleTrackData& traj, int st, int ed){
+		int n = ed - st + 1;
+		mPoints.resize(n);
+		mPointScalars.resize(n);
+		mTrackProperties = traj.mTrackProperties;
+		for (int i = 0; i < n; i++){
+			mPoints[i] = traj.mPoints[st + i];
+			mPointScalars[i] = traj.mPointScalars[st + i];
+		}
+	}
+
 	int Size() const { return mPoints.size(); };
 };
 
@@ -86,6 +97,8 @@ public:
 	void AddTracks(const MyTracks& tracks);
 
 	void CopyTracksFrom(const MyTracks& track);
+	void BoxSubsetFrom(const MyTracks& tract, const MyBoundingObject& bobj, 
+		const MyArrayi& indices, int minSeg = 2);
 
 	int GetNumTracks() const;
 	int GetNumVertex(int trackIdx) const;

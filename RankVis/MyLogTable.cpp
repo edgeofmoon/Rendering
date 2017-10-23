@@ -38,6 +38,11 @@ void MyLogTable::EndLog(){
 		mOutStream.close();
 }
 
+bool MyLogTable::NeedAtLeastOneFrame() const{
+	if (mbStarted || !mbEnabled || mCurrentVisData->GetVisInfo().IsEmpty()) return false;
+	return true;
+}
+
 void MyLogTable::StartTrial(){
 	if (!mbStarted && mbEnabled && !mCurrentVisData->GetVisInfo().IsEmpty()){
 		mCureentTrialStartTime = clock();
@@ -48,7 +53,9 @@ void MyLogTable::StartTrial(){
 }
 
 void MyLogTable::EndTrial(){
-	if (!mbStarted) return;
+	if (!mbStarted) {
+		return;
+	}
 	mbStarted = false;
 	if (!mOutStream.is_open()) return;
 	mOutStream << GetTimeString(time(0)) << Decimer
@@ -58,8 +65,8 @@ void MyLogTable::EndTrial(){
 		<< mCurrentVisData->GetVisInfo().GetString() << Decimer
 		<< GetTimeUsed() << Decimer
 		<< GetTimePaused() << Decimer
-		<< GetError(mUserAnswer) << Decimer
-		<< mUserAnswer << Decimer
+		<< GetError() << Decimer
+		<< (mUserAnswerType==1?mUserAnswerInt:mUserAnswerFloat) << Decimer
 		<< mUserConfidence << Decimer
 		<< GetCorrectAnswer() << endl;
 }
@@ -99,9 +106,12 @@ float MyLogTable::GetTimePaused() const{
 	return float(timePaused) / CLOCKS_PER_SEC;
 }
 
-int MyLogTable::GetError(int userAnswer) const{
-	if (mCurrentVisData->GetCorrectAnswers().size() > 0){
-		return mCurrentVisData->GetError(userAnswer);
+float MyLogTable::GetError() const{
+	if (mUserAnswerType == 1){
+		return mCurrentVisData->GetError(mUserAnswerInt);
+	}
+	else if (mUserAnswerType == 2){
+		return mCurrentVisData->GetError(mUserAnswerFloat);
 	}
 	else return -100;
 }
@@ -110,7 +120,7 @@ float MyLogTable::GetCorrectAnswer() const{
 	if (mCurrentVisData->GetCorrectAnswers().size() > 0){
 		return mCurrentVisData->GetCorrectAnswers()[0];
 	}
-	else return -100;
+	else return mCurrentVisData->GetAnswerInfo();
 }
 
 MyString MyLogTable::GetTimeString(std::time_t t){

@@ -43,6 +43,9 @@ string MyVisEnum::toString(VisTask task){
 	case TUMOR:
 		return "TUMOR";
 		break;
+	case FA_VALUE:
+		return "FA_VALUE";
+		break;
 	case START:
 		return "START";
 		break;

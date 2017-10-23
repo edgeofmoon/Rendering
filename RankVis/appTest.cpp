@@ -50,7 +50,7 @@ void myGlutReshape(int x, int y){
 
 int main(int argc, char* argv[]){
 	if (argc < 4){
-		cout << "Useage: " << argv[0] << " " << "[UserIndex] [TrialIndex] [Mode] [DebugFlag] [PrintDataFlag]" << endl
+		cout << "Useage: " << argv[0] << " " << "[UserIndex] [TrialIndex] [Mode] [DebugFlag] [PrintDataFlag] [Radius]" << endl
 			<< "Mode: Training: 1, Formal: 2, Lighting profile: 3, Occlusion profile: 4," << endl;
 		char tmp[256];
 		std::cin.getline(tmp, 256);
@@ -79,6 +79,7 @@ int main(int argc, char* argv[]){
 	if (argc > 3) mode = atoi(argv[3]);
 	if (argc > 4) mode |= (atoi(argv[4])==1?MyVisRankingApp::APP_MODE_DEBUG : 0);
 	if (argc > 5) mode |= (atoi(argv[5]) == 1 ? MyVisRankingApp::APP_MODE_PRINTDATA : 0);
+	if (argc > 6) MyTractVisBase::DefaultTrackRadius = stof(argv[6]);
 	app = new MyVisRankingApp;
 	app->Init(uidx, tidx, mode);
 	app->Next();

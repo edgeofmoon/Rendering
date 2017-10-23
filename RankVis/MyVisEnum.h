@@ -21,8 +21,9 @@ namespace MyVisEnum{
 		TRACE = 2,
 		SAME = 3,
 		TUMOR = 5,
-		START = 6,
-		END = 7
+		FA_VALUE = 6,
+		START = 254,
+		END = 255
 	} VisTask;
 
 	typedef enum Bundle_t{

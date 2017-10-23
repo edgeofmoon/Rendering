@@ -37,7 +37,7 @@ void MyVisTrialManager::GenerateVisInfo_Training(){
 	};
 	MyArray<DataCombination> dataCombinations;
 	for (int j = 0; j < 8; j++){
-		dataCombinations << DataCombination(dataBundles[j % 4], dataCovers[j / 4], 0);
+		dataCombinations << DataCombination(dataBundles[j % 4], dataCovers[j / 4], dataQuests[0]);
 	}
 
 
@@ -50,32 +50,22 @@ void MyVisTrialManager::GenerateVisInfo_Training(){
 		MyArrayi colors = { 1, 2, 3, 0, 4, 5 };
 		if (thisTask == FA_VALUE){
 			//shapeEncodings.Permute(mUserIndex);
-			for (int iTrial = 0; iTrial < 12; iTrial++){
+			for (int iTrial = 0; iTrial < 6; iTrial++){
 				DataCombination dataCombination = dataCombinations[iTrial % 8];
-				if (iTrial % 2 == 0){
-					MyVisInfo legendChangeInfo(thisTask);
-					legendChangeInfo.SetShowLegend(colors[iTrial / 2]);
-					mVisInfos << legendChangeInfo;
-				}
-				MyVisInfo visInfo(false, true, thisTask, COLOR, colors[iTrial / 2], TUBE,
+				MyVisInfo visInfo(false, true, thisTask, COLOR, colors[iTrial], TUBE,
 					BASIC, dataCombination.bundle, dataCombination.cover,
-					dataCombination.quest, TRAINING_RES, iTrial % 2);
+					dataCombination.quest, TRAINING_RES);
 				mVisInfos << visInfo;
 			}
 		}
 		else{
 			//shapeCues.Permute(mUserIndex);
 			MyArrayi colors = { 4, 3, 1, 0 };
-			for (int iTrial = 0; iTrial < 8; iTrial++){
-				if (iTrial % 2 == 0){
-					MyVisInfo legendChangeInfo(thisTask);
-					legendChangeInfo.SetShowLegend(colors[iTrial / 2]);
-					mVisInfos << legendChangeInfo;
-				}
+			for (int iTrial = 0; iTrial < 4; iTrial++){
 				DataCombination dataCombination = dataCombinations[iTrial % 8];
-				MyVisInfo visInfo(false, true, thisTask, COLOR, colors[iTrial / 2], TUBE,
+				MyVisInfo visInfo(false, true, thisTask, COLOR, colors[iTrial], TUBE,
 					ENCODING, dataCombination.bundle, dataCombination.cover,
-					dataCombination.quest, TRAINING_RES, iTrial % 2);
+					dataCombination.quest, TRAINING_RES);
 				mVisInfos << visInfo;
 			}
 		}
@@ -100,24 +90,26 @@ void MyVisTrialManager::GenerateVisInfo_Experiment_Random(){
 		FiberCover cover;
 		int quest;
 	};
-	MyArray<pair<FiberCover, Bundle>> coverBundles = {
+	MyArray<pair<FiberCover, Bundle>> CoverBundles = {
 		make_pair(WHOLE, CC), make_pair(BUNDLE, CC),
 		make_pair(WHOLE, CST), make_pair(BUNDLE, CST),
-		make_pair(WHOLE, IFO),// make_pair(BUNDLE, IFO),
-		make_pair(WHOLE, ILF),// make_pair(BUNDLE, ILF),
+		make_pair(WHOLE, IFO), make_pair(BUNDLE, IFO),
+		make_pair(WHOLE, ILF), make_pair(BUNDLE, ILF),
 	};
 
 	/****************dcap****************/
 	/*
-	for (int i = 0; i < 6; i++){
-		for (int k = 0; k < 6; k++){
-			//mVisInfos
-			//	<< MyVisInfo(false, false, TRACE, COLOR, k, TUBE, ENCODING,
-			//	dataBundles[j], dataCovers[i], 0, EXPERIMENT_RES);
-			mVisInfos
-				<< MyVisInfo(false, false, FA_VALUE, COLOR, k, TUBE, BASIC,
-				coverBundles[i].second, coverBundles[i].first, 5, EXPERIMENT_RES);
-		}
+	for (int k = 0; k < 6; k++){
+	for (int i = 0; i < 2; i++){
+	for (int j = 0; j < 4; j++){
+	//mVisInfos
+	//	<< MyVisInfo(false, false, TRACE, COLOR, k, TUBE, ENCODING,
+	//	dataBundles[j], dataCovers[i], 0, EXPERIMENT_RES);
+	mVisInfos
+	<< MyVisInfo(false, false, FA_VALUE, COLOR, k, TUBE, BASIC,
+	dataBundles[j], dataCovers[i], 0, EXPERIMENT_RES);
+	}
+	}
 	}
 	return;
 	for (int k = 0; k < 6; k++){
@@ -138,6 +130,14 @@ void MyVisTrialManager::GenerateVisInfo_Experiment_Random(){
 		VisTask thisTask = visTasks[iTask];
 		mVisInfos << MyVisInfo(thisTask);
 		if (thisTask == FA_VALUE){
+			int dataBlock[6][8] = {
+				{ 39, 12, 30, 42, 43, 20, 36, 6, },
+				{ 44, 33, 13, 14, 9, 35, 32, 26, },
+				{ 10, 4, 34, 40, 21, 8, 45, 47, },
+				{ 1, 19, 28, 29, 24, 16, 15, 38, },
+				{ 0, 17, 23, 46, 5, 41, 37, 11, },
+				{ 25, 3, 2, 18, 31, 27, 7, 22 },
+			};
 			// ref: http://www.plantsciences.ucdavis.edu/agr205/Lectures/2010%20Iago/Topic%207/Useful%20Latin%20Squares.pdf
 			int visLatin[6][6] = {
 				{ 0, 1, 2, 3, 4, 5 },
@@ -147,37 +147,22 @@ void MyVisTrialManager::GenerateVisInfo_Experiment_Random(){
 				{ 4, 3, 0, 5, 1, 2, },
 				{ 5, 4, 3, 2, 0, 1 },
 			};
-
-			int dataBlock[6][12] = {};
-			for (int quest = 0; quest < 12; quest++){
-				MyArrayi dataSequence = MyArrayi::GetSequence(0, 5);
-				dataSequence.Permute(20170809 + quest);
-				for (int iRow = 0; iRow < 6; iRow++){
-					dataBlock[iRow][quest] = dataSequence[iRow] * 12 + quest;
-				}
-			}
-
 			int infoSize = mVisInfos.size();
-			mVisInfos.resize(infoSize + 78, MyVisInfo(thisTask));
+			mVisInfos.resize(infoSize + 48, MyVisInfo(thisTask));
 			int* visOrder = visLatin[mUserIndex % 6];
 			for (int ivis = 0; ivis < 6; ivis++){
 				int dataBlockRowIdx = (ivis + mUserIndex) % 6;
 				int visLocIdx = visOrder[ivis];
-				MyVisInfo legendChangeInfo(thisTask);
-				legendChangeInfo.SetShowLegend(ivis);
-				mVisInfos[infoSize + visLocIdx * 13] = legendChangeInfo;
-				for (int idata = 0; idata < 12; idata++){
+				for (int idata = 0; idata < 8; idata++){
 					int dataIdx = dataBlock[dataBlockRowIdx][idata];
-					int trialLocIdx = visLocIdx * 13 + idata + 1;
+					int trialLocIdx = visLocIdx * 8 + idata;
 					mVisInfos[infoSize + trialLocIdx] =
 						MyVisInfo(false, false, FA_VALUE, COLOR, ivis, TUBE, BASIC,
-						coverBundles[dataIdx / 12].second, coverBundles[dataIdx / 12].first,
-						dataIdx % 12, EXPERIMENT_RES);
+						dataBundles[(dataIdx / 6) % 4], dataCovers[dataIdx / 24], dataIdx % 6, EXPERIMENT_RES);
 				}
 			}
 			for (int ivis = 0; ivis < 6; ivis++){
-				mVisInfos.Permute(mUserIndex*ivis * 123, infoSize + ivis * 13 + 1, infoSize + ivis * 13 + 12);
-				mVisInfos[infoSize + ivis * 13 + 12].SetNeedMoreInput(true);
+				mVisInfos.Permute(mUserIndex*ivis * 123, infoSize + ivis * 8, infoSize + ivis * 8 + 7);
 			}
 		}
 		else{
@@ -198,9 +183,6 @@ void MyVisTrialManager::GenerateVisInfo_Experiment_Random(){
 			for (int ilatin = 0; ilatin < 4; ilatin++){
 				int color = colors[latin0[mUserIndex % 4][ilatin]];
 				int quest = latin1[mUserIndex % 4][ilatin];
-				MyVisInfo legendChangeInfo(thisTask);
-				legendChangeInfo.SetShowLegend(color);
-				mVisInfos << legendChangeInfo;
 				int infoSize = mVisInfos.size();
 				for (int ibd = 0; ibd < 8; ibd++){
 					mVisInfos <<
@@ -208,11 +190,69 @@ void MyVisTrialManager::GenerateVisInfo_Experiment_Random(){
 						dataBundles[ibd % 4], dataCovers[ibd / 4], quest, EXPERIMENT_RES);
 				}
 				mVisInfos.Permute(mUserIndex*ilatin * 320, infoSize, mVisInfos.size() - 1);
-				mVisInfos[mVisInfos.size() - 1].SetNeedMoreInput(true);
 			}
 		}
 	}
 	mVisInfos << MyVisInfo(END);
+
+	/*******dumpled 7/18/2017*********/
+	/*
+	mVisInfos << MyVisInfo(START);
+	for (int iTask = 0; iTask < 2; iTask++){
+	// random seed as user index
+	VisTask thisTask = visTasks[iTask];
+	mVisInfos << MyVisInfo(thisTask);
+	if (thisTask == FA_VALUE){
+	MyArray<pair<FiberCover, Bundle>> cbds = CoverBundles;
+	cbds.Permute(mUserIndex);
+	MyArray<DataCombination> dataCombinations;
+	for (int i = 0; i < numValueColors * CoverBundles.size(); i++){
+	dataCombinations << DataCombination(cbds[i / numValueColors].second,
+	cbds[i / numValueColors].first, i % numValueColors);
+	if (i % numValueColors == numValueColors - 1){
+	dataCombinations.Permute(mUserIndex * 101 * i, i - numValueColors + 1, i);
+	}
+	}
+	MyArrayi colorMaps = MyArrayi::GetSequence(0, numValueColors - 1);
+	colorMaps.Permute(mUserIndex);
+	for (int i = 0; i < numValueColors; i++){
+	int infoSize = mVisInfos.size();
+	for (int idata = 0; idata < CoverBundles.size(); idata++){
+	DataCombination combo = dataCombinations[idata * numValueColors + i];
+	MyVisInfo visInfo(false, false, FA_VALUE, COLOR, colorMaps[i], TUBE, BASIC,
+	combo.bundle, combo.cover, combo.quest, EXPERIMENT_RES);
+	mVisInfos << visInfo;
+	}
+	mVisInfos.Permute(mUserIndex*i * 144, infoSize, mVisInfos.size() - 1);
+	}
+	}
+	else{
+	MyArray<pair<FiberCover, Bundle>> cbds = CoverBundles;
+	cbds.Permute(mUserIndex * 153);
+	MyArray<DataCombination> dataCombinations;
+	for (int i = 0; i < numTractColors * CoverBundles.size(); i++){
+	dataCombinations << DataCombination(cbds[i / numTractColors].second,
+	cbds[i / numTractColors].first, i % numTractColors);
+	if (i % numTractColors == numTractColors - 1){
+	dataCombinations.Permute(mUserIndex * 191 * i, i - numTractColors + 1, i);
+	}
+	}
+	MyArrayi tractColors = MyArrayi::GetSequence(0, numTractColors - 1);
+	tractColors.Permute(mUserIndex);
+	for (int i = 0; i < numTractColors; i++){
+	int infoSize = mVisInfos.size();
+	for (int idata = 0; idata < CoverBundles.size(); idata++){
+	DataCombination combo = dataCombinations[idata * numTractColors + i];
+	MyVisInfo visInfo(false, false, TRACE, COLOR, tractColors[i], TUBE, ENCODING,
+	combo.bundle, combo.cover, combo.quest, EXPERIMENT_RES);
+	mVisInfos << visInfo;
+	}
+	mVisInfos.Permute(mUserIndex*i * 144, infoSize, mVisInfos.size() - 1);
+	}
+	}
+	}
+	mVisInfos << MyVisInfo(END);
+	*/
 }
 
 void MyVisTrialManager::GenerateVisInfo_LightingProfile(){

@@ -26,6 +26,7 @@ public:
 	float ComputeArcLength() const;
 	float ComputeArcLengthInterpolated(int nSample) const;
 	void CutFromCenterByArcLength(float arcLength);
+	void CutByLuminance(float minLu, float maxLu);
 	MyArray<MyColor4f> ComputeCutFromCenterByArcLength(float arcLength);
 
 	static MyColor4f GetColorBlending(const MyColor4f& c1, float a1, 
@@ -33,6 +34,7 @@ public:
 	static float ComputeArcLength(const MyArray<MyColor4f>& colors);
 	static float GetDeltaE00(const MyColor4f& c1, const MyColor4f& c2);
 	static MyArrayf ComputeDeltaE00(const MyArray<MyColor4f>& colors);
+	static MyArrayf ComputeDeltaE00(const MyArray<MyColor4f>& colors, const MyColor4f& ref);
 
 protected:
 	MyArray<MyColor4f> mColors;

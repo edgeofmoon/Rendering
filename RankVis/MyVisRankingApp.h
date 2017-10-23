@@ -12,6 +12,7 @@
 #include "MyRenderingLog.h"
 #include "MyEventLog.h"
 #include "MyTractVisBaseLegend.h"
+#include "MySlider.h"
 
 class MyVisRankingApp
 {
@@ -64,6 +65,7 @@ protected:
 	bool mbLightnessBalance;
 	bool mbComputeTotalAlpha;
 	bool mbComputeTotalPixelDrawn;
+	bool IsOnBoxView() const;
 	int HandleDebugKey(unsigned char key);
 	void UpdateSampePerFragmentAtScale(float scale);
 
@@ -78,6 +80,7 @@ protected:
 	void DeactivateUI(MyUIObject* ui);
 
 	// UI events
+	float mAnswerInput;
 	int mAnswerSelected;
 	int mConfidenceSelected;
 	bool mbPaused;
@@ -87,8 +90,11 @@ protected:
 	void UI_Check();
 	void UI_Next();
 	void UI_AnswerSelect(int idx, MyButton* button);
+	void UI_AnswerInput(float value, bool valid);
+	void UI_AnswerSlider();
 	void UI_ConfidenceSelected(int idx);
 	void UI_Process(int uid);
+	bool UI_ConfidenceOkay() const;
 	bool UI_Answered() const;
 	bool UI_CanCheck() const;
 
@@ -109,6 +115,9 @@ protected:
 	MyTextArea mTextArea_Transition;
 	MyTextArea mTextArea_Hint;
 	MyTextArea mTextArea_Progress;
+	//MyTextArea mNumberArea_InputHint;
+	//MyNumberArea mNumberArea_Input;
+	MySlider mSlider_Answer;
 	int UIProcessMouseUp(int x, int y);
 	int UIProcessMouseDown(int x, int y);
 	int UIProcessMouseMove(int x, int y);
@@ -127,7 +136,6 @@ protected:
 	void DrawHighlighted();
 	void DrawBoxes();
 	void DrawTractIndicators();
-	void DrawLegend();
 	MyTractVisBaseLegend mTractLegend;
 	void DrawTractLegend();
 	void DrawTractLegendText();
@@ -138,6 +146,7 @@ protected:
 	void ProcessKey_DataGen(unsigned char key);
 	int mCurrentBoxIndex;
 	void ProcessKey_FA(unsigned char key);
+	void ProcessKey_FA_VALUE(unsigned char key);
 	MyArray<MySphere> mSphereSelectors;
 	MyArrayc mOperators;
 	MyArrayi mSelected;
@@ -150,8 +159,6 @@ protected:
 	MyVisTrialManager mTrialManager;
 	MyVisTract mVisTract;
 	MyTracks mTracts;
-	unsigned int mColorTexture;
-	unsigned int mValueTexture;
 
 	// framebuffer
 	MyFrameBuffer mFrameBuffer;

@@ -48,12 +48,22 @@ void MyVisRankingApp::HandleGlutSpecialKeyboard(unsigned char key, int x, int y)
 
 void MyVisRankingApp::HandleGlutMouseWheel(int button, int dir, int x, int y){
 	if (dir > 0){
-		if (!mbPaused)
+		if (!mbPaused){
 			mTrackBall.ScaleMultiply(1.05);
+			//mTrackBall.ScaleMultiply(sqrt(2));
+			//glMatrixMode(GL_PROJECTION);
+			//glScalef(sqrt(2), sqrt(2), 1);
+			//glMatrixMode(GL_MODELVIEW);
+		}
 	}
 	else{
-		if (!mbPaused)
+		if (!mbPaused){
 			mTrackBall.ScaleMultiply(1 / 1.05);
+			//mTrackBall.ScaleMultiply(sqrt(0.5));
+			//glMatrixMode(GL_PROJECTION);
+			//glScalef(1 / sqrt(2), 1 / sqrt(2), 1);
+			//glMatrixMode(GL_MODELVIEW);
+		}
 	}
 	UpdateSampePerFragmentAtScale(mTrackBall.GetScale());
 
@@ -88,13 +98,13 @@ void MyVisRankingApp::HandleGlutMouse(int button, int state, int x, int y){
 			UIProcessMouseUp(x, y);
 		}
 	}
-	RequestRedisplay();
 	mEventLog.LogItem(
 		"MouseButton" + MyEventLog::Decimer
 		+ MyString(button) + MyEventLog::Decimer
 		+ MyString(state) + MyEventLog::Decimer
 		+ MyString(x) + MyEventLog::Decimer
 		+ MyString(y));
+	RequestRedisplay();
 }
 
 void MyVisRankingApp::HandleGlutMotion(int x, int y){
@@ -103,11 +113,11 @@ void MyVisRankingApp::HandleGlutMotion(int x, int y){
 			mTrackBall.Motion(x, y);
 		}
 	}
-	RequestRedisplay();
 	mEventLog.LogItem(
 		"MouseMotion" + MyEventLog::Decimer
 		+ MyString(x) + MyEventLog::Decimer
 		+ MyString(y));
+	RequestRedisplay();
 }
 
 void MyVisRankingApp::HandleGlutPassiveMotion(int x, int y){
@@ -132,11 +142,11 @@ void MyVisRankingApp::HandleGlutReshape(int x, int y){
 	ResizeRenderBuffer(mCanvasWidth, mCanvasHeight);
 	UIResize(x, y);
 	mVisTract.Resize(mCanvasWidth, mCanvasHeight);
-	RequestRedisplay();
 	mEventLog.LogItem(
 		"Reshape" + MyEventLog::Decimer
 		+ MyString(x) + MyEventLog::Decimer
 		+ MyString(y));
+	RequestRedisplay();
 }
 
 void MyVisRankingApp::RequestRedisplay(){
@@ -174,15 +184,20 @@ int MyVisRankingApp::HandleDebugKey(unsigned char key){
 			break;
 		case 'n':
 		case 'N':
-			Next();
+			if (!mLogs.NeedAtLeastOneFrame()) Next();
 			break;
 		case 'p':
 		case 'P':
-			Previous();
+			if (!mLogs.NeedAtLeastOneFrame()) Previous();
 			break;
 		case 'k':
 		case 'K':
 			mbDrawHighlighted = !mbDrawHighlighted;
+			break;
+		case 'l':
+		case 'L':
+			mVisTract.SetIgnoreBoxVis(!mVisTract.GetIgnoreBoxVis());
+			mVisTract.Update();
 			break;
 		case 'b':
 		case 'B':
@@ -351,6 +366,7 @@ void MyVisRankingApp::OcclusionProfilePrepare(MyTractVisBase* tracts, int idx){
 	tracts->ClearInfluences();
 	tracts->SetBaseColor(MyColor4f(0.01, 0.01, 0.01, 0.01));
 	tracts->SetAmbient(1);
+	tracts->SetDiffuse(0);
 	tracts->SetLightIntensity(1);
 }
 

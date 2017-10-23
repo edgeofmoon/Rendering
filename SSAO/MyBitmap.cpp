@@ -41,20 +41,21 @@ int MyBitmap::Open(const MyString& filename){
 
 	/* read head, and check its format */
 	if (fgetc(fp) != 'B' || fgetc(fp) != 'M') {
-		printf("Error: bmp file \"%s\" format error.", fname);
+		printf("Error: bmp file \"%s\" format error.\n", fname);
 		goto ERR_EXIT;
 	}
 
 	/* read its infomation */
 	fread(&mHeader, sizeof(MyBmpHeader), 1, fp);
-	if (mHeader.sizeStruct != 40 || mHeader.reserved != 0){
-		printf("Error: bmp file \"%s\" format error.", fname);
+	if (mHeader.reserved != 0){
+	//if (mHeader.sizeStruct != 40 || mHeader.reserved != 0){
+		printf("Error: bmp file \"%s\" format error.\n", fname);
 		goto ERR_EXIT;
 	}
 
 	/* check format */
 	if (mHeader.bitCount != 24){
-		printf("Sorry: bmp file \"%s\" bit count != 24", fname);
+		printf("Sorry: bmp file \"%s\" bit count != 24\n", fname);
 		goto ERR_EXIT;
 	}
 
@@ -72,12 +73,14 @@ int MyBitmap::Open(const MyString& filename){
 
 	/* allocate memory */
 	if ((mData = (unsigned char *)realloc(mData, mHeader.sizeImage)) == NULL){
-		printf("Error: alloc fail!");
+		printf("Error: alloc fail!\n");
 		goto ERR_EXIT;
 	}
+
+	fseek(fp, mHeader.offbits, SEEK_SET);
 	/* read data into memory */
 	if (fread(mData, 1, mHeader.sizeImage, fp) != mHeader.sizeImage){
-		printf("Error: read data fail!");
+		printf("Error: read data fail!\n");
 		goto ERR_EXIT;
 	}
 

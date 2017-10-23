@@ -9,5 +9,6 @@ namespace MyConstants
 	extern float DivergingSmooth[1024][3];
 	extern float DivergingBent[1024][3];
 	extern float BlackBodyExtended[1024][3];
+	extern float SpiralColorHenan[1000][3];
 };
 

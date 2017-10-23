@@ -7,17 +7,19 @@ class MyVisInfo
 
 public:
 	MyVisInfo(MyVisEnum::VisTask task, bool isTraining = false);
-	MyVisInfo(bool isEmpty, bool isTraining, MyVisEnum::VisTask task, MyVisEnum::RetinalChannel encoding, int method,
-		MyVisEnum::Shape sp, MyVisEnum::VisCue visCue, MyVisEnum::Bundle bundle, MyVisEnum::FiberCover cover, int quest, int resolution);
+	MyVisInfo(bool isEmpty, bool isTraining, MyVisEnum::VisTask task, 
+		MyVisEnum::RetinalChannel encoding, int method, MyVisEnum::Shape sp, 
+		MyVisEnum::VisCue visCue, MyVisEnum::Bundle bundle, 
+		MyVisEnum::FiberCover cover, int quest, int resolution, bool needMoreInput = false);
 	~MyVisInfo();
-
-	// transition trial
-	bool mIsEmpty;
-	// training session
-	bool mIsTraining;
 
 	bool IsEmpty() const { return mIsEmpty; };
 	bool IsTraining() const{ return mIsTraining; };
+	bool NeedMoreInput() const { return mNeedMoreInput; };
+	bool IsShowLegend() const{ return mDoShowLegend; };
+
+	void SetShowLegend(int method){ mDoShowLegend = true, mMappingMethod = method; mEncoding = MyVisEnum::COLOR; };
+	void SetNeedMoreInput(bool b){ mNeedMoreInput = b; };
 
 	MyVisEnum::RetinalChannel GetEncoding() const { return mEncoding; };
 	int GetMappingMethod() const { return mMappingMethod; };
@@ -30,6 +32,7 @@ public:
 	int GetQuest() const { return mQuest; };
 
 	// task questions
+	MyString GetLegendString() const;
 	MyString GetTaskTransitionString() const;
 	MyString GetTaskHintString() const;
 	int GetNumberAnswerOption() const;
@@ -47,6 +50,7 @@ public:
 	// file names
 	MyString GetTractIndexFileName() const;
 	MyString GetTractSelectFileName() const;
+	MyString GetTractColorFileName(int idx) const;
 	MyString GetBoxFileName(int idx) const;
 	MyString GetSphereFileName(int idx) const;
 
@@ -61,6 +65,15 @@ public:
 	static const MyArray2f& GetFAAnswerOptionRanges();
 
 protected:
+	// transition trial
+	bool mIsEmpty;
+	// training session
+	bool mIsTraining;
+	// need confidence
+	bool mNeedMoreInput;
+	// show legend on empty screen
+	bool mDoShowLegend;
+
 	// vis related
 	MyVisEnum::RetinalChannel mEncoding;
 	int mMappingMethod;

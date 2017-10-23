@@ -9,6 +9,7 @@
 #include "MyConstants.h"
 #include "MyColorConverter.h"
 #include "MySuperquadric.h"
+#include "MyColorTextureMaker.h"
 
 #include <GL/glew.h>
 #include <GL/freeglut.h>
@@ -19,6 +20,7 @@ using namespace std;
 using namespace MyConstants;
 using namespace MyVisEnum;
 
+#define BOXSCALING 6.f
 
 MyVisRankingApp::MyVisRankingApp()
 {
@@ -67,13 +69,23 @@ void MyVisRankingApp::Init(int uidx, int tidx, int mode){
 	// but data selected are for reversed...
 	// so we reverse s3 and keep s4...
 	// also remember to reverse rp[2] is MySuperquadric.cpp
+
+
+	//mTracts.Read("C:\\Users\\GuohaoZhang\\Dropbox\\data\\normal_s2.tensorinfo");
+	//mTracts.AppendTrackColor("C:\\Users\\GuohaoZhang\\Dropbox\\data\\normal_s2_boy.data");
+	//mTracts.Save("C:\\Users\\GuohaoZhang\\Dropbox\\data\\normal_s2_tensorboy.trk");
+	//exit(0);
+
 	if (IsOnMode(APP_MODE_TRAINING)){
 		mTracts.Read("C:\\Users\\GuohaoZhang\\Dropbox\\data\\normal_s4_tensorboy.trk");
 		MySuperquadric::ZREV = 1;
 	}
 	else {
-		mTracts.Read("C:\\Users\\GuohaoZhang\\Dropbox\\data\\normal_s3_tensorboy_RevZ.trk");
+		//mTracts.Read("C:\\Users\\GuohaoZhang\\Dropbox\\data\\normal_s3_tensorboy_RevZ.trk");
+		mTracts.Read("C:\\Users\\GuohaoZhang\\Dropbox\\data\\normal_s2_tensorboy_RevZ.trk");
 		MySuperquadric::ZREV = -1;
+
+
 	}
 	// generate trials
 	mTrialManager.SetDataRootDir("C:\\Users\\GuohaoZhang\\Dropbox\\data\\traces");
@@ -87,10 +99,11 @@ void MyVisRankingApp::Init(int uidx, int tidx, int mode){
 	else if (IsOnMode(APP_MODE_OCCLUSION))
 		mTrialManager.GenerateVisInfo_OcclusionProfile();
 	if (IsOnMode(APP_MODE_PRINTDATA)){
-		mTrialManager.PrintAllCase("dataTable.txt");
+		mTrialManager.PrintAllCase("dataTable_" + MyString(uidx) + ".txt");
 	}
 
-	MyVisTract::UseNormalizedLighting(!IsOnMode(APP_MODE_LIGHTING));
+	//MyVisTract::UseNormalizedLighting(!IsOnMode(APP_MODE_LIGHTING));
+	MyVisTract::UseNormalizedLighting(false);
 	//mTrialManager.SetDataIndex(4);
 	// load textures
 	MyBitmap bitmap;
@@ -108,26 +121,24 @@ void MyVisRankingApp::Init(int uidx, int tidx, int mode){
 	legends[0].CutFromCenterByArcLength(160.f);
 	legends[1].CutFromCenterByArcLength(160.f);
 	MyTexture::SetInterpolateMethod(GL_NEAREST);
-	mValueTexture = MyTexture::MakeGLTexture(legends[0].GetColors(), legends[0].GetColors().size(), 1);
-	mColorTexture = MyTexture::MakeGLTexture(legends[1].GetColors(), legends[1].GetColors().size(), 1);
+	unsigned int valueTexture = MyTexture::MakeGLTexture(legends[0].GetColors(), legends[0].GetColors().size(), 1);
+	unsigned int colorTexture = MyTexture::MakeGLTexture(legends[1].GetColors(), legends[1].GetColors().size(), 1);
+	/*
+	// get more color maps
+	MyArrayui colorTextures;
+	MyTexture::SetInterpolateMethod(GL_NEAREST);
+	colorTextures << MyTexture::MakeGLTexture(&MyConstants::SpiralColorHenan[0][0], 1000, 1);
+	for (int i = 0; i < 14; i++){
+		MyString colorFileName = "scale_s" + MyString(i) + ".bmp";
+		bitmap.Open("..\\RankVis\\colors\\bmp_files\\" + colorFileName);
+		colorTextures << MyTexture::MakeGLTexture(&bitmap);
+	}
+	mVisTract.SetColorTextures({ colorTextures });
+	*/
+	//mVisTract.SetColorTextures({ colorTexture });
+	mVisTract.SetColorTextures(MyColorTextureMaker::MakeColorTextures());
+	mVisTract.SetValueTextures({ valueTexture });
 	MyTexture::SetInterpolateMethod(GL_LINEAR);
-	//bitmap.Open("..\\SSAO\\data\\diverging.bmp");
-	//mColorTexture = MyTexture::MakeGLTexture(&bitmap);
-	//mColorTexture = MyBlackBodyColor::GetTexture();
-	//mColorTexture = MyTexture::MakeGLTexture((float*)IsoluminanceMap, 33, 1);
-	//MyBitmap bitmap2;
-	//bitmap2.Open("..\\SSAO\\data\\diverging.bmp");
-	//mValueTexture = MyTexture::MakeGLTexture(&bitmap2);
-	//MyArrayf hsv;
-	//for (int i = 0; i < 100; i++){
-	//	MyColor4f c;
-	//	c.fromHSV(10, i / 99.f, 1.f);
-	//	hsv << c.r << c.g << c.b;
-	//}
-	//mValueTexture = MyTexture::MakeGLTexture(&hsv[0], 100, 1);
-	// tract vis setup
-	mVisTract.SetColorTextures({ mColorTexture });
-	mVisTract.SetValueTextures({ mValueTexture });
 
 	UIInit();
 	mLogs.SetEnabled(IsOnMode(APP_MODE_TRAINING) || IsOnMode(APP_MODE_STUDY));
@@ -141,11 +152,12 @@ void MyVisRankingApp::Init(int uidx, int tidx, int mode){
 	}
 	else if (IsOnMode(APP_MODE_OCCLUSION)){
 		mRenderingLog.SetRenderingValueNames({ "NUMPIXL", "PIXLFRGS" });
-		mRenderingLog.StartLog("Occlusion");
+		mRenderingLog.StartLog("Occlusion_"+MyString(MyTractVisBase::DefaultTrackRadius));
 	}
 
-	mTrackBall.SetScaleRange(pow(1.05f, -5), pow(1.05f, 20));
-	//mTrackBall.SetScaleRange(pow(1.05f, -5), pow(1.05f, 50));
+	if (!IsOnMode(APP_MODE_DEBUG)){
+		mTrackBall.SetScaleRange(pow(1.05f, -5), pow(1.05f, 20));
+	}
 
 	mTractLegend.LoadShader();
 	mTractLegend.ComputeGeometry();
@@ -163,6 +175,7 @@ bool MyVisRankingApp::IsOnMode(APP_MODE mode) const {
 void MyVisRankingApp::Next(){
 	mLogs.EndTrial();
 	mRenderingLog.EndTrial();
+	mEventLog.LogItem("TrialEnd");
 	if (!mTrialManager.IsLast()){
 		MyVisData* visData = mTrialManager.GotoNextVisData();
 		mVisTract.SetVisData(visData);
@@ -249,6 +262,15 @@ void MyVisRankingApp::PrintTrialInfo(){
 	}
 }
 
+
+bool MyVisRankingApp::IsOnBoxView() const{
+	if (mTrialManager.GetCurrentVisData()->GetVisInfo().GetVisTask() == FA_VALUE){
+		return !mVisTract.GetIgnoreBoxVis();
+	}
+	return false;
+}
+
+
 void MyVisRankingApp::Show(){
 	glViewport(0, 0, mCanvasWidth, mCanvasHeight);
 	glBindFramebuffer(GL_FRAMEBUFFER, mFrameBuffer.GetFrameBuffer());
@@ -259,6 +281,10 @@ void MyVisRankingApp::Show(){
 		glPushMatrix();
 		MyGraphicsTool::LoadTrackBall(&mTrackBall);
 		MyBoundingBox box = mTrialManager.GetCurrentVisData()->GetBoundingBox();
+		if (IsOnBoxView()){
+			box = mTrialManager.GetCurrentVisData()->GetBoxes()[0];
+			glScalef(BOXSCALING, BOXSCALING, BOXSCALING);
+		}
 		MyGraphicsTool::Translate(-box.GetCenter());
 		glLineWidth(mLineThickness);
 		if (mbDrawTracts) mVisTract.Show();
@@ -266,6 +292,9 @@ void MyVisRankingApp::Show(){
 		if (mbDrawIndicators) {
 			DrawBoxes();
 			DrawTractIndicators();
+		}
+		if (IsOnBoxView()){
+			glScalef(1 / BOXSCALING, 1 / BOXSCALING, 1 / BOXSCALING);
 		}
 		glPopMatrix();
 		if (mbDrawLegend) {

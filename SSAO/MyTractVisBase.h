@@ -52,6 +52,7 @@ public:
 	virtual void LoadShader();
 	virtual void Show();
 
+	static float DefaultTrackRadius;
 	// volitile rendering parameters
 	float mTrackRadius;
 	const RenderingParameters& GetRenderingParamters() const { return mRenderingParameters; };
@@ -82,12 +83,17 @@ public:
 	void SetSphereGeometry(MySphereGeometry* sg){ mSphereGeometry = sg; };
 	MySphereGeometry* GetSphereGeometry() const { return mSphereGeometry; };
 
+	void SetPerTractColor(const MyArray<MyColor4f>* c){ mPerTractColor = c; };
+	const MyArray<MyColor4f>* GetPerTractColor() const { return mPerTractColor; };
+
 	void SetBaseColor(const MyColor4f& c){ mRenderingParameters.BaseColor = c; };
 	MyColor4f GetBaseColor() const { return mRenderingParameters.BaseColor; };
 	void SetLightIntensity(float li){ mRenderingParameters.LightIntensity = li; };
 	float GetLightIntensity() const{ return mRenderingParameters.LightIntensity; };
 	void SetAmbient(float ab) { mRenderingParameters.Ambient = ab; };
 	float GetAmbient() const { return mRenderingParameters.Ambient; };
+	void SetDiffuse(float ab) { mRenderingParameters.Diffuse = ab; };
+	float GetDiffuse() const { return mRenderingParameters.Diffuse; };
 
 	void SetColorInfluence(float ci){ mRenderingParameters.ColorInfluence = ci; };
 	void SetValueToTextureInfluence(float vt){ mRenderingParameters.ValueToTextureInfluence = vt; };
@@ -120,6 +126,7 @@ protected:
 	const MyTracks* mTracts;
 	RenderingParameters mRenderingParameters;
 	MySphereGeometry* mSphereGeometry;
+	const MyArray<MyColor4f>* mPerTractColor;
 	
 	// for geometry
 	MyArray3f mVertices;

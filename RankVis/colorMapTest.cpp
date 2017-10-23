@@ -29,9 +29,7 @@ int methodIdx = 1;
 int sampleIdx = 0;
 
 MyArray<MyColorLegend> legends;
-MyArrayStr names = { "Black Body Color", "Extened Black Body", "Isoluminant Map", "True Isoluminant Map",
-"Monoluminant Map", "Monoluminant Extended", "Linearluminant Map", "Diverging Smooth",
-"Diverging Bent", "Saturation_HSV" };
+MyArrayStr names;
 MyArrayi nSamples = { 100, 200, 400, 800, 1600, 3200, 6400, 12800, 25600 };
 MyArrayStr methodNames = { "RGB", "LAB", "HSV" };
 MyArray<MyColorLegend::InterpolationMethod> methods = {
@@ -310,6 +308,10 @@ void tractStats(){
 void reload(){
 	MyBitmap bitmap;
 	int idx = 0;
+	names = { "Black Body Color", "Extened Black Body", "Isoluminant Map", "True Isoluminant Map",
+		"Monoluminant Map", "Monoluminant Extended", "Linearluminant Map", "Diverging Smooth",
+		"Diverging Bent", "Saturation_HSV", "Spiral Color", "Cool-warm", "Gray-scale" };
+	legends.resize(names.size());
 	legends[idx++].SetColorsFromData(&MyBlackBodyColor::mData_1024_3[0][0], 3, 1024, 1);
 	legends[idx++].SetColorsFromData(&MyConstants::BlackBodyExtended[0][0], 3, 1024, 1);
 	bitmap.Open("..\\SSAO\\data\\isoluminant.bmp");
@@ -344,6 +346,28 @@ void reload(){
 		hsvs << c.r << c.g << c.b;
 	}
 	legends[idx++].SetColorsFromData(&hsvs[0], 3, 1024, 1);
+	legends[idx++].SetColorsFromData(&MyConstants::SpiralColorHenan[0][0], 3, 1000, 1);
+	colors = { MyColor4f::blue(), MyColor4f::cyan(), MyColor4f::white(), MyColor4f::yellow(), MyColor4f::red() };
+	legends[idx++].SetColors(colors);
+	colors = legends[idx - 1].Resample(1000);
+	for (int i = 0; i < 1000; i++){
+		MyColorConverter::Lab lab = MyColorConverter::rgb2lab(colors[i]);
+		float li = float(i) / (colors.size() - 1);
+		MyColor4f c = legends[7].GetColorByValue(li);
+		MyColorConverter::Lab lab2 = MyColorConverter::rgb2lab(c);
+		lab.l = lab2.l;
+		colors[i] = MyColorConverter::lab2rgb(lab);
+	}
+	legends[idx - 1].SetColors(colors);
+	//legends[idx - 1].CutByLuminance(38, 69);
+	colors.clear();
+	for (int i = 0; i < 1000; i++){
+		float li = float(i) / (1000 - 1);
+		MyColorConverter::Lab lab(li * 100, 0, 0);
+		colors << MyColorConverter::lab2rgb(lab);
+	}
+	legends[idx++].SetColors(colors);
+
 }
 
 int main(int argc, char* argv[]){
@@ -351,7 +375,6 @@ int main(int argc, char* argv[]){
 	//return 1;
 	init(argc, argv);
 	MyTexture::SetInterpolateMethod(GL_NEAREST);
-	legends.resize(10);
 	reload();
 	Update();
 	glutMainLoop();

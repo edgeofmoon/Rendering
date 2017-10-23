@@ -306,6 +306,22 @@ public:
 		return sum;
     }
 
+	static MyVec<T, n> max(const MyVec<T, n> &a, const MyVec<T, n> &b){
+		MyVec<T, n> ret;
+		for (int i = 0; i < n; i++){
+			ret[i] = std::max(a[i], b[i]);
+		}
+		return ret;
+	}
+
+	static MyVec<T, n> min(const MyVec<T, n> &a, const MyVec<T, n> &b){
+		MyVec<T, n> ret;
+		for (int i = 0; i < n; i++){
+			ret[i] = std::min(a[i], b[i]);
+		}
+		return ret;
+	}
+
 	static bool Intersected(MyVec<T,2>& a1, MyVec<T,2>& a2, MyVec<T,2>& b1, MyVec<T,2>& b2){
 		if(((a2-a1)^(b1-a1))*((a2-a1)^(b2-a1))>0){
 			return false;

@@ -212,6 +212,9 @@ void MyVisRankingApp::ProcessKey_DataGen(unsigned char key){
 	case TUMOR:
 		ProcessKey_TUMOR(key);
 		break;
+	case FA_VALUE:
+		ProcessKey_FA_VALUE(key);
+		break;
 	default:
 		break;
 	}
@@ -306,6 +309,137 @@ void MyVisRankingApp::ProcessKey_FA(unsigned char key){
 	}
 }
 
+
+void MyVisRankingApp::ProcessKey_FA_VALUE(unsigned char key){
+	MyVisData* visData = mTrialManager.GetCurrentVisData();
+	const float minDist = 0.1;
+	const int maxItr = 10;
+	if (key == 'v' || key == 'V'){
+		if (visData->GetBoxes().size() > mCurrentBoxIndex){
+			MyVec3f c = visData->GetBoundingBox().GetCenter();
+			MyBoundingBox box = visData->GetBoxes()[mCurrentBoxIndex];
+			box = MyBoundingBox(box.GetCenter(), powf(box.GetVolume(), 1.f / 3));
+			visData->SetBox(box, mCurrentBoxIndex);
+		}
+		else{
+			if (mCurrentBoxIndex < 0) mCurrentBoxIndex = 1;
+			float r = (rand() % 1001) / (float)1000
+				* (MyVisData::GetMaxSphereRadius() - MyVisData::GetMinSphereRadius())
+				+ MyVisData::GetMinSphereRadius();
+			visData->SetBox(MyBoundingBox(visData->GetBoundingBox().GetCenter(), r),
+				mCurrentBoxIndex);
+		}
+	}
+	else if (key == '1'){
+		mCurrentBoxIndex = 0;
+	}
+	else if (key == '2'){
+		mCurrentBoxIndex = -1;
+	}
+	else if (visData->GetBoxes().size() <= mCurrentBoxIndex) return;
+	else{
+		MyBoundingBox box = visData->GetBoxes()[mCurrentBoxIndex];
+		if (ProcessBoundingObjectKey(box, key)){
+			visData->SetBox(box, mCurrentBoxIndex);
+		}
+		// snap
+		else if (key == 'z' || key == 'Z'){
+			ModifyToStable(box, SMALLMOV, maxItr);
+			visData->SetBox(box, mCurrentBoxIndex);
+		}
+		else if (key == 'x' || key == 'X'){
+			ModifyToStable(box, -SMALLMOV, maxItr);
+			visData->SetBox(box, mCurrentBoxIndex);
+		}
+		else if (key == 'c' || key == 'C'){
+			MyArray2i points = mTracts.GetVertexInBox(box, visData->GetTractIndices());
+			if (points.empty()) cerr << "Empty box. Nothing done." << endl;
+			else{
+				MyBoundingBox newBox(mTracts.GetCoord(points[0]), 0);
+				for (int i = 1; i < points.size(); i++){
+					newBox.Engulf(mTracts.GetCoord(points[i]));
+				}
+				visData->SetBox(newBox, mCurrentBoxIndex);
+			}
+		}
+		else if (key == 'f' || key == 'F'){
+			static Bundle lastBd = CG;
+			static FiberCover lastCv = BUNDLE;
+			static int lastQuest = -1;
+			static MyArray<MyBoundingBox> boxes;
+			Bundle bd = visData->GetVisInfo().GetBundle();
+			FiberCover cv = visData->GetVisInfo().GetCover();
+			int quest = visData->GetVisInfo().GetQuest();
+			if (bd == lastBd && cv == lastCv && quest == lastQuest && boxes.size()>0){
+				float target = visData->GetExpectedValueFromQuestIdx();
+				int idx = rand() % boxes.size();
+				cerr << "target:" << target << endl;
+				cerr << "options:" << boxes.size() << endl;
+				visData->SetBox(boxes[idx], 0);
+			}
+			else {
+				float target = visData->GetExpectedValueFromQuestIdx();
+				MyArray2f avgs;
+				boxes.clear();
+				visData->ComputeBoxesWithValue(boxes, avgs, target, 0.02, 100, 500);
+				lastBd = bd;
+				lastCv = cv;
+				lastQuest = quest;
+				if (boxes.size()>0){
+					int idx = rand() % boxes.size();
+					visData->SetBox(box, 0);
+					cerr << "target:" << target << endl;
+					cerr << "options:" << boxes.size() << endl;
+					visData->SetBox(boxes[idx], 0);
+				}
+				else{
+					class compare{
+					public:
+						bool operator()(const MyVec2f& a, const MyVec2f& b){
+							return a[0] < b[0];
+						}
+					} comp;
+					sort(avgs.begin(), avgs.end(), comp);
+					cerr << "Auto find failed." << "target:" << target << endl;
+					MyVisData::WriteVectorToFile("avgs.txt", avgs);
+				}
+			}
+
+		}
+		else if (key == 'j' || key == 'G'){
+			if (mCurrentBoxIndex >= 0){
+				visData->PermuteBoxes(mCurrentBoxIndex);
+			}
+		}
+		// save files
+		else if (key == 'm' || key == 'M'){
+			MyArray<MyBoundingBox> boxes = visData->GetBoxes();
+			if (boxes.size() > 0){
+				visData->SaveBoxFiles(boxes);
+			}
+			// skip output
+			return;
+		}
+	}
+
+	// out info
+	if (mTrialManager.GetCurrentVisData()->GetVisInfo().GetVisTask() == FA_VALUE){
+		float target = visData->GetExpectedValueFromQuestIdx();
+		cout << "target: " << target << endl;
+		if (visData->GetBoxes().size() >= 1){
+			float faSum;
+			int nSample;
+			mTracts.GetSampleValueInfo(visData->GetBoxes()[0],
+				visData->GetTractIndices(), nSample, faSum);
+			float fa = faSum / nSample;
+			cout << "FA_VALUE: " << fa << endl;
+
+			visData->UpdateAnswers();
+			PrintTrialInfo();
+		};
+	}
+}
+
 void MyVisRankingApp::ProcessKey_TRACE(unsigned char key){
 	MyVisData* visData = mTrialManager.GetCurrentVisData();
 	unordered_map<unsigned char, int> sdict;
@@ -333,7 +467,7 @@ void MyVisRankingApp::ProcessKey_TRACE(unsigned char key){
 			visData->CheckSelectedValidness();
 		}
 	}
-	else if (key == 'j' || key == 'G'){
+	else if (key == 'j' || key == 'J'){
 		if (mCurrentBoxIndex >= 0){
 			visData->PermuteBoxes(mCurrentBoxIndex);
 			visData->CheckSelectedValidness();

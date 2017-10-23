@@ -22,10 +22,16 @@ public:
 	void SetColorTextures(const MyArrayui& c){ mColorTextures = c; };
 	void SetValueTextures(const MyArrayui& c){ mValueTextures = c; };
 
+	const MyArrayui& GetColorTextures() const { return mColorTextures; };
+	const MyArrayui& GetValueTextures() const { return mValueTextures; };
+
 	const MyTractVisBase* GetTractVis() const { return mTractVis; };
 	MyTractVisBase* GetTractVis() { return mTractVis; };
 	const MyTractVisBase* GetTractVisAux() const { return mTractVis_Aux; };
 	MyTractVisBase* GetTractVisAux() { return mTractVis_Aux; };
+
+	void SetIgnoreBoxVis(bool b){ mIgnoreBoxVis = b; };
+	bool GetIgnoreBoxVis() const { return mIgnoreBoxVis; };
 
 	static void UseNormalizedLighting(bool b);
 
@@ -42,6 +48,11 @@ protected:
 	MyTractVisBase* mTractVis;
 	// for tube+DDH
 	MyTractVisBase* mTractVis_Aux;
+
+	// temporal geometry
+	bool mIgnoreBoxVis;
+	MyTractVisBase* mBoxTubeVis;
+	MyTracks* mBoxTracts;
 
 	// stored geometry
 	MyTractVisBase* mTubeVis;
@@ -90,5 +101,8 @@ protected:
 	void Switch_TUMOR_LINE_BASIC();
 	void Switch_TUMOR_TUBE_BASIC();
 	void AddTumorSphere();
+	// FA_VALUE task
+	void Switch_FA_VALUE();
+
 };
 

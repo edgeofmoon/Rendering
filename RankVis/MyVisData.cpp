@@ -72,6 +72,9 @@ void MyVisData::LoadFromDirectory(const MyString& dir){
 	else if (mVisInfo.GetVisTask() == TUMOR){
 		LoadData_TUMOR();
 	}
+	else if (mVisInfo.GetVisTask() == FA_VALUE){
+		LoadData_FA_VALUE();
+	}
 	else{
 		cerr << "Cannot resolve task type!" << endl;
 	}
@@ -87,6 +90,12 @@ void MyVisData::UpdateAnswers(){
 	else if (mVisInfo.GetVisTask() == TUMOR){
 		ComputeAnswer_TUMOR();
 	}
+	else if (mVisInfo.GetVisTask() == FA_VALUE){
+		ComputeAnswer_FA_VALUE();
+	}
+	else{
+		cerr << "Cannot resolve task type!" << endl;
+	}
 }
 
 int MyVisData::GetError(int userAnswer) const{
@@ -101,6 +110,13 @@ int MyVisData::GetError(int userAnswer) const{
 		if (mCorrectAnswers.size()>0)
 			return (userAnswer == mCorrectAnswers[0] ? 0 : 1);
 		else return 1;
+	}
+	else return -100;
+}
+
+float MyVisData::GetError(float userAnswer) const{
+	if (mVisInfo.GetVisTask() == FA_VALUE){
+		return abs(userAnswer - mAnswerInfo);
 	}
 	else return -100;
 }
@@ -146,6 +162,7 @@ void MyVisData::LoadData_FA(){
 void MyVisData::LoadData_TRACE(){
 	LoadData_Box(3);
 	LoadData_SelectIndices();
+	LoadData_TractColors();
 	ComputeAnswer_TRACE();
 
 }
@@ -157,6 +174,11 @@ void MyVisData::LoadData_SAME(){
 void MyVisData::LoadData_TUMOR(){
 	LoadData_Sphere();
 	ComputeAnswer_TUMOR();
+}
+
+void MyVisData::LoadData_FA_VALUE(){
+	LoadData_Box(1);
+	ComputeAnswer_FA_VALUE();
 }
 
 void MyVisData::LoadData_Box(int numBox){
@@ -220,6 +242,32 @@ void MyVisData::LoadData_SelectIndices(){
 	}
 	else{
 		cerr << "Cannot read tract index file: " << selectIndexFileName << endl;
+	}
+}
+
+void MyVisData::LoadData_TractColors(){
+	if (mVisInfo.GetMappingMethod() == 0) return;
+	MyString slash("\\");
+	MyString imDir = mBaseDirectory + slash
+		+ mVisInfo.GetCoverFolderName() + slash
+		+ mVisInfo.GetTaskFolderName() + slash
+		+ mVisInfo.GetResolutionFolderName() + slash
+		+ mVisInfo.GetBundleFolderName() + slash;
+	MyString fileName = imDir + mVisInfo.GetTractColorFileName(mVisInfo.GetMappingMethod());
+	ifstream infile(fileName.c_str());
+	mTractColors.clear();
+	if (infile.is_open()){
+		unsigned int numIdxs = mTractIndices.size();
+		mTractColors.reserve(numIdxs);
+		for (unsigned int i = 0; i<numIdxs; i++){
+			MyColor4f c(0, 0, 0, 1);
+			infile >> c.r >> c.g >> c.b;
+			mTractColors << (c);
+		}
+		infile.close();
+	}
+	else{
+		cerr << "Cannot read tract color file: " << fileName << endl;
 	}
 }
 
@@ -337,6 +385,21 @@ void MyVisData::ComputeAnswer_TUMOR(){
 	}
 }
 
+void MyVisData::ComputeAnswer_FA_VALUE(){
+	float faSum;
+	int nSample;
+	if (mBoxes.size() >= 1){
+		mTracts->GetSampleClampedValueInfo(mBoxes[0], 0.2, 1.0, mTractIndices, nSample, faSum);
+		float fa = faSum / nSample;
+		mAnswerInfo = fa;
+		mCorrectAnswers.clear();
+	}
+	else{
+		cerr << "No Box to resolve FA_VALUE task answer!" << endl;
+	}
+
+}
+
 // for adding data
 void MyVisData::CreateNewQuestFolder() const{
 	MyString slash("\\");
@@ -358,6 +421,7 @@ void MyVisData::SetBox(const MyBoundingBox& box, int idx){
 	if (mBoxes.size() < idx + 1) mBoxes.resize(idx + 1, box);
 	else mBoxes[idx] = box;
 }
+
 void MyVisData::SaveBoxFiles(const MyArray<MyBoundingBox>& boxes) const{
 	for (int i = 0; i < boxes.size(); i++){
 		MyString boxFileName = mDataPath + mVisInfo.GetBoxFileName(i);
@@ -543,6 +607,57 @@ MyArrayi MyVisData::ComputeTouchedIndices(const MySphere& sphere) const{
 		}
 	}
 	return rst;
+}
+
+// FA_VALUE
+float MyVisData::GetExpectedValueFromQuestIdx() const{
+	Bundle bd = mVisInfo.GetBundle();
+	FiberCover cv = mVisInfo.GetCover();
+	if (cv == BUNDLE && (bd == IFO || bd == ILF)){
+		float values[] = { 0.26, 0.3, 0.34, 0.38, 0.42, 0.46, 0.5, 0.54, 0.58, 0.62, 0.68, 0.7 };
+		return values[mVisInfo.GetQuest() % 12];
+	}
+	else {
+		float values[] = { 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8 };
+		return values[mVisInfo.GetQuest() % 12];
+	}
+}
+
+void MyVisData::ComputeBoxesWithValue(MyArray<MyBoundingBox>& boxes, MyArray2f& avgs, float v, float err, int minSegs, int maxSegs){
+	for (int w = 15; w >= 5; w--){
+		for (int t = 0; t < mTractIndices.size(); t++){
+			int tractIndex = mTractIndices[t];
+			int m = mTracts->GetNumVertex(tractIndex);
+			MyArrayi ctns(m, 0);
+			MyArrayf sums(m, 0);
+#pragma omp parallel for default(shared)
+			for (int i = 0; i < m; i++){
+				MyBoundingBox tbox(mTracts->GetCoord(tractIndex, i), w);
+				float sum = 0;
+				int ctn = 0;
+				mTracts->GetSampleClampedValueInfo(tbox, 0.1, 1, mTractIndices, ctns[i], sums[i]);
+			}
+			for (int i = 0; i < m; i++){
+				avgs << MyVec2f(((ctns[i]!=0) ? (sums[i] / ctns[i]) : 0), ctns[i]);
+				if (ctns[i]<minSegs || ctns[i]>maxSegs) continue;
+				float fa = sums[i] / ctns[i];
+				if (fabs(fa - v) <= err) {
+					boxes << MyBoundingBox(mTracts->GetCoord(tractIndex, i), w);
+				}
+			}
+			if (boxes.size()>10) break;
+		}
+	}
+}
+
+void MyVisData::WriteVectorToFile(const MyString& fn, const MyArray2f& vecs){
+	ofstream outfile(fn);
+	if (!outfile.is_open()){
+		cerr << "Cannot Open File: " << fn << endl;
+		return;
+	}
+	for (auto f : vecs) outfile << f[0] << '\t' << f[1] << endl;
+	outfile.close();
 }
 
 CollisionStatus MyVisData::SphereCollusionStatus(float radius, float closetCenterDist){

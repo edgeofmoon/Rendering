@@ -23,12 +23,16 @@ public:
 	MyLogTable();
 	~MyLogTable();
 
+	bool IsStarted() const { return mbStarted; };
+	bool NeedAtLeastOneFrame() const;
+
 	void SetEnabled(bool b){ mbEnabled = b; };
 	bool IsEnabled() const { return mbEnabled; };
 	void SetUserIndex(int uid){ mUserIndex = uid; };
 	void SetVisData(const MyVisData* visData){ mCurrentVisData = visData; };
 	void SetTrialIndex(int idx){ mCurrentTrialIndex = idx; };
-	void SetUserAnswer(int ua){ mUserAnswer = ua; };
+	void SetUserAnswer(int ua){ mUserAnswerType = 1;  mUserAnswerInt = ua; };
+	void SetUserAnswer(float ua){ mUserAnswerType = 2; mUserAnswerFloat = ua; };
 	void SetUserConfidence(int cf){ mUserConfidence = cf; };
 	void StartLog(MyString prefix = "log");
 	void EndLog();
@@ -44,7 +48,9 @@ protected:
 	std::ofstream mOutStream;
 	int mUserIndex;
 	int mCurrentTrialIndex;
-	int mUserAnswer;
+	int mUserAnswerType;
+	int mUserAnswerInt;
+	float mUserAnswerFloat;
 	int mUserConfidence;
 	const MyVisData* mCurrentVisData;
 	bool mbPaused, mbStarted;
@@ -54,7 +60,7 @@ protected:
 	int mCurrentTrialTotalPausedClock;
 	float GetTimeUsed() const;
 	float GetTimePaused() const;
-	int GetError(int userAnswer) const;
+	float GetError() const;
 	float GetCorrectAnswer() const;
 
 	static MyString LogDirectory;

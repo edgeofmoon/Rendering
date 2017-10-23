@@ -22,7 +22,6 @@ using namespace MyVisEnum;
 #define BASIC_SCALE_TUBE_ENCODING	1
 
 #define NORMALIZED_SCALE_LINE_AO		1.764
-
 #define NORMALIZED_SCALE_LINE_BASIC		1
 #define NORMALIZED_SCALE_LINE_DEPTH		1.022
 #define NORMALIZED_SCALE_LINE_ENCODING	1.000
@@ -75,6 +74,9 @@ MyVisTract::MyVisTract()
 	mTubeAOVis = NULL;
 	mCanvasWidth = 0;
 	mCanvasHeight = 0;
+	mBoxTubeVis = NULL;
+	mBoxTracts = NULL;
+	mIgnoreBoxVis = false;
 }
 
 
@@ -86,6 +88,8 @@ MyVisTract::~MyVisTract(){
 	if (mTubeDDHVis) delete mTubeDDHVis;
 	if (mLineAOVis) delete mLineAOVis;
 	if (mTubeAOVis) delete mTubeAOVis;
+	if (mBoxTubeVis) delete mBoxTubeVis;
+	if (mBoxTracts) delete mBoxTracts;
 }
 
 void MyVisTract::Show(){
@@ -110,7 +114,7 @@ void MyVisTract::Update(){
 	mTractVis = NULL;
 	mTractVis_Aux = NULL;
 
-	if (visInfo.GetVisTask() == FA){
+	if (visInfo.GetVisTask() == FA || (visInfo.GetVisTask() == FA_VALUE && mIgnoreBoxVis)){
 		if (visInfo.GetShape() == TUBE){
 			if (visInfo.GetEncoding() == COLOR)
 				Switch_FA_TUBE_COLOR();
@@ -199,12 +203,17 @@ void MyVisTract::Update(){
 			cerr << "Unresolved shape for TUMOR: "
 			<< toString(visInfo.GetShape()) << endl;
 	}
+	else if (visInfo.GetVisTask() == FA_VALUE){
+		Switch_FA_VALUE();
+	}
 	else if (!visInfo.IsEmpty())
 		cerr << "Unresolved task: "  << toString(visInfo.GetVisTask()) << endl;
 
-	// update shown indices
-	if(mTractVis) mTractVis->SetTractsShown(mVisData->GetTractIndices());
-	if (mTractVis_Aux) mTractVis_Aux->SetTractsShown(mVisData->GetTractIndices());
+	if (visInfo.GetVisTask() != FA_VALUE){
+		// update shown indices
+		if (mTractVis) mTractVis->SetTractsShown(mVisData->GetTractIndices());
+		if (mTractVis_Aux) mTractVis_Aux->SetTractsShown(mVisData->GetTractIndices());
+	}
 }
 
 void MyVisTract::Switch_FA_TUBE_COLOR(){
@@ -379,6 +388,14 @@ void MyVisTract::Switch_TRACE_LINE_ENCODING(){
 	mLineVis->SetTractsShown(mVisData->GetTractIndices());
 	mLineVis->UpdateBoundingBox();
 
+	if (mVisData->GetVisInfo().GetMappingMethod() != 0){
+		mLineVis->ClearInfluences();
+		mLineVis->SetPerTractColor(&mVisData->GetTractColors());
+	}
+	else {
+		mLineVis->SetPerTractColor(NULL);
+	}
+
 	mTractVis = mLineVis;
 	mTractVis_Aux = NULL;
 }
@@ -400,6 +417,14 @@ void MyVisTract::Switch_TRACE_TUBE_ENCODING(){
 	mTubeVisFlatCap->SetColorInfluence(1);
 	mTubeVisFlatCap->SetTractsShown(mVisData->GetTractIndices());
 	mTubeVisFlatCap->UpdateBoundingBox();
+
+	if (mVisData->GetVisInfo().GetMappingMethod() != 0){
+		mTubeVisFlatCap->ClearInfluences();
+		mTubeVisFlatCap->SetPerTractColor(&mVisData->GetTractColors());
+	}
+	else {
+		mTubeVisFlatCap->SetPerTractColor(NULL);
+	}
 
 	mTractVis = mTubeVisFlatCap;
 	mTractVis_Aux = NULL;
@@ -449,13 +474,11 @@ void MyVisTract::Switch_TRACE_TUBE_BASIC(){
 
 void MyVisTract::Switch_TUMOR_LINE_DEPTH(){
 	Switch_TRACE_LINE_DEPTH();
-
 	AddTumorSphere();
 }
 
 void MyVisTract::Switch_TUMOR_TUBE_DEPTH(){
-	Switch_TRACE_LINE_DEPTH();
-
+	Switch_TRACE_TUBE_DEPTH();
 	AddTumorSphere();
 }
 
@@ -510,4 +533,27 @@ void MyVisTract::AddTumorSphere(){
 		sphereGeometry->GenerateGeometry();
 		mTractVis->SetSphereGeometry(sphereGeometry);
 	}
+}
+
+void MyVisTract::Switch_FA_VALUE(){
+	if (mVisData->GetVisInfo().IsEmpty()) return;
+	if (mBoxTubeVis != NULL) delete mBoxTubeVis;
+	if ( mBoxTracts == NULL) delete mBoxTracts;
+	mBoxTracts = new MyTracks;
+	mBoxTracts->BoxSubsetFrom(*mVisData->GetTracts(), 
+		mVisData->GetBoxes()[0], mVisData->GetTractIndices());
+	mBoxTubeVis = new MyTractVisBase();
+	mBoxTubeVis->SetTracts(mBoxTracts);
+	mBoxTubeVis->SetShape(MyTractVisBase::TRACK_SHAPE_TUBE);
+	mBoxTubeVis->SetCapType(MyTractVisBase::CAP_TYPE_FLAT);
+	mBoxTubeVis->ComputeGeometry();
+	mBoxTubeVis->LoadShader();
+	mBoxTubeVis->LoadGeometry();
+	mBoxTubeVis->ResetRenderingParameters();
+	mBoxTubeVis->SetTexture(mColorTextures[mVisData->GetVisInfo().GetMappingMethod()]);
+	mBoxTubeVis->ClearInfluences();
+	mBoxTubeVis->SetValueToTextureInfluence(1);
+
+	mTractVis = mBoxTubeVis;
+	mTractVis_Aux = NULL;
 }

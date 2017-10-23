@@ -100,6 +100,8 @@ int MyTracks::Read(const std::string& filename){
 
 		std::streamsize ss = std::cout.precision();
 		std::cout.precision(2);
+		mHeader.n_properties = 0;
+		mHeader.n_scalars = 3;
 		for (int i = 0; i < mHeader.n_count; i++){
 			if ((int)((i + 1) * 100 / (float)mHeader.n_count)
 				- (int)(i * 100 / (float)mHeader.n_count) >= 1){
@@ -144,6 +146,7 @@ int MyTracks::Read(const std::string& filename){
 			MySingleTrackData& track = mTracks[i];
 			int tractSize = 0;
 			fs >> tractSize;
+			mHeader.n_properties = 0;
 			mHeader.n_scalars = 13;
 			track.mPoints.resize(tractSize);
 			track.mPointScalars.resize(tractSize);
@@ -389,6 +392,38 @@ void MyTracks::AddTracks(const MyTracks& tracks){
 void MyTracks::CopyTracksFrom(const MyTracks& track){
 	memcpy(&this->mHeader, &track.mHeader, sizeof(MyTrackHeader_Trk));
 	this->mTracks = track.mTracks;
+}
+
+void MyTracks::BoxSubsetFrom(const MyTracks& tract, 
+	const MyBoundingObject& bobj, const MyArrayi& indices, int minSeg){
+	memcpy(&this->mHeader, &tract.mHeader, sizeof(MyTrackHeader_Trk));
+	for (int i = 0; i < indices.size(); i++){
+		int tidx = indices[i];
+		int st = -1, ed = -1;
+		int n = tract.GetNumVertex(tidx);
+		for (int j = 0; j < n; j++){
+			const MyVec3f& p = tract.GetCoord(tidx, j);
+			if (bobj.IsIn(p)){
+				if (st == -1) st = ed = j;
+				else ed = j;
+			}
+			else {
+				if (st >= 0 && ed - st + 1 >= minSeg){
+					MySingleTrackData d;
+					d.CopyFrom(tract.GetTracts()[tidx], st, ed);
+					mTracks << d;
+					st = ed = -1;
+				}
+			}
+		}
+		if (st >= 0 && ed - st + 1 >= minSeg){
+			MySingleTrackData d;
+			d.CopyFrom(tract.GetTracts()[tidx], st, ed);
+			mTracks << d;
+			st = ed = -1;
+		}
+	}
+	mHeader.n_count = mTracks.size();
 }
 
 int MyTracks::GetNumTracks() const{

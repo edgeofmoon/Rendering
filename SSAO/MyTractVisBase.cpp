@@ -21,6 +21,20 @@ using namespace std;
 #include "GL\glew.h"
 #include <GL/freeglut.h>
 
+// below description is wrong!
+//assuming superquadric has radius 0.5
+//average (1-cl)^3=0.46
+//average (1-cp)^3=0.59
+//which will have average max area (gamma=3):
+//integration 0 to pi/2: 4*(0.5*0.5)*(cosx)^0.460*(sinx)^0.593 = 0.8247
+//4 is for each quarter on x/y plan, 0.5 is base glyph radius
+//average 1/2 will be projected
+//for tube, projected will always be 2*R*1
+//1 is length is sample distance
+//let 2*R=0.8247/2, we get R=0.206
+//float MyTractVisBase::DefaultTrackRadius = 0.206;
+float MyTractVisBase::DefaultTrackRadius = 0.2;
+
 MyTractVisBase::RenderingParameters MyTractVisBase::DefaultRenderingParameters = {
 	MyTractVisBase::TRACK_SHAPE_TUBE,
 	MyTractVisBase::CAP_TYPE_ROUND,
@@ -42,6 +56,7 @@ MyTractVisBase::RenderingParameters MyTractVisBase::DefaultRenderingParameters =
 };
 
 MyTractVisBase::MyTractVisBase(){
+	mPerTractColor = NULL;
 	ResetRenderingParameters();
 }
 
@@ -64,17 +79,7 @@ void MyTractVisBase::SetTracts(const MyTracks* tracts){
 }
 
 void MyTractVisBase::ResetRenderingParameters(){
-	//assuming superquadric has radius 0.5
-	//average (1-cl)^3=0.46
-	//average (1-cp)^3=0.59
-	//which will have average max area (gamma=3):
-	//integration 0 to pi/2: 4*(0.5*0.5)*(cosx)^0.460*(sinx)^0.593 = 0.8247
-	//4 is for each quarter on x/y plan, 0.5 is base glyph radius
-	//average 1/2 will be projected
-	//for tube, projected will always be 2*R*1
-	//1 is length is sample distance
-	//let 2*R=0.8247/2, we get R=0.206
-	mTrackRadius = 0.206;
+	mTrackRadius = DefaultTrackRadius;
 	mRenderingParameters = DefaultRenderingParameters;
 	mSphereGeometry = NULL;
 }
@@ -713,6 +718,9 @@ void MyTractVisBase::DrawGeometry(){
 			//int offset = (mIdxOffset[fiberIdx] / (mRenderingParameters.Faces + 1) - fiberIdx)*mRenderingParameters.Faces * 6;
 			//int numVertex = (this->GetNumVertex(fiberIdx) - 1)*(mRenderingParameters.Faces + 0) * 6;
 			// add cap offset
+			if (mPerTractColor){
+				glUniform4fv(glGetUniformLocation(mShaderProgram, "baseColor"), 1, &mPerTractColor->at(i).r);
+			}
 			int offset = (mIdxOffset[fiberIdx] / (mRenderingParameters.Faces + 1) - fiberIdx * 2)*mRenderingParameters.Faces * 6;
 			int numVertex = (mTracts->GetNumVertex(fiberIdx) - 1)*(mRenderingParameters.Faces + 0) * 6 + mRenderingParameters.Faces * 6;
 			glDrawElements(GL_TRIANGLES, numVertex, GL_UNSIGNED_INT, (const void *)(offset*sizeof(int)));

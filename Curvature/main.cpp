@@ -12,9 +12,9 @@ using namespace std;
 #include "GL/glui.h"
 
 #ifdef TRACK
-#include "MyTracks.h"
+#include "MyTractVisBase.h"
 #include "MyTrackRings.h"
-#include "MyLineAO.h"
+#include "MyTrackCurv.h"
 #endif
 
 #ifdef MESH
@@ -39,8 +39,7 @@ int gl_error;
 
 
 #ifdef TRACK
-MyLineAO track;
-int lineWidth = 3;
+MyTrackCurv track;
 #endif
 
 #ifdef MESH
@@ -49,7 +48,10 @@ MyMesh mesh;
 unsigned int gTex;
 
 MyTrackBall trackBall;
-MyFrameBuffer fb;
+MyFrameBuffer geomFb, ssaoFb, blurFb, lightingFb;
+MySsaoPass ssaoPass;
+MyBlurPass blurPass;
+MyLightingPass lightingPass;
 
 #define MAX_RENDER_MODE 4
 int renderIdx = 0;
@@ -57,9 +59,9 @@ int bdrawTracks = 1;
 int bdrawAxes = 0;
 MyVec3f boxOffset[2];
 int bdrawBoxes = 0;
+int bdrawHalo = 1;
 int activeBox = 0;
 int boxOpacityIndex = 0;
-int lineSkip = 1;
 // glui code
 GLUI_Panel* panel[MAX_RENDER_MODE + 1] = { 0 };
 
@@ -179,6 +181,19 @@ void drawBox(MyVec3f low, MyVec3f high, int id = 0){
 	glPopAttrib();
 }
 
+void drawTracks(int x, int y, int width, int height){
+	MyGraphicsTool::SetViewport(MyVec4i(x, y, width, height));
+	glPushMatrix(); {
+		MyGraphicsTool::LoadTrackBall(&trackBall);
+		MyGraphicsTool::Rotate(180, MyVec3f(0, 1, 0));
+		MyBoundingBox box = track.GetTracts()->GetBoundingBox();
+		MyGraphicsTool::Translate(-box.GetCenter());
+		if (bdrawTracks){
+			track.Show();
+		}
+	}glPopMatrix();
+
+}
 
 #endif
 #ifdef MESH
@@ -262,7 +277,7 @@ GLUI* glui;
 float meshPrecision = 0.01;
 GLUI_Scrollbar* lightComponentSlider[MAX_LIGHT_COMPONENTS] = { 0 };
 int lightComponentRatioControl = 1;
-int dsrIndex = 4;
+int dsrIndex = 2;
 int cullface = 0;
 
 void reRender(int mode){
@@ -274,11 +289,17 @@ void changeDsr(int mode){
 
 	int tw = windowWidth * dsr_factor;
 	int th = windowHeight * dsr_factor;
+	geomFb.SetSize(tw, th);
+	geomFb.Build();
 
-	track.Resize(tw, th);
-	fb.SetSize(tw, th);
-	fb.Build();
+	ssaoFb.SetSize(tw, th);
+	ssaoFb.Build();
 
+	blurFb.SetSize(tw, th);
+	blurFb.Build();
+
+	lightingFb.SetSize(tw, th);
+	lightingFb.Build();
 	glutPostRedisplay();
 }
 
@@ -291,10 +312,9 @@ void switchRenderMode(int mode){
 }
 
 #ifdef TRACK
-int trackShape = 1;
+int trackShape = 0;
 int trackFaces = 20;
 GLUI_Panel* tubeParameterPanel;
-GLUI_Panel* lineParameterPanel;
 void changeTrackShape(int id){
 	MyTractVisBase::TrackShape oldShape = track.GetShape();
 	int oldNumFaces = track.GetNumberFaces();
@@ -303,12 +323,10 @@ void changeTrackShape(int id){
 	case 0:
 		track.SetShape(MyTractVisBase::TrackShape::TRACK_SHAPE_TUBE);
 		tubeParameterPanel->enable();
-		lineParameterPanel->disable();
 		break;
 	case 1:
 		track.SetShape(MyTractVisBase::TrackShape::TRACK_SHAPE_LINE);
 		tubeParameterPanel->disable();
-		lineParameterPanel->enable();
 		break;
 	default:
 		break;
@@ -331,15 +349,13 @@ void resetTrackShape(){
 	}
 	switch (track.GetShape())
 	{
-	case MyTractVisBase::TRACK_SHAPE_TUBE:
+	case MyTractVisBase::TrackShape::TRACK_SHAPE_TUBE:
 		tubeParameterPanel->enable();
 		trackShape = 0;
-		track.SetLightIntensity(1.677);
 		break;
-	case MyTractVisBase::TRACK_SHAPE_LINE:
+	case MyTractVisBase::TrackShape::TRACK_SHAPE_LINE:
 		tubeParameterPanel->disable();
 		trackShape = 1;
-		track.SetLightIntensity(1.764);
 		break;
 	default:
 		break;
@@ -412,14 +428,6 @@ void resetShaders(int mode){
 #endif
 }
 
-void lineSkipChange(int mode){
-	int n = track.GetTracts()->GetNumTracks();
-	MyArrayi toDraw = MyArrayi::GetSequence(0, n - 1, lineSkip);
-	track.SetTractsShown(toDraw);
-	cout << "Line Skip: " << lineSkip << ",\ttotal: " << n / lineSkip << endl;
-	glutPostRedisplay();
-}
-
 void resetRenderingParameters(int mode){
 	switch (mode)
 	{
@@ -428,7 +436,24 @@ void resetRenderingParameters(int mode){
 		resetTrackShape();
 #endif
 		break;
+	case 1:
+		ssaoPass.ResetRenderingParameters();
+		break;
+	case 2:
+		blurPass.ResetRenderingParameters();
+		break;
+	case 3:
+		lightingPass.ResetRenderingParameters();
+		lightComponentRatioControl = 1;
+		break;
 	default:
+#ifdef TRACK
+		resetTrackShape();
+#endif
+		ssaoPass.ResetRenderingParameters();
+		blurPass.ResetRenderingParameters();
+		lightingPass.ResetRenderingParameters();
+		lightComponentRatioControl = 1;
 		break;
 	}
 	if (cullface == 1){
@@ -444,28 +469,103 @@ void resetRenderingParameters(int mode){
 
 /**************************************** GLUT Callback ********************/
 void myGlutDisplay(){
-	glBindFramebuffer(GL_FRAMEBUFFER, fb.GetFrameBuffer());
 	glClearColor(1, 1, 1, 0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	MyGraphicsTool::SetViewport(MyVec4i(0, 0, windowWidth * dsr_factor, windowHeight * dsr_factor));
-	glPushMatrix(); {
-		MyGraphicsTool::LoadTrackBall(&trackBall);
-		MyGraphicsTool::Rotate(180, MyVec3f(0, 1, 0));
-		MyBoundingBox box = track.GetTracts()->GetBoundingBox();
-		MyGraphicsTool::Translate(-box.GetCenter());
-		if (bdrawTracks){
-			glLineWidth(lineWidth*dsr_factor);
-			track.Show();
-		}
-	}glPopMatrix();
 
+	// geometry pass
+	glBindFramebuffer(GL_FRAMEBUFFER, geomFb.GetFrameBuffer());
+	geomFb.Clear();
+#ifdef TRACK
+
+	/*
+	// code for pixel halo
+	glLineWidth(1 * (dsrIndex / 2));
+	track.mTrackRadius = 1;
+	drawTracks(0, 0, windowWidth*dsr_factor, windowHeight*dsr_factor);
+	glLineWidth(3 * (dsrIndex / 2));
+	track.mTrackRadius = 0;
+	*/
+	drawTracks(0, 0, windowWidth*dsr_factor, windowHeight*dsr_factor);
+	glLineWidth(1);
+
+	/*
+	// code for line-tube in box.
+	track.mTrackRadius = 0;
+	drawTracks(0, 0, windowWidth*dsr_factor, windowHeight*dsr_factor);
+	trackLine.mTrackRadius = 1;
+	drawTrackLines(0, 0, windowWidth*dsr_factor, windowHeight*dsr_factor);
+	*/
+
+#endif
+#ifdef MESH
+	drawMesh(0, 0, windowWidth*dsr_factor, windowHeight*dsr_factor);
+#endif
+	drawAxes();
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	glClearColor(1, 1, 0, 0);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	MyGraphicsTool::SetViewport(MyVec4i(0, 0, windowWidth, windowHeight));
-	RenderTexture(fb.GetColorTexture(), 0, 0, windowWidth, windowHeight);
 
-	glutSwapBuffers();
+	if (renderIdx == 0){
+		RenderTexture(geomFb.GetColorTexture(), 0, 0, windowWidth, windowHeight);
+		//drawLegend();
+		glutSwapBuffers();
+		return;
+	}
+
+	if (renderIdx >= 1){
+		// ssao pass
+		glBindFramebuffer(GL_FRAMEBUFFER, ssaoFb.GetFrameBuffer());
+		ssaoFb.Clear();
+		glViewport(0, 0, windowWidth*dsr_factor, windowHeight*dsr_factor);
+		ssaoPass.SetColorTexture(geomFb.GetColorTexture());
+		ssaoPass.SetPositionTexture(geomFb.GetExtraDrawTexture(0));
+		ssaoPass.SetNormalTexture(geomFb.GetExtraDrawTexture(1));
+		ssaoPass.Render();
+		drawAxes();
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	}
+
+	if (renderIdx == 1){
+		RenderTexture(ssaoFb.GetColorTexture(), 0, 0, windowWidth, windowHeight);
+		glutSwapBuffers();
+		return;
+	}
+
+	if (renderIdx >= 2){
+		// blur pass
+		glBindFramebuffer(GL_FRAMEBUFFER, blurFb.GetFrameBuffer());
+		ssaoFb.Clear();
+		glViewport(0, 0, windowWidth*dsr_factor, windowHeight*dsr_factor);
+		blurPass.SetInputTexture(ssaoFb.GetColorTexture());
+		blurPass.Render();
+		drawAxes();
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	}
+
+	if (renderIdx == 2){
+		RenderTexture(blurFb.GetColorTexture(), 0, 0, windowWidth, windowHeight);
+		glutSwapBuffers();
+		return;
+	}
+
+	if (renderIdx >= 3){
+		// lighting pass
+		glBindFramebuffer(GL_FRAMEBUFFER, lightingFb.GetFrameBuffer());
+		lightingFb.Clear();
+		glViewport(0, 0, windowWidth*dsr_factor, windowHeight*dsr_factor);
+		lightingPass.SetColorTexture(geomFb.GetColorTexture());
+		lightingPass.SetPositionTexture(geomFb.GetExtraDrawTexture(0));
+		lightingPass.SetNormalTexture(geomFb.GetExtraDrawTexture(1));
+		lightingPass.SetSsaoTexture(blurFb.GetColorTexture());
+		lightingPass.Render();
+		drawAxes();
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	}
+
+	if (renderIdx == 3){
+		RenderTexture(lightingFb.GetColorTexture(), 0, 0, windowWidth, windowHeight);
+		//drawLegend();
+		glutSwapBuffers();
+		return;
+	}
 }
 void myGlutKeyboard(unsigned char Key, int x, int y)
 {
@@ -474,6 +574,15 @@ void myGlutKeyboard(unsigned char Key, int x, int y)
 	case 27:
 		exit(0);
 		break;
+	case 'r':
+	case 'R':
+#ifdef TRACK
+		track.LoadShader();
+#endif
+		ssaoPass.CompileShader();
+		blurPass.CompileShader();
+		lightingPass.CompileShader();
+		break;
 	case 'i':
 		renderIdx = (renderIdx + 1) % MAX_RENDER_MODE;
 		cout << renderIdx << endl;
@@ -481,14 +590,6 @@ void myGlutKeyboard(unsigned char Key, int x, int y)
 	case 'I':
 		renderIdx = (renderIdx + MAX_RENDER_MODE - 1) % MAX_RENDER_MODE;
 		cout << renderIdx << endl;
-		break;
-	case 'h':
-	case 'H':
-		trackBall.ResetRotate();
-		trackBall.ResetScale();
-		trackBall.ResetTranslate();
-		trackBall.SetRotationMatrix(MyMatrixf::RotateMatrix(90, 1, 0, 0));
-		trackBall.ScaleMultiply(1.3);
 		break;
 	};
 
@@ -503,45 +604,28 @@ void myGlutMenu(int value)
 void myGlutMouseWheel(int button, int dir, int x, int y)
 {
 	if (dir > 0){
-		//trackBall.ScaleMultiply(1.05);
-		glMatrixMode(GL_PROJECTION);
-		glScalef(sqrt(2), sqrt(2), 1);
-		glMatrixMode(GL_MODELVIEW);
+		trackBall.ScaleMultiply(1.05);
 	}
 	else{
-		//trackBall.ScaleMultiply(1 / 1.05);
-		glMatrixMode(GL_PROJECTION);
-		glScalef(1 / sqrt(2), 1 / sqrt(2), 1);
-		glMatrixMode(GL_MODELVIEW);
+		trackBall.ScaleMultiply(1/1.05);
 	}
 	glutPostRedisplay();
 }
 
 void myGlutMouse(int button, int state, int x, int y)
 {
-	if (button == GLUT_LEFT_BUTTON){
-		if (state == GLUT_DOWN){
-			trackBall.StartRotation(x, y);
-		}
-		else if (state == GLUT_UP){
-			trackBall.EndRotation(x, y);
-		}
+	if (state == GLUT_DOWN){
+		trackBall.StartMotion(x, y);
 	}
-	else if (button == GLUT_RIGHT_BUTTON){
-		trackBall.SetTranslateScale(0.1, 0.1);
-		if (state == GLUT_DOWN){
-			trackBall.StartTranslation(x, y);
-		}
-		else if (state == GLUT_UP){
-			trackBall.EndTranslation(x, y);
-		}
+	else if (state == GLUT_UP){
+		trackBall.EndMotion(x, y);
 	}
 	glutPostRedisplay();
 }
 
 void myGlutMotion(int x, int y)
 {
-	trackBall.Motion(x, y);
+	trackBall.RotateMotion(x, y);
 	glutPostRedisplay();
 }
 
@@ -593,45 +677,45 @@ int main(int argc, char* argv[])
 
 	glEnable(GL_DEPTH_TEST);
 
+	/****************************************/
+	/*         Here's the GLSL code         */
+	/****************************************/
+	geomFb.AddExtraDrawTexture(GL_RGBA32F, GL_RGBA, GL_FLOAT, GL_NEAREST, GL_CLAMP_TO_EDGE);
+	geomFb.AddExtraDrawTexture(GL_RGBA, GL_RGBA, GL_FLOAT, GL_NEAREST, GL_CLAMP_TO_EDGE);
+	glClampColor(GL_CLAMP_READ_COLOR, GL_FALSE);
+	glClampColor(GL_CLAMP_VERTEX_COLOR, GL_FALSE);
+	glClampColor(GL_CLAMP_FRAGMENT_COLOR, GL_FALSE);
+
+	/****************************************/
+	/*               Loading Data           */
+	/****************************************/
+
+	ssaoPass.Build();
+	blurPass.Build();
+	lightingPass.Build();
+
 #ifdef TRACK
 	trackBall.SetRotationMatrix(MyMatrixf::RotateMatrix(90, 1, 0, 0));
 	trackBall.ScaleMultiply(1.3);
 	MyTracks tractData;
-	//tractData.Read("C:\\Users\\GuohaoZhang\\Dropbox\\data\\region_s1.data");
-	//tractData.Read("C:\\Users\\GuohaoZhang\\Dropbox\\data\\region_s1_revZ.trk");
-	//tractData.Read("C:\\Users\\GuohaoZhang\\Dropbox\\data\\normal_s2.data");
-	//tractData.Read("C:\\Users\\GuohaoZhang\\Dropbox\\data\\normal_s3.data");
-	//tractData.Read("C:\\Users\\GuohaoZhang\\Dropbox\\data\\normal_s3_tensorboy.trk");
-	//tractData.Read("C:\\Users\\GuohaoZhang\\Dropbox\\data\\normal_s4.data");
-	//tractData.Read("C:\\Users\\GuohaoZhang\\Dropbox\\data\\normal_s5_boy.data");
+	tractData.Read("..\\SSAO\\data\\normal_s3.data");
 	//tractData.Read("data\\normal_s5.tensorinfo");
 	//tractData.Read("data\\cFile.tensorinfo");
 	//tractData.Read("C:\\Users\\GuohaoZhang\\Desktop\\tmpdata\\dti.trk");
-	tractData.Read("C:\\Users\\GuohaoZhang\\Desktop\\tmpdata\\ACR.trk");
+	//tractData.Read("C:\\Users\\GuohaoZhang\\Desktop\\tmpdata\\ACR.trk");
 	//tractData.Read("dti_20_0995.data");
+	//tractData.SetShape(MyTractVisBase::TRACK_SHAPE_LINE);
 	track.SetTracts(&tractData);
-	track.SetShape(MyTractVisBase::TRACK_SHAPE_LINE);
-	track.SetLightIntensity(1.764);
-	//track.SetShape(MyTractVisBase::TRACK_SHAPE_TUBE);
+	track.SetShape(MyTractVisBase::TRACK_SHAPE_TUBE);
 	track.ComputeGeometry();
 	track.LoadShader();
 	track.LoadGeometry();
 
-	/*
-	ring.CopyTracksFrom(track);
-	ring.SetShape(MyTracks::TRACK_SHAPE_TUBE);
-	ring.ComputeGeometry();
-	ring.LoadShader();
-	ring.LoadGeometry();
-
-
-	trackLine.CopyTracksFrom(track);
-	trackLine.SetShape(MyTracks::TRACK_SHAPE_LINE);
-	trackLine.ComputeGeometry();
-	trackLine.LoadShader();
-	trackLine.LoadGeometry();
-	*/
-
+	MyVec3f center = track.GetTracts()->GetBoundingBox().GetCenter();
+	cout << "Center: " << center[0] << ", " << center[1] << ", " << center[2] << endl;
+	boxOffset[0] = MyVec3f(5, 0, 4);
+	boxOffset[0] += center;
+	boxOffset[1] = boxOffset[0];
 #endif
 
 #ifdef MESH
@@ -679,46 +763,120 @@ int main(int argc, char* argv[])
 		panel[0], "DSR Index", GLUI_SPINNER_INT,
 		&dsrIndex, -1, changeDsr);
 	dsrSpinner->set_int_limits(1, 4);
+	GLUI_RadioGroup* radioGroup = new GLUI_RadioGroup(panel[0],
+		&renderIdx, 0, switchRenderMode);
 	new GLUI_Button(panel[0], "Reset All", -1, resetRenderingParameters);
 	new GLUI_Button(panel[0], "Reset Shaders", -1, resetShaders);
-	new GLUI_StaticText(panel[0], "AO Strength");
-	GLUI_Scrollbar* lineAOtotalStrengthSlider = new GLUI_Scrollbar
-		(panel[0], "AO Strength", GLUI_SCROLL_HORIZONTAL,
-		&(track.mLineAOTotalStrength), -1, reRender);
-	lineAOtotalStrengthSlider->set_float_limits(0, 10);
-	GLUI_Spinner* blurRadiusSpinner = new GLUI_Spinner(
-		panel[0], "Blur Radius", GLUI_SPINNER_INT,
-		&track.mBlurRadius, -1, reRender);
-	blurRadiusSpinner->set_int_limits(0, 4);
 
+	// geometry pass
 	panel[1] = new GLUI_Panel(glui, "Geometry Pass");
+	new GLUI_Button(panel[1], "Reset", 0, resetRenderingParameters);
+	new GLUI_Checkbox(panel[1], "Cull Backface",
+		&cullface, -1, resetRenderingParameters);
+	new GLUI_Checkbox(panel[1], "Draw Tracts",
+		&bdrawTracks, -1, reRender);
+	new GLUI_Checkbox(panel[1], "Draw Axes",
+		&bdrawAxes, -1, reRender);
+	new GLUI_Checkbox(panel[1], "Draw Boxes",
+		&bdrawBoxes, -1, reRender);
+	//new GLUI_Checkbox(panel[1], "Draw Halos",
+	//	&bdrawHalo, -1, reRender);
+
+#ifdef MESH
+	GLUI_Spinner* meshPrecisionSpinner = new GLUI_Spinner
+		(panel[1], "Mesh Detail", GLUI_SPINNER_FLOAT,
+		&meshPrecision, -1, changeMeshPrecision);
+	meshPrecisionSpinner->set_float_limits(0.01, 10);
+#endif
+
+#ifdef TRACK
 	GLUI_RadioGroup* shapeRadioGroup = new GLUI_RadioGroup(panel[1],
 		&trackShape, 0, changeTrackShape);
-	new GLUI_RadioButton(shapeRadioGroup, "Tube");
-	new GLUI_RadioButton(shapeRadioGroup, "Line");
+	//new GLUI_RadioButton(shapeRadioGroup, "Tube");
+	//new GLUI_RadioButton(shapeRadioGroup, "Line");
 	tubeParameterPanel = new GLUI_Panel(panel[1], "Tube Parameters");
 	new GLUI_StaticText(tubeParameterPanel, "Tube Radius");
 	GLUI_Scrollbar* tubeRadiusSlider = new GLUI_Scrollbar
 		(tubeParameterPanel, "Tube Radius", GLUI_SCROLL_HORIZONTAL,
 		&(track.mTrackRadius), -1, reRender);
 	tubeRadiusSlider->set_float_limits(0, 1);
-	new GLUI_StaticText(tubeParameterPanel, "Skipping");
-	GLUI_Scrollbar* skippingSlider = new GLUI_Scrollbar
-		(tubeParameterPanel, "Skipping", GLUI_SCROLL_HORIZONTAL,
-		&(lineSkip), -1, lineSkipChange);
-	skippingSlider->set_int_limits(1, 100);
+	/*
+	GLUI_Spinner* boxOpacitySpinner = new GLUI_Spinner(
+		tubeParameterPanel, "Opacity Index", GLUI_SPINNER_INT,
+		&boxOpacityIndex, -1, reRender);
+	boxOpacitySpinner->set_int_limits(0, 2);
+	*/
 	GLUI_Spinner* trackFaceSpinner = new GLUI_Spinner(
 		tubeParameterPanel, "Number Faces", GLUI_SPINNER_INT,
 		&trackFaces, -1, changeTrackShape);
 	trackFaceSpinner->set_int_limits(2, 20);
 	trackFaceSpinner->set_int_val(track.GetNumberFaces());
-	lineParameterPanel = new GLUI_Panel(panel[1], "Line Parameters");
-	new GLUI_StaticText(lineParameterPanel, "Line Width");
-	GLUI_Scrollbar* lineWidthSlider = new GLUI_Scrollbar
-		(lineParameterPanel, "Line Width", GLUI_SCROLL_HORIZONTAL,
-		&(lineWidth), -1, reRender);
-	lineWidthSlider->set_int_limits(0, 5);
+#endif
 
+	/*
+	// ssao pass
+	panel[2] = new GLUI_Panel(glui, "SSAO Pass");
+	new GLUI_Button(panel[2], "Reset", 1, resetRenderingParameters);
+	new GLUI_StaticText(panel[2], "Sample Radius");
+	GLUI_Scrollbar* sampleRadiusSlider = new GLUI_Scrollbar
+		(panel[2], "Sample Radius", GLUI_SCROLL_HORIZONTAL,
+		&(ssaoPass.mSampleRadius), -1, reRender);
+	sampleRadiusSlider->set_float_limits(0, 100);
+	new GLUI_StaticText(panel[2], "Occlusion Power");
+	GLUI_Scrollbar* occulusioPowerSlider = new GLUI_Scrollbar
+		(panel[2], "Occlusion Power", GLUI_SCROLL_HORIZONTAL,
+		&(ssaoPass.mOcclusionPower), -1, reRender);
+	occulusioPowerSlider->set_float_limits(0, 4);
+
+	// blur pass
+	panel[3] = new GLUI_Panel(glui, "Blur Pass");
+	new GLUI_Button(panel[3], "Reset", 2, resetRenderingParameters);
+	GLUI_Spinner* blurRadiusSpinner = new GLUI_Spinner
+		(panel[3], "Blur Radius (Pixel)", GLUI_SPINNER_INT,
+		&(blurPass.mBlurRadius), -1, reRender);
+	blurRadiusSpinner->set_int_limits(0, 20);
+
+	// lighting pass
+	lightingPass.mAmbient = 0.4;
+	lightingPass.mDiffuse = 0.6;
+	lightingPass.mSpecular = 0;
+	lightingPass.mUseSsao = 0;
+	panel[4] = new GLUI_Panel(glui, "Lighting Pass");
+	new GLUI_Button(panel[4], "Reset", 3, resetRenderingParameters);
+	new GLUI_Checkbox(panel[4], "Normalize Intensity",
+		&lightComponentRatioControl, -1, changeLightComponent);
+	new GLUI_Checkbox(panel[4], "Use SSAO",
+		&lightingPass.mUseSsao, -1, changeLightComponent);
+	new GLUI_StaticText(panel[4], "Light Intensity");
+	GLUI_Scrollbar* lightIntensitySlider = new GLUI_Scrollbar
+		(panel[4], "Light Intensity", GLUI_SCROLL_HORIZONTAL,
+		&(lightingPass.mLightItensity), -1, reRender);
+	lightIntensitySlider->set_float_limits(0, 10);
+	new GLUI_StaticText(panel[4], "Ambient");
+	lightComponentSlider[0] = new GLUI_Scrollbar
+		(panel[4], "Ambient", GLUI_SCROLL_HORIZONTAL,
+		&(lightingPass.mAmbient), 0, changeLightComponent);
+	lightComponentSlider[0]->set_float_limits(0, 1);
+	new GLUI_StaticText(panel[4], "Diffuse");
+	lightComponentSlider[1] = new GLUI_Scrollbar
+		(panel[4], "Diffuse", GLUI_SCROLL_HORIZONTAL,
+		&(lightingPass.mDiffuse), 1, changeLightComponent);
+	lightComponentSlider[1]->set_float_limits(0, 1);
+	new GLUI_StaticText(panel[4], "Specular");
+	lightComponentSlider[2] = new GLUI_Scrollbar
+		(panel[4], "Specular", GLUI_SCROLL_HORIZONTAL,
+		&(lightingPass.mSpecular), 2, changeLightComponent);
+	lightComponentSlider[2]->set_float_limits(0, 1);
+	new GLUI_StaticText(panel[4], "Shininess");
+	GLUI_Scrollbar* shininessSlider = new GLUI_Scrollbar
+		(panel[4], "Shininess", GLUI_SCROLL_HORIZONTAL,
+		&(lightingPass.mShininess), -1, changeLightComponent);
+	shininessSlider->set_float_limits(0, 128);
+
+
+	// set init state right
+	switchRenderMode(renderIdx);
+	*/
 	glutMainLoop();
 
 	return EXIT_SUCCESS;

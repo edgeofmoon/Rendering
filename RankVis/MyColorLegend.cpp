@@ -59,9 +59,6 @@ MyArray<MyColor4f> MyColorLegend::Resample(int nSample) const{
 	MyArray<MyColor4f> rst(nSample);
 	for (int i = 0; i < nSample; i++){
 		float v = i / float(nSample - 1);
-		if (nSample == mColors.size() && i == nSample - 1){
-			int debug = 1;
-		}
 		rst[i] = GetColorByValue(v);
 	}
 	return rst;
@@ -125,6 +122,20 @@ void MyColorLegend::CutFromCenterByArcLength(float arcLength){
 	mColors = ComputeCutFromCenterByArcLength(arcLength);
 }
 
+void MyColorLegend::CutByLuminance(float minLu, float maxLu){
+	MyArray<MyColor4f> colors;
+	for (int i = 0; i < mColors.size(); i++){
+		MyColorConverter::Lab lab = MyColorConverter::rgb2lab(mColors[i]);
+		if (lab.l >= minLu && lab.l <= maxLu){
+			colors << mColors[i];
+		}
+		else{
+			int debug = 1;
+		}
+	}
+	mColors = colors;
+}
+
 MyArray<MyColor4f> MyColorLegend::ComputeCutFromCenterByArcLength(float arcLength){
 	MyArrayf de = ComputeDeltaE00(mColors);
 	MyArrayf sums(de.size() + 1, 0);
@@ -170,6 +181,16 @@ MyArrayf MyColorLegend::ComputeDeltaE00(const MyArray<MyColor4f>& colors){
 	MyArrayf rst;
 	for (int i = 1; i < colors.size(); i++){
 		rst << GetDeltaE00(colors[i - 1], colors[i]);
+		//rst << GetDeltaE00(colors[0], colors[i])/100;
+	}
+	return rst;
+}
+
+MyArrayf MyColorLegend::ComputeDeltaE00(const MyArray<MyColor4f>& colors, const MyColor4f& ref){
+	MyArrayf rst;
+	for (int i = 0; i < colors.size(); i++){
+		rst << GetDeltaE00(ref, colors[i]);
+		//rst << GetDeltaE00(colors[0], colors[i])/100;
 	}
 	return rst;
 }

@@ -333,7 +333,7 @@ MyArray<T> MyArray<T>::GetSequence(const T& start, const T& end, const T& inc = 
 	do{
 		rst << value;
 		value += inc;
-	} while ((value - start >= 0)!=(value - end >= 0));
+	} while ((value - start >= 0)!=(value - end > 0));
 	return rst;
 }
 
