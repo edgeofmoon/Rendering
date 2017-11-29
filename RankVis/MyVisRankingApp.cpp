@@ -99,7 +99,9 @@ void MyVisRankingApp::Init(int uidx, int tidx, int mode){
 	else if (IsOnMode(APP_MODE_OCCLUSION))
 		mTrialManager.GenerateVisInfo_OcclusionProfile();
 	if (IsOnMode(APP_MODE_PRINTDATA)){
-		mTrialManager.PrintAllCase("dataTable_" + MyString(uidx) + ".txt");
+		//mTrialManager.PrintAllCase("dataTable_" + MyString(uidx) + ".txt");
+		//mTrialManager.PrintHistogramTables("histogram_" + MyString(uidx) + ".txt");
+		//mTrialManager.PrintFABySegments("FA\\FA");
 	}
 
 	//MyVisTract::UseNormalizedLighting(!IsOnMode(APP_MODE_LIGHTING));
@@ -224,13 +226,16 @@ void MyVisRankingApp::PrintTrialInfo(){
 	const MyVisInfo& visInfo = visData->GetVisInfo();
 	int index = mTrialManager.GetCurrentVisDataIndex();
 	VisTask task = visInfo.GetVisTask();
-	if (task == MyVisEnum::FA){
+	if (task == MyVisEnum::FA || task == MyVisEnum::FA_VALUE){
 		cout << index << ": "
 			<< toString(visInfo.GetCover()) << ", "
 			<< toString(visInfo.GetBundle()) << ", "
 			<< toString(visInfo.GetShape()) << ", "
 			<< toString(visInfo.GetEncoding()) << ", "
 			<< visInfo.GetQuest() << ", ";
+		if (task == MyVisEnum::FA_VALUE){
+			cout << visData->GetAnswerInfo() << ",";
+		}
 		if (visData->GetCorrectAnswers().size()>0)
 				cout << visData->GetCorrectAnswers()[0] << ":"
 				<< visData->GetCorrectAnswerString();
@@ -270,7 +275,6 @@ bool MyVisRankingApp::IsOnBoxView() const{
 	return false;
 }
 
-
 void MyVisRankingApp::Show(){
 	glViewport(0, 0, mCanvasWidth, mCanvasHeight);
 	glBindFramebuffer(GL_FRAMEBUFFER, mFrameBuffer.GetFrameBuffer());
@@ -306,6 +310,216 @@ void MyVisRankingApp::Show(){
 	BrightnessBalance();
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	if (IsOnMode(APP_MODE_OCCLUSION)) glClearColor(0, 0, 0, 0);
+	else glClearColor(1, 1, 1, 0);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glViewport(0, 0, mWindowWidth, mWindowHeight);
+	MyPrimitiveDrawer::DrawTextureOnViewport(mFrameBuffer.GetColorTexture());
+	if (mbDrawUI) UIDraw();
+	if (mbDrawLegend) {
+		DrawColorLegend();
+		DrawTextureRatioLegend();
+		DrawTractLegendText();
+	}
+}
+
+// for making legends
+void MyVisRankingApp::ShowForLegendMaking(){
+	glViewport(0, 0, mCanvasWidth, mCanvasHeight);
+
+	// render left view
+	glBindFramebuffer(GL_FRAMEBUFFER, mFrameBuffer.GetFrameBuffer());
+	if (IsOnMode(APP_MODE_OCCLUSION)) glClearColor(0, 0, 0, 0);
+	else glClearColor(1, 1, 1, 0);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	if (mVisTract.GetTractVis() != NULL && !mbPaused){
+		glPushMatrix();
+		glRotatef(90, 0, 1, 0);
+		glRotatef(-90, 1, 0, 0);
+		//MyGraphicsTool::LoadTrackBall(&mTrackBall);
+		MyBoundingBox box = mTrialManager.GetCurrentVisData()->GetBoundingBox();
+		if (IsOnBoxView()){
+			box = mTrialManager.GetCurrentVisData()->GetBoxes()[0];
+			glScalef(BOXSCALING, BOXSCALING, BOXSCALING);
+		}
+		MyGraphicsTool::Translate(-box.GetCenter());
+		glLineWidth(mLineThickness);
+		if (mbDrawTracts) mVisTract.Show();
+		if (mbDrawHighlighted) DrawHighlighted();
+		if (mbDrawIndicators) {
+			DrawBoxes();
+			DrawTractIndicators();
+		}
+		if (IsOnBoxView()){
+			glScalef(1 / BOXSCALING, 1 / BOXSCALING, 1 / BOXSCALING);
+		}
+		glPopMatrix();
+		if (mbDrawLegend) {
+			glClear(GL_DEPTH_BUFFER_BIT);
+			DrawTractLegend();
+		}
+	}
+	BrightnessBalance();
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	// left copy to RAM
+	MyArray<MyColor4f> colorBuffer_left;
+	colorBuffer_left.resize(mCanvasWidth*mCanvasHeight);
+	glBindTexture(GL_TEXTURE_2D, mFrameBuffer.GetColorTexture());
+	glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_FLOAT, &colorBuffer_left[0]);
+	static unsigned int texture_left;
+	if (!glIsTexture(texture_left)){
+		texture_left = MyTexture::MakeGLTexture(colorBuffer_left, mCanvasWidth, mCanvasHeight);
+	}
+	else{
+		glBindTexture(GL_TEXTURE_2D, texture_left);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, mCanvasWidth,
+			mCanvasHeight, 0, GL_RGBA, GL_FLOAT, &colorBuffer_left[0].r);
+	}
+	glBindTexture(GL_TEXTURE_2D, 0);
+
+	// render front view
+	glBindFramebuffer(GL_FRAMEBUFFER, mFrameBuffer.GetFrameBuffer());
+	if (IsOnMode(APP_MODE_OCCLUSION)) glClearColor(0, 0, 0, 0);
+	else glClearColor(1, 1, 1, 0);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	if (mVisTract.GetTractVis() != NULL && !mbPaused){
+		glPushMatrix();
+		glRotatef(-90, 1, 0, 0);
+		//MyGraphicsTool::LoadTrackBall(&mTrackBall);
+		MyBoundingBox box = mTrialManager.GetCurrentVisData()->GetBoundingBox();
+		if (IsOnBoxView()){
+			box = mTrialManager.GetCurrentVisData()->GetBoxes()[0];
+			glScalef(BOXSCALING, BOXSCALING, BOXSCALING);
+		}
+		MyGraphicsTool::Translate(-box.GetCenter());
+		glLineWidth(mLineThickness);
+		if (mbDrawTracts) mVisTract.Show();
+		if (mbDrawHighlighted) DrawHighlighted();
+		if (mbDrawIndicators) {
+			DrawBoxes();
+			DrawTractIndicators();
+		}
+		if (IsOnBoxView()){
+			glScalef(1 / BOXSCALING, 1 / BOXSCALING, 1 / BOXSCALING);
+		}
+		glPopMatrix();
+		if (mbDrawLegend) {
+			glClear(GL_DEPTH_BUFFER_BIT);
+			DrawTractLegend();
+		}
+	}
+	BrightnessBalance();
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	// front copy to RAM
+	MyArray<MyColor4f> colorBuffer_front;
+	colorBuffer_front.resize(mCanvasWidth*mCanvasHeight);
+	glBindTexture(GL_TEXTURE_2D, mFrameBuffer.GetColorTexture());
+	glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_FLOAT, &colorBuffer_front[0]);
+	static unsigned int texture_front;
+	if (!glIsTexture(texture_front)){
+		texture_front = MyTexture::MakeGLTexture(colorBuffer_front, mCanvasWidth, mCanvasHeight);
+	}
+	else{
+		glBindTexture(GL_TEXTURE_2D, texture_front);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, mCanvasWidth,
+			mCanvasHeight, 0, GL_RGBA, GL_FLOAT, &colorBuffer_front[0].r);
+	}
+	glBindTexture(GL_TEXTURE_2D, 0);
+
+	// render the view
+	glBindFramebuffer(GL_FRAMEBUFFER, mFrameBuffer.GetFrameBuffer());
+	if (IsOnMode(APP_MODE_OCCLUSION)) glClearColor(0, 0, 0, 0);
+	else glClearColor(1, 1, 1, 0);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	if (mVisTract.GetTractVis() != NULL && !mbPaused){
+		glPushMatrix();
+		MyGraphicsTool::LoadTrackBall(&mTrackBall);
+		MyBoundingBox box = mTrialManager.GetCurrentVisData()->GetBoundingBox();
+		if (IsOnBoxView()){
+			box = mTrialManager.GetCurrentVisData()->GetBoxes()[0];
+			glScalef(BOXSCALING, BOXSCALING, BOXSCALING);
+		}
+		MyGraphicsTool::Translate(-box.GetCenter());
+		glLineWidth(mLineThickness);
+		if (mbDrawTracts) mVisTract.Show();
+		if (mbDrawHighlighted) DrawHighlighted();
+		if (mbDrawIndicators) {
+			DrawBoxes();
+			DrawTractIndicators();
+		}
+		if (IsOnBoxView()){
+			glScalef(1 / BOXSCALING, 1 / BOXSCALING, 1 / BOXSCALING);
+		}
+
+		MyGraphicsTool::Translate(box.GetCenter());
+		bool drawSideViews = true;
+		if (drawSideViews){
+			float xdist = 80;
+			float ydist = 80;
+			float xsize = mCanvasWidth * 0.03;
+			float ysize = mCanvasWidth * 0.03;
+			float zsize = mCanvasHeight * 0.03;
+			glPushAttrib(GL_ALL_ATTRIB_BITS);
+			glEnable(GL_TEXTURE_2D);
+			//glEnable(GL_BLEND);
+			//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+			// left view
+			glBindTexture(GL_TEXTURE_2D, texture_left);
+			glColor3f(1, 1, 1);
+			glBegin(GL_TRIANGLE_FAN);
+			glTexCoord2f(0, 0);
+			glVertex3f(-xdist, ysize, -zsize);
+			glTexCoord2f(1, 0);
+			glVertex3f(-xdist, -ysize, -zsize);
+			glTexCoord2f(1, 1);
+			glVertex3f(-xdist, -ysize, zsize);
+			glTexCoord2f(0, 1);
+			glVertex3f(-xdist, ysize, zsize);
+			glEnd();
+			glColor3f(0, 0, 0);
+			glLineWidth(3);
+			glBegin(GL_LINE_LOOP);
+			glVertex3f(-xdist, ysize, -zsize);
+			glVertex3f(-xdist, -ysize, -zsize);
+			glVertex3f(-xdist, -ysize, zsize);
+			glVertex3f(-xdist, ysize, zsize);
+			glEnd();
+			// front view
+			glBindTexture(GL_TEXTURE_2D, texture_front);
+			glColor3f(1, 1, 1);
+			glBegin(GL_TRIANGLE_FAN);
+			glTexCoord2f(0, 0);
+			glVertex3f(-xsize, -ydist, -zsize);
+			glTexCoord2f(1, 0);
+			glVertex3f(xsize, -ydist, -zsize);
+			glTexCoord2f(1, 1);
+			glVertex3f(xsize, -ydist, zsize);
+			glTexCoord2f(0, 1);
+			glVertex3f(-xsize, -ydist, zsize);
+			glEnd();
+			glColor3f(0, 0, 0);
+			glLineWidth(3);
+			glBegin(GL_LINE_LOOP);
+			glVertex3f(-xsize, -ydist, -zsize);
+			glVertex3f(xsize, -ydist, -zsize);
+			glVertex3f(xsize, -ydist, zsize);
+			glVertex3f(-xsize, -ydist, zsize);
+			glEnd();
+			glPopAttrib();
+		}
+
+		glPopMatrix();
+		if (mbDrawLegend) {
+			glClear(GL_DEPTH_BUFFER_BIT);
+			DrawTractLegend();
+		}
+	}
+	BrightnessBalance();
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+
 	if (IsOnMode(APP_MODE_OCCLUSION)) glClearColor(0, 0, 0, 0);
 	else glClearColor(1, 1, 1, 0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

@@ -63,6 +63,7 @@ public:
 	static MyString GetTaskAnswerOptionString(MyVisEnum::VisTask task, int idx);
 	static MyString GetTaskAnswerHintString(MyVisEnum::VisTask task);
 	static const MyArray2f& GetFAAnswerOptionRanges();
+	int GetDataIndex() const;
 
 protected:
 	// transition trial

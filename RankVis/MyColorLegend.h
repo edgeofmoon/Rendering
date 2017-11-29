@@ -22,6 +22,8 @@ public:
 	const MyArray<MyColor4f>& GetColors() const{ return mColors; };
 	MyColor4f GetColorByValue(float v) const;
 	MyArray<MyColor4f> Resample(int nSample) const;
+	void PrintToFileLAB(const MyString& fileName) const;
+	void PrintToFileRGB(const MyString& fileName) const;
 
 	float ComputeArcLength() const;
 	float ComputeArcLengthInterpolated(int nSample) const;

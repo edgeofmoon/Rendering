@@ -24,6 +24,7 @@ public:
 
 	virtual const unsigned char* GetPixelBufferRGB() const;
 
+	void SetFromData(const MyColor4f* colors, int w, int h);
 
 protected:
 	int mWidth, mHeight;
@@ -39,7 +40,7 @@ protected:
 		unsigned short  planes;        /* 1 */
 		unsigned short  bitCount;      /* bits of each pixel, 256color it is 8, 24 color it is 24 */
 		unsigned long compression;   /* 0 */
-		unsigned long sizeImage;     /* (width+?)(till multiple of 4) * height£¬in bytes */
+		unsigned long sizeImage;     /* (width+?)(till multiple of 4) * heightï¿½ï¿½in bytes */
 		unsigned long xPelsPerMeter; /* resolution in mspaint */
 		unsigned long yPelsPerMeter;
 		unsigned long colorUsed;     /* if use all, it is 0 */

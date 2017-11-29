@@ -369,3 +369,49 @@ MyString MyVisInfo::GetTaskAnswerHintString(VisTask task){
 const MyArray2f& MyVisInfo::GetFAAnswerOptionRanges(){
 	return FAAnswerOptionRanges;
 }
+
+int MyVisInfo::GetDataIndex() const{
+	// temp solotion for FA_VALUE task
+	// that only uses WHOLE(CC,CST,IFO,ILF)
+	// and BUNDLE(CC,CST)
+	int idx = 0;
+	if (mCover == WHOLE){
+		switch (mBundle){
+		case CC:
+			idx = 0;
+			break;
+		case CST:
+			idx = 2;
+			break;
+		case IFO:
+			idx = 4;
+			break;
+		case ILF:
+			idx = 5;
+			break;
+		default:
+			return -1;
+			break;
+		}
+	}
+	else if (mCover == BUNDLE){
+		switch (mBundle){
+		case CC:
+			idx = 1;
+			break;
+		case CST:
+			idx = 3;
+			break;
+		case IFO:
+			return -1;
+			break;
+		case ILF:
+			return -1;
+			break;
+		default:
+			return -1;
+			break;
+		}
+	}
+	return idx * 12 + mQuest;
+}

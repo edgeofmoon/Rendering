@@ -70,7 +70,7 @@ int main(int argc, char* argv[]){
 	glutMouseFunc(myGlutMouse);
 	glutKeyboardFunc(myGlutKeyboard);
 	glutSpecialFunc(myGlutSpecialInput);
-	glutFullScreen();
+	//glutFullScreen();
 	glEnable(GL_DEPTH_TEST);
 
 	int uidx = 0, tidx = -1, mode = 2;

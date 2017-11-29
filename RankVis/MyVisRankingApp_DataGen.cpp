@@ -401,7 +401,7 @@ void MyVisRankingApp::ProcessKey_FA_VALUE(unsigned char key){
 					} comp;
 					sort(avgs.begin(), avgs.end(), comp);
 					cerr << "Auto find failed." << "target:" << target << endl;
-					MyVisData::WriteVectorToFile("avgs.txt", avgs);
+					//MyVisData::WriteVectorToFile("avgs.txt", avgs);
 				}
 			}
 

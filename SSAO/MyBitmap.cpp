@@ -66,13 +66,14 @@ int MyBitmap::Open(const MyString& filename){
 	mWidth = mHeader.width;
 	mHeight = mHeader.height;
 	//mbmp.size = head.sizeImage;
-	if (mHeader.sizeImage != CEIL4(mWidth * 3) * mHeight){ /* check size */
+	int stride = CEIL4(mWidth * 3);
+	if (mHeader.sizeImage != stride * mHeight){ /* check size */
 		printf("Error: bmp file \"%s\" size do not match!\n", fname);
 		goto ERR_EXIT;
 	}
 
 	/* allocate memory */
-	if ((mData = (unsigned char *)realloc(mData, mHeader.sizeImage)) == NULL){
+	if ((mData = new unsigned char[mHeader.sizeImage]) == NULL){
 		printf("Error: alloc fail!\n");
 		goto ERR_EXIT;
 	}
@@ -85,9 +86,19 @@ int MyBitmap::Open(const MyString& filename){
 	}
 
 	// switch from BGR to RGB
-	for (int i = 0; i < mWidth*mHeight; i++){
-		std::swap(mData[i * 3], mData[i * 3 + 2]);
+	// beaware of padding
+	unsigned char* _d = new unsigned char[mWidth*mHeight * 3];
+	for (int j = 0; j < mHeight; j++){
+		for (int i = 0; i < mWidth; i++){
+			_d[j*mWidth * 3 + i * 3 + 0] = mData[j*stride + i * 3 + 2];
+			_d[j*mWidth * 3 + i * 3 + 1] = mData[j*stride + i * 3 + 1];
+			_d[j*mWidth * 3 + i * 3 + 2] = mData[j*stride + i * 3 + 0];
+		}
 	}
+	delete mData;
+	mData = _d;
+	// finish swapping BGR to RGB
+
 	fclose(fp);
 	return 1;
 
@@ -114,10 +125,24 @@ int MyBitmap::Save(const MyString& filename){
 	head.sizeImage = mHeader.sizeImage;
 	head.sizeFile = mHeader.sizeImage + head.offbits;
 	fwrite(&head, sizeof head, 1, fp); /* write header */
-	if (fwrite(mData, 1, mHeader.sizeImage, fp) != mHeader.sizeImage) {
+
+	// switch from BGR to RGB
+	// beaware of padding
+	int stride = CEIL4(mWidth * 3);
+	unsigned char* _d = new unsigned char[stride*mHeight];
+	for (int j = 0; j < mHeight; j++){
+		for (int i = 0; i < mWidth; i++){
+			_d[j*stride + i * 3 + 0] = mData[j*mWidth * 3 + i * 3 + 2];
+			_d[j*stride + i * 3 + 1] = mData[j*mWidth * 3 + i * 3 + 1];
+			_d[j*stride + i * 3 + 2] = mData[j*mWidth * 3 + i * 3 + 0];
+		}
+	}
+	// finish swapping BGR to RGB
+	if (fwrite(_d, 1, mHeader.sizeImage, fp) != mHeader.sizeImage) {
 		fclose(fp);
 		return 1; /* write bitmap infomation */
 	}
+	delete[] _d;
 
 	fclose(fp);
 	return 0;
@@ -177,7 +202,21 @@ unsigned char* MyBitmap::MakePixelBufferRGBA() const{
 	}
 	return rst;
 }
-#include "MyArray.h"
 const unsigned char* MyBitmap::GetPixelBufferRGB() const{
 	return mData;
+}
+
+void MyBitmap::SetFromData(const MyColor4f* colors, int w, int h){
+	mWidth = w;
+	mHeight = h;
+	mHeader.sizeImage = CEIL4(mWidth * 3) * mHeight;
+	if (mData) delete[] mData;
+	mData = new unsigned char[mWidth * mHeight * 3];
+	for (int j = 0; j<mHeight; j++){
+		for (int i = 0; i<mWidth; i++){
+			mData[(j*mWidth + i) * 3 + 0] = colors[j*mWidth + i].r * 255;
+			mData[(j*mWidth + i) * 3 + 1] = colors[j*mWidth + i].g * 255;
+			mData[(j*mWidth + i) * 3 + 2] = colors[j*mWidth + i].b * 255;
+		}
+	}
 }

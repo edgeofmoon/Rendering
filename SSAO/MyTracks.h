@@ -117,6 +117,8 @@ public:
 	void GetSampleValueInfo(const MyBoundingObject& bobj, const MyArrayi& indices, int& nSample, float& valueSum) const;
 	void GetSampleClampedValueInfo(const MyBoundingObject& bobj, float minv, float maxv, int& nSample, float& valueSum) const;
 	void GetSampleClampedValueInfo(const MyBoundingObject& bobj, float minv, float maxv, const MyArrayi& indices, int& nSample, float& valueSum) const;
+	void GetSampleClampedValues(const MyBoundingObject& bobj, float minv, float maxv, MyArrayf& values) const;
+	void GetSampleClampedValues(const MyBoundingObject& bobj, float minv, float maxv, const MyArrayi& indices, MyArrayf& values) const;
 
 	void FilterByTrackLength(const std::vector<int>& inset, float threshold[2], std::vector<int>& outset) const;
 	void FilterByIndexSkip(const std::vector<int>& inset, float skipRatio, std::vector<int>& outset) const;

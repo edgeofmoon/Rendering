@@ -3,6 +3,7 @@
 #include "MyTexture.h"
 #include "MyPrimitiveDrawer.h"
 #include "MyColorConverter.h"
+#include "MyColorTextureMaker.h"
 #include "MyLineAO.h"
 #include "MyTrackDDH.h"
 
@@ -16,9 +17,11 @@ using namespace std;
 void MyVisRankingApp::HandleGlutDisplay(){
 	StartProfileRendering();
 	Show();
+	//ShowForLegendMaking();
 	glutSwapBuffers();
 	EndProfileRendering();
 	mLogs.StartTrial();
+	SaveInitScreenShots();
 	if (mDisplayEndToNext) Next();
 	mEventLog.LogItem( "Display" );
 }
@@ -240,6 +243,32 @@ int MyVisRankingApp::HandleDebugKey(unsigned char key){
 				cout << "Tube Radius: " << mVisTract.GetTractVis()->mTrackRadius << endl;
 			}
 			break;
+		case 'w':
+		case 'W':
+			// top view
+			this->ResetCamera();
+			//glRotatef(15, 1, 0, 0);
+			//glRotatef(80, 0, 1, 0);
+			//glRotatef(-90, 1, 0, 0);
+			break;
+		case 'q':
+		case 'Q':
+			// left side view
+			this->ResetCamera();
+			glRotatef(-90, 1, 0, 0);
+			glRotatef(90, 0, 0, 1);
+			break;
+		case 'e':
+		case 'E':
+			// front view
+			this->ResetCamera();
+			glRotatef(-90, 1, 0, 0);
+			break;
+		case 's':
+		case 'S':
+			// save picture
+			this->SaveColorBufferToImage("images\\bmp\\test.bmp");
+			break;
 		default:
 			return 0;
 			break;
@@ -437,4 +466,67 @@ void MyVisRankingApp::EndProfileRendering(){
 		RequestRedisplay();
 	}
 
+}
+
+void MyVisRankingApp::SaveInitScreenShots(){
+	// save init pics
+	bool saveInit = false;
+	if (saveInit){
+		// check when all reshape event processed
+		static int w = -1, h = -1;
+		if (mWindowWidth != w || mWindowHeight != h){
+			w = mWindowWidth;
+			h = mWindowHeight;
+			RequestRedisplay();
+			return;
+		}
+		// start save screenshots
+		const MyVisData* visData = mTrialManager.GetCurrentVisData();
+		const MyVisInfo* visInfo = &(visData->GetVisInfo());
+		static int idx = -1;
+		if (idx == visInfo->GetDataIndex()){
+			RequestRedisplay();
+			return;
+		}
+		if (!visInfo->IsEmpty() &&
+			visInfo->GetVisTask() == MyVisEnum::FA_VALUE){
+			float avg = visData->GetAnswerInfo();
+			MyArrayf values;
+			mTracts.GetSampleClampedValues(visData->GetBoxes()[0], 0.2, 1.0, visData->GetTractIndices(), values);
+			float stdev = 0;
+			for (float f : values){
+				float diff = (f - avg);
+				stdev += diff*diff;
+			}
+			stdev = sqrtf(stdev / (values.size()));
+			MyString colorName = MyColorTextureMaker::GetColorName(visInfo->GetMappingMethod());
+			char avgStr[128], stdevStr[128];
+			sprintf(avgStr, "%f", avg);
+			sprintf(stdevStr, "%f", stdev);
+			SaveScreenToImage("images\\bmp\\" + colorName + "_" + MyString(idx) + "_" +
+				MyString(avgStr) + "_" + MyString(stdevStr) + ".bmp");
+			idx = visInfo->GetDataIndex();
+		}
+		mDisplayEndToNext = true;
+		RequestRedisplay();
+	}
+
+}
+
+void MyVisRankingApp::SaveColorBufferToImage(const MyString& fileName){
+	MyArray<MyColor4f> colorBuffer(mCanvasWidth*mCanvasHeight);
+	glBindTexture(GL_TEXTURE_2D, mFrameBuffer.GetColorTexture());
+	glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_FLOAT, &colorBuffer[0]);
+	MyBitmap bitmap;
+	bitmap.SetFromData(&colorBuffer[0], mCanvasWidth, mCanvasHeight);
+	bitmap.Save(fileName);
+	glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+void MyVisRankingApp::SaveScreenToImage(const MyString& fileName){
+	MyArray<MyColor4f> colorBuffer(mWindowWidth * mWindowHeight);
+	glReadPixels(0, 0, mWindowWidth, mWindowHeight, GL_RGBA, GL_FLOAT, &colorBuffer[0].r);
+	MyBitmap bitmap;
+	bitmap.SetFromData(&colorBuffer[0], mWindowWidth, mWindowHeight);
+	bitmap.Save(fileName);
 }

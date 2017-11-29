@@ -185,6 +185,9 @@ protected:
 	void OcclusionProfileRestore(MyTractVisBase* tracts, int idx);
 	void StartProfileRendering();
 	void EndProfileRendering();
+	void SaveInitScreenShots();
+	void SaveColorBufferToImage(const MyString& fileName);
+	void SaveScreenToImage(const MyString& fileName);
 
 	// interaction
 	MyTrackBall mTrackBall;
@@ -206,5 +209,6 @@ private:
 	MyBoundingBox ComputedEndingBox(const MyArrayi& selected) const;
 	MyColor4f GetSphereStatusColor(const MyTractVisBase* tractVis) const;
 	MyColor4f GetCollisionStatusColor(MyVisEnum::CollisionStatus st) const;
+	void ShowForLegendMaking();
 };
 

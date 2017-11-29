@@ -32,6 +32,8 @@ public:
 	MyString GetProgresInfoString() const;
 
 	void PrintAllCase(const MyString& fileName, const MyString& decimer = "\t") const;
+	void PrintHistogramTables(const MyString& fileName, const MyString& decimer = "\t") const;
+	void PrintFABySegments(const MyString& fileNamePrefix) const;
 
 protected:
 	int mUserIndex;

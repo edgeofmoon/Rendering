@@ -109,6 +109,24 @@ void MyVisTrialManager::GenerateVisInfo_Experiment_Random(){
 
 	/****************dcap****************/
 	/*
+	for (int j = 0; j < 6; j++){
+		for (int i = 0; i < 6; i++){
+			for (int k = 0; k < 12; k++){
+				mVisInfos
+					<< MyVisInfo(false, false, FA_VALUE, COLOR, j, TUBE, BASIC,
+					coverBundles[i].second, coverBundles[i].first, k, EXPERIMENT_RES);
+			}
+		}
+	}
+	return;
+	for (int i = 0; i < 6; i++){
+		for (int k = 0; k < 12; k++){
+			mVisInfos
+				<< MyVisInfo(false, false, FA_VALUE, COLOR, 0, TUBE, BASIC,
+				coverBundles[i].second, coverBundles[i].first, k, EXPERIMENT_RES);
+		}
+	}
+	return;
 	for (int i = 0; i < 6; i++){
 		for (int k = 0; k < 6; k++){
 			//mVisInfos
@@ -130,7 +148,14 @@ void MyVisTrialManager::GenerateVisInfo_Experiment_Random(){
 	<< MyVisInfo(false, false, TRACE, COLOR, colors[k], TUBE, ENCODING, CC, BUNDLE, 0, EXPERIMENT_RES);
 	}
 	return;
+	mVisInfos
+		<< MyVisInfo(false, false, TRACE, COLOR, 0, TUBE, ENCODING, CC, WHOLE, 0, EXPERIMENT_RES)
+		<< MyVisInfo(false, false, TRACE, COLOR, 1, TUBE, ENCODING, CC, WHOLE, 0, EXPERIMENT_RES)
+		<< MyVisInfo(false, false, TRACE, COLOR, 3, TUBE, ENCODING, CC, WHOLE, 0, EXPERIMENT_RES)
+		<< MyVisInfo(false, false, TRACE, COLOR, 4, TUBE, ENCODING, CC, WHOLE, 0, EXPERIMENT_RES);
+	return;
 	*/
+
 	/****************dcap****************/
 	mVisInfos << MyVisInfo(START);
 	for (int iTask = 0; iTask < 2; iTask++){
@@ -315,4 +340,116 @@ void MyVisTrialManager::PrintAllCase(const MyString& fileName, const MyString& d
 		}
 		delete visData;
 	}
+}
+
+void MyVisTrialManager::PrintHistogramTables(
+	const MyString& fileName, const MyString& decimer) const{
+	ofstream outFile(fileName);
+	if (!outFile.is_open()){
+		cerr << "Cannot open file to write: " << fileName << endl;
+		return;
+	}
+	MyArrayf values;
+	outFile << "USERIDX" << decimer
+		<< "TRIALIDX" << decimer
+		<< MyVisInfo::GetStringHeader(decimer) << decimer
+		<< "MEAN" << decimer
+		<< "STDDEV" << decimer;
+	for (int i = 0; i < 16; i++){
+		outFile << 0.2 + i*0.05 << decimer;
+	}
+	outFile << endl;
+	for (int i = 0; i < mVisInfos.size(); i++){
+		if (mVisInfos[i].IsEmpty()) continue;
+		if (mVisInfos[i].GetVisTask() != FA_VALUE) continue;
+		MyVisData* visData = new MyVisData(mVisInfos[i]);
+		visData->SetTracts(mTracts);
+		visData->LoadFromDirectory(mDataRootDir);
+		outFile << mUserIndex << decimer
+			<< i << decimer
+			<< mVisInfos[i].GetString(decimer) << decimer;
+		float mean;
+		if (visData->GetCorrectAnswers().size() > 0){
+			outFile << (mean = visData->GetCorrectAnswers()[0]) << decimer;
+		}
+		else {
+			outFile << (mean = visData->GetAnswerInfo()) << decimer;
+		}
+		values.clear();
+		mTracts->GetSampleClampedValues(visData->GetBoxes()[0], 0.2, 1, visData->GetTractIndices(), values);
+
+		// compute std deviance
+		float var = 0;
+		for (float v : values){
+			float diff = v - mean;
+			var += diff * diff;
+		}
+		outFile << var / values.size() << decimer;
+
+		// to bins
+		vector<int> bins(16, 0);
+		for (float v : values){
+			int idx = (v - 0.2) / 0.05;
+			idx = min(idx, 15);
+			idx = max(0, idx);
+			bins[idx]++;
+		}
+		for (int i = 0; i < 16; i++){
+			outFile << bins[i] << decimer;
+		}
+		outFile << endl;
+		delete visData;
+	}
+	cout << "Histogram table written." << endl;
+}
+
+void MyVisTrialManager::PrintFABySegments(const MyString& fileNamePrefix) const{
+	float minv = 0.2f;
+	float maxv = 1.0f;
+	for (int i = 0; i < mVisInfos.size(); i++){
+		MyVisData* visData = new MyVisData(mVisInfos[i]);
+		visData->SetTracts(mTracts);
+		visData->LoadFromDirectory(mDataRootDir);
+		const MyArrayi& indices = visData->GetTractIndices();
+		const MyBoundingBox& box = visData->GetBoxes()[0];
+		MyArray<MyArrayf> valueArrays;
+		float vSum = 0;
+		int count = 0;
+		for (int i = 0; i < indices.size(); i++){
+			int it = indices[i];
+			MyArrayf values;
+			for (int is = 0; is < mTracts->GetNumVertex(it); is++){
+				MyVec3f p = mTracts->GetCoord(it, is);
+				if (box.IsIn(p)){
+					float value = mTracts->GetValue(it, is);
+					if (value < minv) value = minv;
+					if (value > maxv) value = maxv;
+					values << value;
+					vSum += value;
+					count++;
+				}
+			}
+			if (!values.empty()){
+				valueArrays << values;
+			}
+		}
+		delete visData;
+		MyString fileName = fileNamePrefix + MyString(i) + ".txt";
+		ofstream outFile(fileName);
+		if (!outFile.is_open()){
+			cerr << "Cannot open file to write: " << fileName << endl;
+			return;
+		}
+		else{
+			outFile << valueArrays.size() << endl;
+			//outFile << vSum / count << endl;
+			for (int i = 0; i < valueArrays.size(); i++){
+				for (int j = 0; j < valueArrays[i].size(); j++){
+					outFile << i << " " << j << " " << valueArrays[i][j] << endl;
+				}
+			}
+			outFile.close();
+		}
+	}
+	cout << "FA value files written" << endl;
 }

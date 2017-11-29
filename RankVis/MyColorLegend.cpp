@@ -3,6 +3,7 @@
 #include "CIEDE2000.h"
 
 #include <algorithm>
+#include <fstream>
 using namespace std;
 using namespace MyColorConverter;
 
@@ -62,6 +63,35 @@ MyArray<MyColor4f> MyColorLegend::Resample(int nSample) const{
 		rst[i] = GetColorByValue(v);
 	}
 	return rst;
+}
+
+void MyColorLegend::PrintToFileLAB(const MyString& fileName) const{
+	ofstream outfile;
+	outfile.open(fileName);
+	if (!outfile.is_open()){
+	}
+	else{
+		outfile << mColors.size() << endl;
+		for (int i = 0; i < mColors.size(); i++){
+			MyColorConverter::Lab lab = MyColorConverter::rgb2lab(mColors[i]);
+			outfile << lab.l << " " << lab.a << " " << lab.b << endl;
+		}
+		outfile.close();
+	}
+}
+
+void MyColorLegend::PrintToFileRGB(const MyString& fileName) const{
+	ofstream outfile;
+	outfile.open(fileName);
+	if (!outfile.is_open()){
+	}
+	else{
+		outfile << mColors.size() << endl;
+		for (int i = 0; i < mColors.size(); i++){
+			outfile << mColors[i].r << " " << mColors[i].g << " " << mColors[i].b << endl;
+		}
+		outfile.close();
+	}
 }
 
 MyColor4f MyColorLegend::GetColorBlending(

@@ -611,6 +611,35 @@ void MyTracks::GetSampleClampedValueInfo(const MyBoundingObject& bobj,
 	}
 }
 
+void MyTracks::GetSampleClampedValues(const MyBoundingObject& bobj, float minv, float maxv, MyArrayf& values) const{
+	for (int it = 0; it < this->GetNumTracks(); it++){
+		for (int is = 0; is < this->GetNumVertex(it); is++){
+			MyVec3f p = this->GetCoord(it, is);
+			if (bobj.IsIn(p)){
+				float value = this->GetValue(it, is);
+				if (value < minv) value = minv;
+				if (value > maxv) value = maxv;
+				values << value;
+			}
+		}
+	}
+}
+
+void MyTracks::GetSampleClampedValues(const MyBoundingObject& bobj, float minv, float maxv, const MyArrayi& indices, MyArrayf& values) const{
+	for (int i = 0; i < indices.size(); i++){
+		int it = indices[i];
+		for (int is = 0; is < this->GetNumVertex(it); is++){
+			MyVec3f p = this->GetCoord(it, is);
+			if (bobj.IsIn(p)){
+				float value = this->GetValue(it, is);
+				if (value < minv) value = minv;
+				if (value > maxv) value = maxv;
+				values << value;
+			}
+		}
+	}
+}
+
 void MyTracks::FilterByTrackLength(const std::vector<int>& inset, float threshold[2], std::vector<int>& outset) const{
 	for (int i = 0; i < inset.size(); i++){
 		int idx = inset[i];
