@@ -553,6 +553,7 @@ void MyVisRankingApp::DrawTractIndicators(){
 	MyGraphicsTool::PopAttributes();
 }
 
+/*
 void MyVisRankingApp::DrawLegend(){
 	const MyVisInfo& visInfo = mTrialManager.GetCurrentVisData()->GetVisInfo();
 	if (visInfo.GetVisTask() != FA || visInfo.IsEmpty() || mbPaused) return;
@@ -566,6 +567,7 @@ void MyVisRankingApp::DrawLegend(){
 		DrawTractLegend();
 	}
 }
+*/
 
 void MyVisRankingApp::DrawColorLegend(){
 	const MyVisInfo& visInfo = mTrialManager.GetCurrentVisData()->GetVisInfo();

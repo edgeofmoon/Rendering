@@ -77,18 +77,24 @@ void MyVisRankingApp::Init(int uidx, int tidx, int mode){
 	//exit(0);
 
 	if (IsOnMode(APP_MODE_TRAINING)){
-		mTracts.Read("C:\\Users\\GuohaoZhang\\Dropbox\\data\\normal_s4_tensorboy.trk");
+		//mTracts.Read("C:\\Users\\GuohaoZhang\\Dropbox\\data\\normal_s4_tensorboy.trk");
+		mTracts.Read("..\\..\\data\\normal_s4_tensorboy.trk");
 		MySuperquadric::ZREV = 1;
 	}
 	else {
+		// s3 is for the dMRI encoding study using FA, TRACE and TUMOR tasks
 		//mTracts.Read("C:\\Users\\GuohaoZhang\\Dropbox\\data\\normal_s3_tensorboy_RevZ.trk");
-		mTracts.Read("C:\\Users\\GuohaoZhang\\Dropbox\\data\\normal_s2_tensorboy_RevZ.trk");
+		// s2 is for the color study
+		//mTracts.Read("C:\\Users\\GuohaoZhang\\Dropbox\\data\\normal_s2_tensorboy_RevZ.trk");
+		//mTracts.Read("..\\..\\data\\normal_s3_tensorboy_RevZ.trk");
+		mTracts.Read("..\\..\\data\\normal_s2_tensorboy_RevZ.trk");
 		MySuperquadric::ZREV = -1;
 
 
 	}
 	// generate trials
-	mTrialManager.SetDataRootDir("C:\\Users\\GuohaoZhang\\Dropbox\\data\\traces");
+	//mTrialManager.SetDataRootDir("C:\\Users\\GuohaoZhang\\Dropbox\\data\\traces");
+	mTrialManager.SetDataRootDir("..\\..\\data\\traces");
 	mTrialManager.SetTracts(&mTracts);
 	if (IsOnMode(APP_MODE_TRAINING))
 		mTrialManager.GenerateVisInfo_Training();

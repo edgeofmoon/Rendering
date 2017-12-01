@@ -43,12 +43,16 @@ enable_debug: default 0. set to 1 to enable keyboard function to "next [n]", "pr
 print_configData: default 0. set to 1 to enable print result table without user input.
 
 Data:
-The path to all data folders are specified in MyVisRankingApp.cpp.
+The path to all data folders are specified in MyVisRankingApp::Init() function.
 
 Build:
-For dMRI visualization study, include MyVisRankingApp_UI_old.cpp.
-For color study, include MyVisRankingApp_UI.cpp instead.
-Exclude MyVisRankingApp_UI_color1.cpp for both cases.
+For dMRI visualization study, include MyVisRankingApp_UI_old.cpp and MyVisTrialManager_old.cpp. 
+Also change the mTracts.Read() to use resolution 3 data in MyVisRankingApp::Init() function.
+
+For color study, include MyVisRankingApp_UI.cpp and MyVisTrialManager.cpp instead.
+Also change the mTracts.Read() to use resolution 2 data in MyVisRankingApp::Init() function.
+Exclude MyVisRankingApp_UI_color1.cpp and MyVisTrialManager_color1.cpp for both cases.
+
 All *.cpp files with a main function are for testing purposes and only one should be included for building an executable.
 The appTest.cpp should be used for building the experiment program.
 The tractView.cpp should be used for building the viewer where the five major bundles are colored and labelled.

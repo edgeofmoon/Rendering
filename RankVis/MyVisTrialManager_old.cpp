@@ -187,6 +187,7 @@ void MyVisTrialManager::GenerateVisInfo_Experiment_Random(){
 		<< MyVisInfo(false, false, TUMOR, COLOR, 0, TUBE, BASIC, IFO, BUNDLE, 0, EXPERIMENT_RES)
 		<< MyVisInfo(false, false, TUMOR, COLOR, 0, TUBE, DEPTH, ILF, WHOLE, 5, EXPERIMENT_RES);
 	*/
+	/*
 	for (int k = 0; k < 6; k++){
 		for (int i = 0; i < 2; i++){
 			for (int j = 0; j < 4; j++){
@@ -200,6 +201,7 @@ void MyVisTrialManager::GenerateVisInfo_Experiment_Random(){
 		}
 	}
 	return;
+	*/
 	/**********dcap*****************/
 	/*******Experiment Used*********/
 	shapeEncodings.Permute(mUserIndex);
