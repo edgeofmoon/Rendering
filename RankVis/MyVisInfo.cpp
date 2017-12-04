@@ -371,47 +371,85 @@ const MyArray2f& MyVisInfo::GetFAAnswerOptionRanges(){
 }
 
 int MyVisInfo::GetDataIndex() const{
-	// temp solotion for FA_VALUE task
-	// that only uses WHOLE(CC,CST,IFO,ILF)
-	// and BUNDLE(CC,CST)
-	int idx = 0;
-	if (mCover == WHOLE){
-		switch (mBundle){
-		case CC:
-			idx = 0;
+	if (mTask == FA_VALUE){
+		// temp solotion for FA_VALUE task
+		// that only uses WHOLE(CC,CST,IFO,ILF)
+		// and BUNDLE(CC,CST)
+		int idx = 0;
+		if (mCover == WHOLE){
+			switch (mBundle){
+			case CC:
+				idx = 0;
+				break;
+			case CST:
+				idx = 2;
+				break;
+			case IFO:
+				idx = 4;
+				break;
+			case ILF:
+				idx = 5;
+				break;
+			default:
+				return -1;
+				break;
+			}
+		}
+		else if (mCover == BUNDLE){
+			switch (mBundle){
+			case CC:
+				idx = 1;
+				break;
+			case CST:
+				idx = 3;
+				break;
+			case IFO:
+				return -1;
+				break;
+			case ILF:
+				return -1;
+				break;
+			default:
+				return -1;
+				break;
+			}
+		}
+		return idx * 12 + mQuest;
+	}
+	else if (mTask == TRACE){
+		int coverIdxOffset = 0;
+		int bundleIdxOffset = 0;
+		switch (mCover){
+		case WHOLE:
+			coverIdxOffset = 0;
 			break;
-		case CST:
-			idx = 2;
-			break;
-		case IFO:
-			idx = 4;
-			break;
-		case ILF:
-			idx = 5;
+		case BUNDLE:
+			coverIdxOffset = 1;
 			break;
 		default:
-			return -1;
+			coverIdxOffset = -1;
 			break;
 		}
-	}
-	else if (mCover == BUNDLE){
 		switch (mBundle){
 		case CC:
-			idx = 1;
+			bundleIdxOffset = 0;
 			break;
 		case CST:
-			idx = 3;
+			bundleIdxOffset = 1;
 			break;
 		case IFO:
-			return -1;
+			bundleIdxOffset = 2;
 			break;
 		case ILF:
-			return -1;
+			bundleIdxOffset = 3;
 			break;
 		default:
-			return -1;
+			bundleIdxOffset = -1;
 			break;
 		}
+		int id = coverIdxOffset * 4 * 4 + bundleIdxOffset * 4 + mQuest;
+		if (id < 0) return -1;
+		return id;
 	}
-	return idx * 12 + mQuest;
+	return -1;
 }

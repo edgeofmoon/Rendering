@@ -281,3 +281,22 @@ MyVec3f MyMathHelper::ClosestPointOnLineSegment(const MyVec3f& p,
 	MyVec3f Pb = lineEnd + b * v;
 	return Pb;
 }
+
+float MyMathHelper::ComputeStandardDeviation(const MyArrayf& d, float mean){
+	if (d.empty()) return 0;
+	float stdev = 0;
+	for (float f : d){
+		float diff = f - mean;
+		stdev += diff*diff;
+	}
+	return sqrtf(stdev / d.size());
+}
+
+float MyMathHelper::ComputeMean(const MyArrayf& d){
+	if (d.empty()) return 0;
+	float m = 0;
+	for (float f : d){
+		m += f;
+	}
+	return m / d.size();
+}

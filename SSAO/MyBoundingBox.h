@@ -38,6 +38,7 @@ public:
 	float GetDepth() const;
 	float GetVolume() const;
 	float GetFrontFaceArea() const;
+	MyVec3f GetSize() const { return mHighPos - mLowPos; };
 /*
                 6---7
         2---3   |	|

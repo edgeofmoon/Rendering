@@ -134,6 +134,26 @@ MyString MyVisData::GetCorrectAnswerString() const{
 	return "Unknown task";
 }
 
+float MyVisData::GetStandardDeviation() const{
+	if (mVisInfo.IsEmpty()) return -1;
+	if (mVisInfo.GetVisTask() == FA || mVisInfo.GetVisTask() == FA_VALUE){
+		MyArrayf values;
+		mTracts->GetSampleClampedValues(mBoxes[0], 0.2, 1, values);
+		float m = MyMathHelper::ComputeMean(values);
+		float stdev = MyMathHelper::ComputeStandardDeviation(values, m);
+		return stdev;
+	}
+	return -1;
+}
+
+MyArrayf MyVisData::GetBoxPairWiseDistances() const{
+	if (mBoxes.size() != 3) return MyArrayf();
+	float d0 = (mBoxes[0].GetCenter() - mBoxes[1].GetCenter()).norm();
+	float d1 = (mBoxes[1].GetCenter() - mBoxes[2].GetCenter()).norm();
+	float d2 = (mBoxes[2].GetCenter() - mBoxes[0].GetCenter()).norm();
+	return MyArrayf{ d0, d1, d2 };
+}
+
 int MyVisData::LoadTractIndices(const MyString& fileName){
 	// load tract index
 	ifstream infile(fileName);

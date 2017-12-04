@@ -109,6 +109,14 @@ void MyVisTrialManager::GenerateVisInfo_Experiment_Random(){
 
 	/****************dcap****************/
 	/*
+	for (int i = 0; i < 6; i++){
+		for (int k = 0; k < 12; k++){
+			mVisInfos
+				<< MyVisInfo(false, false, FA_VALUE, COLOR, 0, TUBE, BASIC,
+				coverBundles[i].second, coverBundles[i].first, k, EXPERIMENT_RES);
+		}
+	}
+	return;
 	for (int j = 0; j < 6; j++){
 		for (int i = 0; i < 6; i++){
 			for (int k = 0; k < 12; k++){
@@ -116,14 +124,6 @@ void MyVisTrialManager::GenerateVisInfo_Experiment_Random(){
 					<< MyVisInfo(false, false, FA_VALUE, COLOR, j, TUBE, BASIC,
 					coverBundles[i].second, coverBundles[i].first, k, EXPERIMENT_RES);
 			}
-		}
-	}
-	return;
-	for (int i = 0; i < 6; i++){
-		for (int k = 0; k < 12; k++){
-			mVisInfos
-				<< MyVisInfo(false, false, FA_VALUE, COLOR, 0, TUBE, BASIC,
-				coverBundles[i].second, coverBundles[i].first, k, EXPERIMENT_RES);
 		}
 	}
 	return;
@@ -153,6 +153,17 @@ void MyVisTrialManager::GenerateVisInfo_Experiment_Random(){
 		<< MyVisInfo(false, false, TRACE, COLOR, 1, TUBE, ENCODING, CC, WHOLE, 0, EXPERIMENT_RES)
 		<< MyVisInfo(false, false, TRACE, COLOR, 3, TUBE, ENCODING, CC, WHOLE, 0, EXPERIMENT_RES)
 		<< MyVisInfo(false, false, TRACE, COLOR, 4, TUBE, ENCODING, CC, WHOLE, 0, EXPERIMENT_RES);
+	return;
+	int methods[] = { 0, 1, 3, 4 };
+	for (int ibd = 0; ibd < 8; ibd++){
+		for (int quest = 0; quest < 4; quest++){
+			for (int m = 0; m < 1; m++){
+				mVisInfos <<
+					MyVisInfo(false, false, TRACE, COLOR, methods[m], TUBE, ENCODING,
+					dataBundles[ibd % 4], dataCovers[ibd / 4], quest, EXPERIMENT_RES);
+			}
+		}
+	}
 	return;
 	*/
 
@@ -407,6 +418,8 @@ void MyVisTrialManager::PrintFABySegments(const MyString& fileNamePrefix) const{
 	float minv = 0.2f;
 	float maxv = 1.0f;
 	for (int i = 0; i < mVisInfos.size(); i++){
+		if (mVisInfos[i].IsEmpty()) continue;
+		if (mVisInfos[i].GetVisTask() != FA_VALUE) continue;
 		MyVisData* visData = new MyVisData(mVisInfos[i]);
 		visData->SetTracts(mTracts);
 		visData->LoadFromDirectory(mDataRootDir);
@@ -433,15 +446,20 @@ void MyVisTrialManager::PrintFABySegments(const MyString& fileNamePrefix) const{
 				valueArrays << values;
 			}
 		}
+		MyVec3f boxSize = box.GetSize();
 		delete visData;
-		MyString fileName = fileNamePrefix + MyString(i) + ".txt";
+		int idx = mVisInfos[i].GetDataIndex();
+		MyString fileName = fileNamePrefix + MyString(idx) + ".txt";
 		ofstream outFile(fileName);
 		if (!outFile.is_open()){
 			cerr << "Cannot open file to write: " << fileName << endl;
 			return;
 		}
 		else{
+			// print #tracts
 			outFile << valueArrays.size() << endl;
+			// print box size
+			outFile << boxSize[0] << " " << boxSize[1] << " " << boxSize[2] << endl;
 			//outFile << vSum / count << endl;
 			for (int i = 0; i < valueArrays.size(); i++){
 				for (int j = 0; j < valueArrays[i].size(); j++){
@@ -452,4 +470,30 @@ void MyVisTrialManager::PrintFABySegments(const MyString& fileNamePrefix) const{
 		}
 	}
 	cout << "FA value files written" << endl;
+}
+
+void MyVisTrialManager::PrintBoxPairWiseDistances(const MyString& fileName) const{
+	ofstream outFile(fileName);
+	if (!outFile.is_open()){
+		cerr << "Cannot open file to write: " << fileName << endl;
+		return;
+	}
+	else{
+		for (int i = 0; i < mVisInfos.size(); i++){
+			if (mVisInfos[i].IsEmpty()) continue;
+			if (mVisInfos[i].GetVisTask() != TRACE) continue;
+			MyVisData* visData = new MyVisData(mVisInfos[i]);
+			visData->SetTracts(mTracts);
+			visData->LoadFromDirectory(mDataRootDir);
+			MyArrayf distances = visData->GetBoxPairWiseDistances();
+			int idx = mVisInfos[i].GetDataIndex();
+			outFile << idx;
+			for (int j = 0; j < distances.size(); j++){
+				outFile << " " << distances[j];
+			}
+			outFile << endl;
+			delete visData;
+		}
+		outFile.close();
+	}
 }

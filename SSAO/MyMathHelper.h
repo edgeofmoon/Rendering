@@ -32,6 +32,10 @@ public:
 	static float PointToLineSegmentDistance(const MyVec3f& p, const MyVec3f& lineStart, const MyVec3f& lineEnd);
 
 	static MyVec3f ClosestPointOnLineSegment(const MyVec3f& p, const MyVec3f& lineStart, const MyVec3f& lineEnd);
+
+	static float ComputeStandardDeviation(const MyArrayf& d, float mean);
+
+	static float ComputeMean(const MyArrayf& d);
 protected:
 	static MyArrayi Factorials;
 };

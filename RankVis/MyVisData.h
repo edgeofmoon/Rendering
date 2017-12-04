@@ -17,6 +17,8 @@ public:
 	int GetError(int userAnswer) const;
 	float GetError(float userAnswer) const;
 	MyString GetCorrectAnswerString() const;
+	float GetStandardDeviation() const;
+	MyArrayf GetBoxPairWiseDistances() const;
 	const MyTracks* GetTracts() const { return mTracts; };
 	void SetTracts(const MyTracks* tracts) { mTracts = tracts; };
 

@@ -34,6 +34,7 @@ public:
 	void PrintAllCase(const MyString& fileName, const MyString& decimer = "\t") const;
 	void PrintHistogramTables(const MyString& fileName, const MyString& decimer = "\t") const;
 	void PrintFABySegments(const MyString& fileNamePrefix) const;
+	void PrintBoxPairWiseDistances(const MyString& fileName) const;
 
 protected:
 	int mUserIndex;

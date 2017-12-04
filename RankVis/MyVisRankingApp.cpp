@@ -108,6 +108,7 @@ void MyVisRankingApp::Init(int uidx, int tidx, int mode){
 		//mTrialManager.PrintAllCase("dataTable_" + MyString(uidx) + ".txt");
 		//mTrialManager.PrintHistogramTables("histogram_" + MyString(uidx) + ".txt");
 		//mTrialManager.PrintFABySegments("FA\\FA");
+		//mTrialManager.PrintBoxPairWiseDistances("boxDistances.txt");
 	}
 
 	//MyVisTract::UseNormalizedLighting(!IsOnMode(APP_MODE_LIGHTING));
@@ -233,14 +234,17 @@ void MyVisRankingApp::PrintTrialInfo(){
 	int index = mTrialManager.GetCurrentVisDataIndex();
 	VisTask task = visInfo.GetVisTask();
 	if (task == MyVisEnum::FA || task == MyVisEnum::FA_VALUE){
-		cout << index << ": "
+		cout << index << ": ID"
+			<< visInfo.GetDataIndex() << ", "
 			<< toString(visInfo.GetCover()) << ", "
 			<< toString(visInfo.GetBundle()) << ", "
 			<< toString(visInfo.GetShape()) << ", "
 			<< toString(visInfo.GetEncoding()) << ", "
 			<< visInfo.GetQuest() << ", ";
 		if (task == MyVisEnum::FA_VALUE){
-			cout << visData->GetAnswerInfo() << ",";
+			cout << visData->GetAnswerInfo() << ", stdev";
+			// print stdev also
+			cout << visData->GetStandardDeviation() << ",";
 		}
 		if (visData->GetCorrectAnswers().size()>0)
 				cout << visData->GetCorrectAnswers()[0] << ":"
@@ -248,7 +252,8 @@ void MyVisRankingApp::PrintTrialInfo(){
 		cout << endl;
 	}
 	else if (task == MyVisEnum::TRACE){
-		cout << index << ": "
+		cout << index << ": ID"
+			<< visInfo.GetDataIndex() << ", "
 			<< toString(visInfo.GetCover()) << ", "
 			<< toString(visInfo.GetBundle()) << ", "
 			<< toString(visInfo.GetShape()) << ", "
