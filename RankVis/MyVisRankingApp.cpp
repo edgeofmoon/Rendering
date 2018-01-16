@@ -110,7 +110,7 @@ void MyVisRankingApp::Init(int uidx, int tidx, int mode){
 		//mTrialManager.PrintFABySegments("FA\\FA");
 		//mTrialManager.PrintBoxPairWiseDistances("boxDistances.txt");
 		//mTrialManager.PrintFAVarianceTable("FA_variance.txt");
-		mTrialManager.PrintTumorDistanceTable("Tumor_distance.txt");
+		//mTrialManager.PrintTumorDistanceTable("Tumor_distance.txt");
 	}
 
 	//MyVisTract::UseNormalizedLighting(!IsOnMode(APP_MODE_LIGHTING));
