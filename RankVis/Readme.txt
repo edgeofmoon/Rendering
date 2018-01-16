@@ -5,7 +5,7 @@ bd71571@umbc.edu
 https://github.com/edgeofmoon/Rendering
 
 Description:
-This solution contains multiple projects. RankVis is used for the final experiments.
+This solution contains multiple projects. RankVis should be used for the experiments.
 RankVis was used for two experiments:
 1) The dMRI visualization study
 This study compared four encoding methods combined with two shapes for an aggregated comparison task; 
@@ -27,13 +27,16 @@ All six color maps (in LAB) are stored in files in RankVis/color_maps folder.
 
 
 Commandline parameters:
+RankVis [participant_index] [trial_index] [mode: 1 for training, 2 for formal study] [debug control enable, like Next, Previous key etc] [additional output]
 The program has multiple mode which can be specified in the command line parameters.
+Mode:
 Go to MyVisRankingApp.h to see the value of each mode.
-APP_MODE_TRAINING is used for building the training program (provide correct answer after participant answered)
-APP_MODE_STUDY is the formal study program.
-APP_MODE_LIGHTING is used for testing the lighting profile of each rendering methods.
-APP_MODE_OCCLUSION is used for testing the occlusion profile of different shapes (glyph vs tube)
-APP_MODE_PRINTDATA is used for addtional output before the visualizations are presented. 
+APP_MODE_TRAINING (1) is used for building the training program (provide correct answer after participant answered)
+APP_MODE_STUDY (2) is the formal study program.
+APP_MODE_LIGHTING (3) is used for testing the lighting profile of each rendering methods.
+APP_MODE_OCCLUSION (4) is used for testing the occlusion profile of different shapes (glyph vs tube)
+Additional output:
+APP_MODE_PRINTDATA (1) is used for addtional output before the visualizations are presented. 
 One example is to print the vis config information for the current subject to a file before proceeding to other mode. 
 This functionality of this mode is selected via uncommenting code lines in MyVisRankingApp.cpp, after "if (IsOnMode(APP_MODE_PRINTDATA))" statement.
 
@@ -49,15 +52,18 @@ There are different types of files as data input.
 The path to all data folders are specified in MyVisRankingApp::Init() function.
 
 Build:
-For dMRI visualization study, include MyVisRankingApp_UI_old.cpp and MyVisTrialManager_old.cpp. 
+a) For dMRI visualization study
+Include MyVisRankingApp_UI_old.cpp and MyVisTrialManager_old.cpp. 
+Exclude MyVisRankingApp_UI_color1.cpp and MyVisTrialManager_color1.cpp.
 Also change the mTracts.Read() to use resolution 3 data in MyVisRankingApp::Init() function.
 
-For color study, include MyVisRankingApp_UI.cpp and MyVisTrialManager.cpp instead.
+b) For color study
+Include MyVisRankingApp_UI.cpp and MyVisTrialManager.cpp instead.
+Exclude MyVisRankingApp_UI_color1.cpp and MyVisTrialManager_color1.cpp.
 Also change the mTracts.Read() to use resolution 2 data in MyVisRankingApp::Init() function.
-Exclude MyVisRankingApp_UI_color1.cpp and MyVisTrialManager_color1.cpp for both cases.
 
 All *.cpp files with a main function are for testing purposes and only one should be included for building an executable.
-The appTest.cpp should be used for building the experiment program.
+The appTest.cpp should be used for building both experiment programs.
 The tractView.cpp should be used for building the viewer where the five major bundles are colored and labelled.
 
 SAS:
