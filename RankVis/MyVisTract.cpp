@@ -214,6 +214,11 @@ void MyVisTract::Update(){
 		if (mTractVis) mTractVis->SetTractsShown(mVisData->GetTractIndices());
 		if (mTractVis_Aux) mTractVis_Aux->SetTractsShown(mVisData->GetTractIndices());
 	}
+
+	if (visInfo.GetVisTask() == FA && !mIgnoreBoxVis){
+		// append box vis
+		Append_FA_BOX_VIS();
+	}
 }
 
 void MyVisTract::Switch_FA_TUBE_COLOR(){
@@ -554,6 +559,29 @@ void MyVisTract::Switch_FA_VALUE(){
 	mBoxTubeVis->ClearInfluences();
 	mBoxTubeVis->SetValueToTextureInfluence(1);
 
+	mTractVis = mBoxTubeVis;
+	mTractVis_Aux = NULL;
+}
+
+
+void MyVisTract::Append_FA_BOX_VIS(){
+	if (mVisData->GetVisInfo().IsEmpty()) return;
+	if (mBoxTubeVis != NULL) delete mBoxTubeVis;
+	if (mBoxTracts == NULL) delete mBoxTracts;
+	mBoxTracts = new MyTracks;
+	mBoxTracts->BoxSubsetFrom(*mVisData->GetTracts(),
+		mVisData->GetBoxes()[0], mVisData->GetTractIndices());
+	MyTracks tracts1;
+	tracts1.BoxSubsetFrom(*mVisData->GetTracts(),
+		mVisData->GetBoxes()[1], mVisData->GetTractIndices());
+	mBoxTracts->AddTracks(tracts1);
+	mBoxTubeVis = new MyTractVisBase();
+	mBoxTubeVis->SetTracts(mBoxTracts);
+	mBoxTubeVis->SetRenderingParamters(mTractVis->GetRenderingParamters());
+	mBoxTubeVis->ComputeGeometry();
+	mBoxTubeVis->LoadShader();
+	mBoxTubeVis->LoadGeometry();
+	
 	mTractVis = mBoxTubeVis;
 	mTractVis_Aux = NULL;
 }

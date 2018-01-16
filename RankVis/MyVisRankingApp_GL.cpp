@@ -6,6 +6,7 @@
 #include "MyColorTextureMaker.h"
 #include "MyLineAO.h"
 #include "MyTrackDDH.h"
+#include "MyMathHelper.h"
 
 #include <GL/glew.h>
 #include <GL/freeglut.h>
@@ -18,10 +19,10 @@ void MyVisRankingApp::HandleGlutDisplay(){
 	StartProfileRendering();
 	Show();
 	//ShowForLegendMaking();
+	SaveInitScreenShots();
 	glutSwapBuffers();
 	EndProfileRendering();
 	mLogs.StartTrial();
-	SaveInitScreenShots();
 	if (mDisplayEndToNext) Next();
 	mEventLog.LogItem( "Display" );
 }
@@ -457,7 +458,7 @@ void MyVisRankingApp::EndProfileRendering(){
 		}
 		else if (IsOnMode(APP_MODE_OCCLUSION)){
 			v1 = ComputeTotalPixelDraw();
-			v2 = ComputeTotalAlpha()*100.f / v1;;
+			v2 = ComputeTotalAlpha()*100.f / v1;
 		}
 		glBindTexture(GL_TEXTURE_2D, 0);
 		mRenderingLog.SetRenderingValues({ v1, v2 });
@@ -484,33 +485,60 @@ void MyVisRankingApp::SaveInitScreenShots(){
 		const MyVisData* visData = mTrialManager.GetCurrentVisData();
 		const MyVisInfo* visInfo = &(visData->GetVisInfo());
 		static int idx = -1;
-		if (idx == visInfo->GetDataIndex()){
-			RequestRedisplay();
-			return;
-		}
-		if (!visInfo->IsEmpty() &&
-			visInfo->GetVisTask() == MyVisEnum::FA_VALUE){
-			float avg = visData->GetAnswerInfo();
-			MyArrayf values;
-			mTracts.GetSampleClampedValues(visData->GetBoxes()[0], 0.2, 1.0, visData->GetTractIndices(), values);
-			float stdev = 0;
-			for (float f : values){
-				float diff = (f - avg);
-				stdev += diff*diff;
+		static int mIdx = -1;
+		//if (idx == visInfo->GetDataIndex() && mIdx == visInfo->GetMappingMethod()){
+		//	RequestRedisplay();
+		//	return;
+		//}
+		idx = visInfo->GetDataIndex();
+		mIdx = visInfo->GetMappingMethod();
+		if (!visInfo->IsEmpty()){
+			if (visInfo->GetVisTask() == MyVisEnum::FA_VALUE){
+				float avg = visData->GetAnswerInfo();
+				MyArrayf values;
+				mTracts.GetSampleClampedValues(visData->GetBoxes()[0], 0.2, 1.0, visData->GetTractIndices(), values);
+				float stdev = MyMathHelper::ComputeStandardDeviation(values, avg);
+				MyString colorName = MyColorTextureMaker::GetColorName(mIdx);
+				char avgStr[128], stdevStr[128];
+				sprintf(avgStr, "%f", avg);
+				sprintf(stdevStr, "%f", stdev);
+				SaveScreenToImage("images\\bmp\\" + colorName + "_" + MyString(idx) + "_" +
+					MyString(avgStr) + "_" + MyString(stdevStr) + ".bmp");
 			}
-			stdev = sqrtf(stdev / (values.size()));
-			MyString colorName = MyColorTextureMaker::GetColorName(visInfo->GetMappingMethod());
-			char avgStr[128], stdevStr[128];
-			sprintf(avgStr, "%f", avg);
-			sprintf(stdevStr, "%f", stdev);
-			SaveScreenToImage("images\\bmp\\" + colorName + "_" + MyString(idx) + "_" +
-				MyString(avgStr) + "_" + MyString(stdevStr) + ".bmp");
-			idx = visInfo->GetDataIndex();
+			else if (visInfo->GetVisTask() == MyVisEnum::TRACE && MyVisInfo::IsColorStudy){
+				MyString ansStr = visData->GetCorrectAnswerString();
+				MyArrayStr mappingNames = { "boys", "eigen", "similarity", "absolute", "gray" };
+				MyString colorName = mappingNames[mIdx];
+				SaveScreenToImage("images\\bmp\\" + colorName + "_" + MyString(idx) + "_" + ansStr + ".bmp");
+			}
+			else if (visInfo->GetVisTask() == MyVisEnum::FA){
+				int ans = visData->GetCorrectAnswers()[0];
+				SaveScreenToImage("images\\bmp\\t1_" + 
+					toString(visInfo->GetShape()) + "_" + 
+					toString(visInfo->GetEncoding()) + "_" +
+					MyString(idx) + "_" +
+					MyString(ans) + ".bmp");
+			}
+			else if (visInfo->GetVisTask() == MyVisEnum::TRACE && !MyVisInfo::IsColorStudy){
+				int ans = visData->GetCorrectAnswers()[0];
+				SaveScreenToImage("images\\bmp\\t2_" +
+					toString(visInfo->GetShape()) + "_" +
+					toString(visInfo->GetVisCue()) + "_" +
+					MyString(idx) + "_" +
+					MyString(ans) + ".bmp");
+			}
+			else if (visInfo->GetVisTask() == MyVisEnum::TUMOR){
+				int ans = visData->GetCorrectAnswers()[0];
+				SaveScreenToImage("images\\bmp\\t3_" +
+					toString(visInfo->GetShape()) + "_" +
+					toString(visInfo->GetVisCue()) + "_" +
+					MyString(idx) + "_" + 
+					MyString(ans) + ".bmp");
+			}
 		}
 		mDisplayEndToNext = true;
 		RequestRedisplay();
 	}
-
 }
 
 void MyVisRankingApp::SaveColorBufferToImage(const MyString& fileName){

@@ -5,6 +5,8 @@
 
 using namespace MyVisEnum;
 
+bool MyVisInfo::IsColorStudy = true;
+
 MyArray2f MyVisInfo::FAAnswerOptionRanges = {
 	MyVec2f(-0.2, -0.15),
 	MyVec2f(-0.15, -0.1),
@@ -371,6 +373,15 @@ const MyArray2f& MyVisInfo::GetFAAnswerOptionRanges(){
 }
 
 int MyVisInfo::GetDataIndex() const{
+	// taken from MyVisTrialManager_old.cpp
+	class DataCombination{
+	public:
+		DataCombination(Bundle b, FiberCover c, int q) :
+			bundle(b), cover(c), quest(q){};
+		Bundle bundle;
+		FiberCover cover;
+		int quest;
+	};
 	if (mTask == FA_VALUE){
 		// temp solotion for FA_VALUE task
 		// that only uses WHOLE(CC,CST,IFO,ILF)
@@ -416,7 +427,8 @@ int MyVisInfo::GetDataIndex() const{
 		}
 		return idx * 12 + mQuest;
 	}
-	else if (mTask == TRACE){
+	// color TRACE task
+	else if (mTask == TRACE && IsColorStudy){
 		int coverIdxOffset = 0;
 		int bundleIdxOffset = 0;
 		switch (mCover){
@@ -450,6 +462,45 @@ int MyVisInfo::GetDataIndex() const{
 		int id = coverIdxOffset * 4 * 4 + bundleIdxOffset * 4 + mQuest;
 		if (id < 0) return -1;
 		return id;
+	}
+	else if (mTask == FA){
+		MyArray<pair<FiberCover, Bundle>> CoverBundles = {
+			make_pair(BUNDLE, CC), make_pair(WHOLE, CC),
+			make_pair(BUNDLE, CST), make_pair(WHOLE, CST),
+			make_pair(BUNDLE, IFO), make_pair(WHOLE, IFO),
+			make_pair(BUNDLE, ILF)
+		};
+		int idx = 0;
+		for (int iq = 0; iq < 7; iq++){
+			for (int idb = 0; idb < 7; idb++){
+				if (iq == idb) continue;
+				if (mBundle == CoverBundles[idb].second
+					&& mCover == CoverBundles[idb].first
+					&& iq == mQuest){
+					return idx;
+				}
+				idx++;
+			}
+		}
+		return -1;
+	}
+	// dMRI TUMOR or TRACE task
+	else if (mTask == TUMOR || (mTask == TRACE && !IsColorStudy)){
+		MyArray<Bundle> dataBundles = { CC, CST, IFO, ILF };
+		MyArray<FiberCover> dataCovers = { BUNDLE, WHOLE };
+		MyArray<DataCombination> dataTable;
+		int idx = 0;
+		for (int iq = 0; iq < 6; iq++){
+			for (int idb = 0; idb < 8; idb++){
+				dataTable << DataCombination(dataBundles[idb % 4], dataCovers[idb / 4], iq);
+				if (mBundle == dataBundles[idb % 4]
+					&& mCover == dataCovers[idb / 4]
+					&& iq == mQuest){
+					return idx;
+				}
+				idx++;
+			}
+		}
 	}
 	return -1;
 }

@@ -82,6 +82,7 @@ protected:
 	void Switch_FA_TUBE_TEXTURE();
 	void Switch_FA_SUPERQUADRICS_COLOR();
 	void Switch_FA_SUPERQUADRICS_VALUE();
+	void Append_FA_BOX_VIS();
 	// TRACE task
 	void Switch_TRACE_LINE_DEPTH();
 	void Switch_TRACE_TUBE_DEPTH();

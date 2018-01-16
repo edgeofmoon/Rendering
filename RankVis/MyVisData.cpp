@@ -399,6 +399,18 @@ void MyVisData::ComputeAnswer_TUMOR(){
 		mCorrectAnswers = MyArrayi(1, ans);
 		if (ans != mVisInfo.GetQuest()%3 && !mVisInfo.IsTraining())
 			cerr << "TUMOR task answer doesn't match quest index!" << endl;
+
+		// compute point to surface signed distance
+		float minDist = FLT_MAX;
+		for (int i = 0; i < mTractIndices.size(); i++){
+			int tractIndex = mTractIndices[i];
+			for (int j = 1; j < mTracts->GetNumVertex(tractIndex); j++){
+				float dist = MyMathHelper::PointToLineSegmentDistance(mSpheres[0].GetCenter(),
+					mTracts->GetCoord(tractIndex, j - 1), mTracts->GetCoord(tractIndex, j));
+				if (minDist > dist) minDist = dist;
+			}
+		}
+		mAnswerInfo = minDist - mSpheres[0].GetRadius();
 	}
 	else{
 		cerr << "No tumor to resolve TUMOR task answer!" << endl;

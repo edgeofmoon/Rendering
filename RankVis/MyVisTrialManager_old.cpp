@@ -1,4 +1,5 @@
 #include "MyVisTrialManager.h"
+#include "MyMathHelper.h"
 
 #include <iostream>
 #include <fstream>
@@ -13,6 +14,7 @@ MyVisTrialManager::MyVisTrialManager(){
 	mVisDataIndex = -1;
 	mDataRootDir = "./";
 	mUserIndex = 0;
+	MyVisInfo::IsColorStudy = false;
 }
 
 
@@ -146,15 +148,6 @@ void MyVisTrialManager::GenerateVisInfo_Experiment_Random(){
 	*/
 
 	/*
-	for (int i = 0; i < 6; i++){
-		for (int j = 0; j < 56; j+=7){
-			MyVisInfo visInfo(false, false, FA, shapeEncodings[i].second, 0, shapeEncodings[i].first,
-				BASIC, dataBundles[(j / 7) % 4], dataCovers[j / 28], dataQuests[j % 7], EXPERIMENT_RES);
-			mVisInfos << visInfo;
-		}
-	}
-	*/
-	/*
 	for (int i = 0; i < 8; i++){
 		for (int j = 0; j < 48; j+=6){
 			MyVisInfo visInfo(false, false, TRACE, COLOR, 0, shapeCues[i].first, shapeCues[i].second, 
@@ -200,8 +193,46 @@ void MyVisTrialManager::GenerateVisInfo_Experiment_Random(){
 			}
 		}
 	}
-	return;
 	*/
+	// for each dataset in FA, go through all six vis
+	MyArray<DataCombination> dataTable;
+	for (int iq = 0; iq < 7; iq++){
+		for (int idb = 0; idb < 7; idb++){
+			if (iq == idb) continue;
+			dataTable << DataCombination(CoverBundles[idb].second, CoverBundles[idb].first, iq);
+		}
+	}
+	for (int j = 0; j < 42; j ++){
+		for (int i = 0; i < 6; i++){
+			MyVisInfo visInfo(false, false, FA, shapeEncodings[i].second, 0, shapeEncodings[i].first,
+				BASIC, dataTable[j].bundle, dataTable[j].cover, dataTable[j].quest, EXPERIMENT_RES);
+			mVisInfos << visInfo;
+		}
+	}
+	// for trace and tumor task, tabletable is the same
+	dataTable.clear();
+	for (int iq = 0; iq < 6; iq++){
+		for (int idb = 0; idb < 8; idb++){
+			dataTable << DataCombination(dataBundles[idb % 4], dataCovers[idb / 4], iq);
+		}
+	}
+	for (int j = 0; j < 48; j++){
+		for (int i = 0; i < 8; i++){
+			MyVisInfo visInfo(false, false, TRACE, COLOR, 0, shapeCues[i].first,
+				shapeCues[i].second, dataTable[j].bundle,
+				dataTable[j].cover, dataTable[j].quest, EXPERIMENT_RES);
+			mVisInfos << visInfo;
+		}
+	}
+	for (int j = 0; j < 48; j++){
+		for (int i = 0; i < 8; i++){
+			MyVisInfo visInfo(false, false, TUMOR, COLOR, 0, shapeCues[i].first,
+				shapeCues[i].second, dataTable[j].bundle,
+				dataTable[j].cover, dataTable[j].quest, EXPERIMENT_RES);
+			mVisInfos << visInfo;
+		}
+	}
+	return;
 	/**********dcap*****************/
 	/*******Experiment Used*********/
 	shapeEncodings.Permute(mUserIndex);
@@ -214,7 +245,7 @@ void MyVisTrialManager::GenerateVisInfo_Experiment_Random(){
 		if (thisTask == FA){
 			// make sure under each vis
 			// there always will be 7 quest from 0~7
-			// and 7 different bunlde*cover combins
+			// and 7 different bunlde*cover combines
 			MyArray<DataCombination> dataTable;
 			for (int iq = 0; iq < 7; iq++){
 				for (int idb = 0; idb < 7; idb++){
@@ -362,4 +393,73 @@ void MyVisTrialManager::PrintAllCase(const MyString& fileName, const MyString& d
 			<< visData->GetCorrectAnswers()[0] << endl;
 		delete visData;
 	}
+}
+
+void MyVisTrialManager::PrintFAVarianceTable(const MyString& fileName) const{
+	float minv = 0.2f;
+	float maxv = 1.0f;
+	ofstream outFile(fileName);
+	if (!outFile.is_open()){
+		cerr << "Cannot open file to write: " << fileName << endl;
+		return;
+	}
+	else{
+		for (int i = 0; i < mVisInfos.size(); i++){
+			if (mVisInfos[i].IsEmpty()) continue;
+			if (mVisInfos[i].GetVisTask() != FA_VALUE 
+				&& mVisInfos[i].GetVisTask() != FA) continue;
+			MyVisData* visData = new MyVisData(mVisInfos[i]);
+			visData->SetTracts(mTracts);
+			visData->LoadFromDirectory(mDataRootDir);
+			const MyArrayi& indices = visData->GetTractIndices();
+			int idx = mVisInfos[i].GetDataIndex();
+			outFile << toString(mVisInfos[i].GetCover()) << " ";
+			outFile << toString(mVisInfos[i].GetBundle()) << " ";
+			outFile << mVisInfos[i].GetQuest() << " ";
+			outFile << idx;
+			for (int ib = 0; ib < visData->GetBoxes().size(); ib++){
+				const MyBoundingBox& box = visData->GetBoxes()[ib];
+				MyArrayf values;
+				mTracts->GetSampleClampedValues(box, minv, maxv, indices, values);
+				float mean = MyMathHelper::ComputeMean(values);
+				float stdev = MyMathHelper::ComputeStandardDeviation(values, mean);
+				outFile << " " << mean << " " << stdev;
+			}
+			outFile << endl;
+			// print #tracts
+			delete visData;
+		}
+		outFile.close();
+	}
+	cout << "FA value files written" << endl;
+}
+
+void MyVisTrialManager::PrintTumorDistanceTable(const MyString& fileName) const{
+	float minv = 0.2f;
+	float maxv = 1.0f;
+	ofstream outFile(fileName);
+	if (!outFile.is_open()){
+		cerr << "Cannot open file to write: " << fileName << endl;
+		return;
+	}
+	else{
+		for (int i = 0; i < mVisInfos.size(); i++){
+			if (mVisInfos[i].IsEmpty()) continue;
+			if (mVisInfos[i].GetVisTask() != TUMOR) continue;
+			MyVisData* visData = new MyVisData(mVisInfos[i]);
+			visData->SetTracts(mTracts);
+			visData->LoadFromDirectory(mDataRootDir);
+			const MyArrayi& indices = visData->GetTractIndices();
+			int idx = mVisInfos[i].GetDataIndex();
+			outFile << toString(mVisInfos[i].GetCover()) << " ";
+			outFile << toString(mVisInfos[i].GetBundle()) << " ";
+			outFile << mVisInfos[i].GetQuest() << " ";
+			outFile << idx << " ";
+			outFile << visData->GetAnswerInfo() << endl;
+			// print #tracts
+			delete visData;
+		}
+		outFile.close();
+	}
+	cout << "FA value files written" << endl;
 }

@@ -336,6 +336,9 @@ void MyVisRankingApp::UIInit(){
 	mTextArea_Progress.SetConstant(true);
 	mTextArea_Answer.SetConstant(true);
 	mTextArea_ConfidenceHint.SetConstant(true);
+
+	// for dMRI study, set to true
+	mVisTract.SetIgnoreBoxVis(true);
 }
 
 void MyVisRankingApp::UIUpdate(){

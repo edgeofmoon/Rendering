@@ -22,7 +22,7 @@ MyArrayui MyColorTextureMaker::MakeColorTextures(){
 	MyBitmap bitmap;
 	MyColorLegend legend;
 	//MyTexture::SetInterpolateMethod(GL_NEAREST);
-	bool printToFile = false;
+	bool printToFile = true;
 	float lowLu = 38;
 	float highLu = 88;
 	// isoluminant
@@ -78,6 +78,9 @@ MyArrayui MyColorTextureMaker::MakeColorTextures(){
 	legend.SetColors(colors);
 	colors = legend.Resample(1000);
 	for (int i = 0; i < colors.size(); i++){
+		if (i == 245){
+			int debug = 1;
+		}
 		MyColorConverter::Lab lab = MyColorConverter::rgb2lab(colors[i]);
 		float li = float(i) / (colors.size() - 1);
 		MyColor4f c = divergingLegend.GetColorByValue(li);

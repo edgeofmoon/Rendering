@@ -86,8 +86,8 @@ void MyVisRankingApp::Init(int uidx, int tidx, int mode){
 		//mTracts.Read("C:\\Users\\GuohaoZhang\\Dropbox\\data\\normal_s3_tensorboy_RevZ.trk");
 		// s2 is for the color study
 		//mTracts.Read("C:\\Users\\GuohaoZhang\\Dropbox\\data\\normal_s2_tensorboy_RevZ.trk");
-		//mTracts.Read("..\\..\\data\\normal_s3_tensorboy_RevZ.trk");
-		mTracts.Read("..\\..\\data\\normal_s2_tensorboy_RevZ.trk");
+		mTracts.Read("..\\..\\data\\normal_s3_tensorboy_RevZ.trk");
+		//mTracts.Read("..\\..\\data\\normal_s2_tensorboy_RevZ.trk");
 		MySuperquadric::ZREV = -1;
 
 
@@ -109,6 +109,8 @@ void MyVisRankingApp::Init(int uidx, int tidx, int mode){
 		//mTrialManager.PrintHistogramTables("histogram_" + MyString(uidx) + ".txt");
 		//mTrialManager.PrintFABySegments("FA\\FA");
 		//mTrialManager.PrintBoxPairWiseDistances("boxDistances.txt");
+		//mTrialManager.PrintFAVarianceTable("FA_variance.txt");
+		mTrialManager.PrintTumorDistanceTable("Tumor_distance.txt");
 	}
 
 	//MyVisTract::UseNormalizedLighting(!IsOnMode(APP_MODE_LIGHTING));
@@ -167,6 +169,7 @@ void MyVisRankingApp::Init(int uidx, int tidx, int mode){
 	if (!IsOnMode(APP_MODE_DEBUG)){
 		mTrackBall.SetScaleRange(pow(1.05f, -5), pow(1.05f, 20));
 	}
+	mTrackBall.ScaleMultiply(powf(1.0 / 1.05, 5));
 
 	mTractLegend.LoadShader();
 	mTractLegend.ComputeGeometry();

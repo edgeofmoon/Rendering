@@ -80,16 +80,31 @@ void MyColorLegend::PrintToFileLAB(const MyString& fileName) const{
 	}
 }
 
+float Clamp(float x, float l, float h){
+	if (x < l) return l;
+	if (x > h) return h;
+	return x;
+}
+
 void MyColorLegend::PrintToFileRGB(const MyString& fileName) const{
 	ofstream outfile;
 	outfile.open(fileName);
 	if (!outfile.is_open()){
 	}
 	else{
-		outfile << mColors.size() << endl;
+		//outfile << mColors.size() << endl;
 		for (int i = 0; i < mColors.size(); i++){
-			outfile << mColors[i].r << " " << mColors[i].g << " " << mColors[i].b << endl;
+			outfile << (int) (Clamp(mColors[i].r, 0, 1) * 255)
+				<< " " << (int)(Clamp(mColors[i].g, 0, 1) * 255)
+				<< " " << (int)(Clamp(mColors[i].b, 0, 1) * 255) << endl;
 		}
+		/*
+		for (int i = 0; i < mColors.size(); i++){
+			outfile << Clamp(mColors[i].r, 0, 1)
+				<< " " << Clamp(mColors[i].g, 0, 1)
+				<< " " << Clamp(mColors[i].b, 0, 1)<< endl;
+		}
+		*/
 		outfile.close();
 	}
 }

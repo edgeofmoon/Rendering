@@ -1,4 +1,5 @@
 #include "MyVisTrialManager.h"
+#include "MyMathHelper.h"
 
 #include <iostream>
 #include <fstream>
@@ -108,7 +109,6 @@ void MyVisTrialManager::GenerateVisInfo_Experiment_Random(){
 	};
 
 	/****************dcap****************/
-	/*
 	for (int i = 0; i < 6; i++){
 		for (int k = 0; k < 12; k++){
 			mVisInfos
@@ -117,6 +117,7 @@ void MyVisTrialManager::GenerateVisInfo_Experiment_Random(){
 		}
 	}
 	return;
+	/*
 	for (int j = 0; j < 6; j++){
 		for (int i = 0; i < 6; i++){
 			for (int k = 0; k < 12; k++){
@@ -157,7 +158,7 @@ void MyVisTrialManager::GenerateVisInfo_Experiment_Random(){
 	int methods[] = { 0, 1, 3, 4 };
 	for (int ibd = 0; ibd < 8; ibd++){
 		for (int quest = 0; quest < 4; quest++){
-			for (int m = 0; m < 1; m++){
+				for (int m = 0; m < 4; m++){
 				mVisInfos <<
 					MyVisInfo(false, false, TRACE, COLOR, methods[m], TUBE, ENCODING,
 					dataBundles[ibd % 4], dataCovers[ibd / 4], quest, EXPERIMENT_RES);
@@ -165,8 +166,8 @@ void MyVisTrialManager::GenerateVisInfo_Experiment_Random(){
 		}
 	}
 	return;
-	*/
 
+	*/
 	/****************dcap****************/
 	mVisInfos << MyVisInfo(START);
 	for (int iTask = 0; iTask < 2; iTask++){
@@ -496,4 +497,36 @@ void MyVisTrialManager::PrintBoxPairWiseDistances(const MyString& fileName) cons
 		}
 		outFile.close();
 	}
+}
+
+void MyVisTrialManager::PrintFAVarianceTable(const MyString& fileName) const{
+	float minv = 0.2f;
+	float maxv = 1.0f;
+	ofstream outFile(fileName);
+	if (!outFile.is_open()){
+		cerr << "Cannot open file to write: " << fileName << endl;
+		return;
+	}
+	else{
+		for (int i = 0; i < mVisInfos.size(); i++){
+			if (mVisInfos[i].IsEmpty()) continue;
+			if (mVisInfos[i].GetVisTask() != FA_VALUE) continue;
+			MyVisData* visData = new MyVisData(mVisInfos[i]);
+			visData->SetTracts(mTracts);
+			visData->LoadFromDirectory(mDataRootDir);
+			const MyArrayi& indices = visData->GetTractIndices();
+			const MyBoundingBox& box = visData->GetBoxes()[0];
+			MyArrayf values;
+			mTracts->GetSampleClampedValues(box, minv, maxv, indices, values);
+			float mean = visData->GetAnswerInfo();
+			float stdev = MyMathHelper::ComputeStandardDeviation(values, mean);
+			int idx = mVisInfos[i].GetDataIndex();
+			// print #tracts
+			outFile << idx << " " << mean << " " << stdev << endl;
+			delete visData;
+		}
+		outFile.close();
+	}
+	cout << "FA value files written" << endl;
+
 }

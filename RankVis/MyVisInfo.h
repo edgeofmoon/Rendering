@@ -65,6 +65,8 @@ public:
 	static const MyArray2f& GetFAAnswerOptionRanges();
 	int GetDataIndex() const;
 
+	// to distinguish color and dMRI study dataId for TRACE task
+	static bool IsColorStudy;
 protected:
 	// transition trial
 	bool mIsEmpty;
