@@ -156,6 +156,7 @@ void addTractVis(const MyTensor3f& tensor, const MyVec3f pos){
 		<< tensor.GetEigenVector(0)[0] << tensor.GetEigenVector(0)[1] << tensor.GetEigenVector(0)[2]
 		<< tensor.GetEigenVector(1)[0] << tensor.GetEigenVector(1)[1] << tensor.GetEigenVector(1)[2]
 		<< tensor.GetEigenVector(2)[0] << tensor.GetEigenVector(2)[1] << tensor.GetEigenVector(2)[2];
+	// determin the glyph colors
 	tracts.back()->GetTracts().back().mTrackProperties = { 0.5, 0.5, 0.5 };
 	tracts.back()->GetHeader().n_count = 1;
 	tracts.back()->GetHeader().n_scalars = 13;
@@ -167,6 +168,7 @@ void addTractVis(const MyTensor3f& tensor, const MyVec3f pos){
 	tractVises.back()->ComputeGeometry();
 	tractVises.back()->LoadGeometry();
 	tractVises.back()->ClearInfluences();
+	tractVises.back()->SetColorInfluence(1);
 	centers << pos;
 }
 
